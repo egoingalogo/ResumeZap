@@ -24,7 +24,6 @@ const AuthPage: React.FC = () => {
     confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -137,10 +136,10 @@ const AuthPage: React.FC = () => {
         {/* Back button */}
         <button
           onClick={() => navigate('/')}
-          className="absolute -top-16 left-0 flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-200 group"
+          className="absolute -top-16 left-0 flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-200"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Return back to home</span>
+          <span>Back to Home</span>
         </button>
 
         {/* Auth card */}
@@ -251,28 +250,19 @@ const AuthPage: React.FC = () => {
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Confirm Password
                 </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 pr-12 rounded-lg border ${
-                      errors.confirmPassword 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
-                    } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
-                    placeholder="Confirm your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    errors.confirmPassword 
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
+                  } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
+                  placeholder="Confirm your password"
+                />
                 {errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
                 )}
