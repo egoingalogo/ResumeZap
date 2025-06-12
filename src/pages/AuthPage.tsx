@@ -188,7 +188,7 @@ const AuthPage: React.FC = () => {
                   placeholder="Enter your full name"
                 />
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Enter your first and last name (letters and spaces only).
+                  Enter your full name (letters and spaces only, minimum 3 letters).
                 </p>
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600">{errors.name}</p>
