@@ -7,7 +7,8 @@ import toast from 'react-hot-toast';
 
 /**
  * Authentication page handling both login and registration
- * Includes form validation, loading states, and error handling
+ * Includes comprehensive form validation, loading states, and error handling
+ * Validates inputs according to specific business rules with visual feedback
  */
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const AuthPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   console.log('AuthPage: Component mounted with mode:', mode);
 
@@ -37,30 +39,68 @@ const AuthPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  /**
+   * Validates form inputs according to business rules
+   * Returns true if all validations pass, false otherwise
+   */
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (mode === 'register' && !formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    // Full Name validation (registration only)
+    if (mode === 'register') {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+      } else {
+        // Check if name contains only letters and spaces
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        if (!nameRegex.test(formData.name)) {
+          newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+        } else {
+          // Check if each name part has at least 3 characters
+          const nameParts = formData.name.trim().split(/\s+/);
+          if (nameParts.length < 2 || nameParts.some(part => part.length < 3)) {
+            newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+          }
+        }
+      }
     }
 
+    // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Please enter a valid email address (e.g., user@example.com).';
+    } else {
+      // Enhanced email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address (e.g., user@example.com).';
+      }
     }
 
+    // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+    } else {
+      // Check minimum length
+      if (formData.password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+      } else {
+        // Check for uppercase, lowercase, and numbers
+        const hasUppercase = /[A-Z]/.test(formData.password);
+        const hasLowercase = /[a-z]/.test(formData.password);
+        const hasNumbers = /[0-9]/.test(formData.password);
+        
+        if (!hasUppercase || !hasLowercase || !hasNumbers) {
+          newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+        }
+      }
     }
 
+    // Confirm Password validation (registration only)
     if (mode === 'register') {
       if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
+        newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
       } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
+        newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
       }
     }
 
@@ -68,9 +108,95 @@ const AuthPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Validates a single field and updates errors state
+   * Used for real-time validation as user types
+   */
+  const validateField = (fieldName: string, value: string) => {
+    const newErrors = { ...errors };
+
+    switch (fieldName) {
+      case 'name':
+        if (mode === 'register') {
+          if (!value.trim()) {
+            newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+          } else {
+            const nameRegex = /^[a-zA-Z\s]+$/;
+            if (!nameRegex.test(value)) {
+              newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+            } else {
+              const nameParts = value.trim().split(/\s+/);
+              if (nameParts.length < 2 || nameParts.some(part => part.length < 3)) {
+                newErrors.name = 'Please enter your full name (letters and spaces only, at least 3 characters per name).';
+              } else {
+                delete newErrors.name;
+              }
+            }
+          }
+        }
+        break;
+
+      case 'email':
+        if (!value.trim()) {
+          newErrors.email = 'Please enter a valid email address (e.g., user@example.com).';
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            newErrors.email = 'Please enter a valid email address (e.g., user@example.com).';
+          } else {
+            delete newErrors.email;
+          }
+        }
+        break;
+
+      case 'password':
+        if (!value) {
+          newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+        } else if (value.length < 8) {
+          newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+        } else {
+          const hasUppercase = /[A-Z]/.test(value);
+          const hasLowercase = /[a-z]/.test(value);
+          const hasNumbers = /[0-9]/.test(value);
+          
+          if (!hasUppercase || !hasLowercase || !hasNumbers) {
+            newErrors.password = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+          } else {
+            delete newErrors.password;
+          }
+        }
+        break;
+
+      case 'confirmPassword':
+        if (mode === 'register') {
+          if (!value) {
+            newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
+          } else if (formData.password !== value) {
+            newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
+          } else {
+            delete newErrors.confirmPassword;
+          }
+        }
+        break;
+    }
+
+    setErrors(newErrors);
+  };
+
+  /**
+   * Handles form submission with comprehensive validation
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('AuthPage: Form submission started');
+    
+    // Mark all fields as touched
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
     
     if (!validateForm()) {
       console.log('AuthPage: Form validation failed');
@@ -113,14 +239,36 @@ const AuthPage: React.FC = () => {
     }
   };
 
+  /**
+   * Handles input changes with real-time validation
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    // Mark field as touched
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    // Validate field in real-time if it has been touched
+    if (touched[name]) {
+      validateField(name, value);
     }
+  };
+
+  /**
+   * Handles input blur events to trigger validation
+   */
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    validateField(name, value);
+  };
+
+  /**
+   * Determines if an input field should show error styling
+   */
+  const hasError = (fieldName: string): boolean => {
+    return touched[fieldName] && !!errors[fieldName];
   };
 
   return (
@@ -180,18 +328,19 @@ const AuthPage: React.FC = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 rounded-lg border ${
-                    errors.name 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
-                  } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
+                  onBlur={handleInputBlur}
+                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                    hasError('name')
+                      ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                      : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                  } dark:bg-gray-800 dark:text-white focus:outline-none`}
                   placeholder="Enter your full name"
                 />
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Enter your full name (letters and spaces only, minimum 3 letters).
+                  Enter your first and last name (letters and spaces only).
                 </p>
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                {hasError('name') && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
                 )}
               </div>
             )}
@@ -206,18 +355,19 @@ const AuthPage: React.FC = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.email 
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                    : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
-                } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
+                onBlur={handleInputBlur}
+                className={`w-full px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                  hasError('email')
+                    ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                    : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                } dark:bg-gray-800 dark:text-white focus:outline-none`}
                 placeholder="Enter your email"
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Enter a valid email address (e.g., user@example.com).
               </p>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              {hasError('email') && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
               )}
             </div>
 
@@ -232,17 +382,18 @@ const AuthPage: React.FC = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 pr-12 rounded-lg border ${
-                    errors.password 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
-                  } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
+                  onBlur={handleInputBlur}
+                  className={`w-full px-4 py-3 pr-12 rounded-lg border-2 transition-all duration-200 ${
+                    hasError('password')
+                      ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                      : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                  } dark:bg-gray-800 dark:text-white focus:outline-none`}
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -250,8 +401,8 @@ const AuthPage: React.FC = () => {
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 At least 8 characters, including uppercase A–Z, lowercase a–z, and numbers 0–9.
               </p>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              {hasError('password') && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
               )}
             </div>
 
@@ -267,11 +418,12 @@ const AuthPage: React.FC = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 pr-12 rounded-lg border ${
-                      errors.confirmPassword 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
-                    } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
+                    onBlur={handleInputBlur}
+                    className={`w-full px-4 py-3 pr-12 rounded-lg border-2 transition-all duration-200 ${
+                      hasError('confirmPassword')
+                        ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                        : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                    } dark:bg-gray-800 dark:text-white focus:outline-none`}
                     placeholder="Confirm your password"
                   />
                   <button
@@ -285,8 +437,8 @@ const AuthPage: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Must exactly match the password you entered above.
                 </p>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                {hasError('confirmPassword') && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword}</p>
                 )}
               </div>
             )}
