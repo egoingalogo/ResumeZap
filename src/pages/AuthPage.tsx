@@ -127,21 +127,21 @@ const AuthPage: React.FC = () => {
       {/* Background pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
 
+      {/* Back button - positioned at top of screen */}
+      <button
+        onClick={() => navigate('/')}
+        className="fixed top-6 left-6 z-50 flex items-center space-x-2 text-white/90 hover:text-white transition-all duration-200 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span className="font-medium">Back to Home</span>
+      </button>
+
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="max-w-md w-full relative"
       >
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/')}
-          className="absolute -top-16 left-0 flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
-        </button>
-
         {/* Auth card */}
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl p-8 shadow-2xl">
           {/* Header */}
