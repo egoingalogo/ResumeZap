@@ -187,6 +187,9 @@ const AuthPage: React.FC = () => {
                   } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
                   placeholder="Enter your full name"
                 />
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Enter your first and last name (letters and spaces only).
+                </p>
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                 )}
@@ -210,6 +213,9 @@ const AuthPage: React.FC = () => {
                 } dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 transition-colors duration-200`}
                 placeholder="Enter your email"
               />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Enter a valid email address (e.g., user@example.com).
+              </p>
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
@@ -241,6 +247,9 @@ const AuthPage: React.FC = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                At least 8 characters, including uppercase A–Z, lowercase a–z, and numbers 0–9.
+              </p>
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
@@ -273,6 +282,9 @@ const AuthPage: React.FC = () => {
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Must exactly match the password you entered above.
+                </p>
                 {errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
                 )}
