@@ -55,6 +55,32 @@ export const useAuthStore = create<AuthState>()(
               },
               createdAt: '2024-01-01T00:00:00.000Z',
             };
+          } else if (email === 'free@example.com') {
+            // Free plan account for testing limitations
+            mockUser = {
+              id: 'free-user-123',
+              email: 'free@example.com',
+              name: 'Free User',
+              plan: 'free',
+              usageThisMonth: {
+                resumeTailoring: 1,
+                coverLetters: 0,
+              },
+              createdAt: '2024-12-01T00:00:00.000Z',
+            };
+          } else if (email === 'freelimit@example.com') {
+            // Free plan account that has reached limits
+            mockUser = {
+              id: 'freelimit-user-456',
+              email: 'freelimit@example.com',
+              name: 'Free Limit User',
+              plan: 'free',
+              usageThisMonth: {
+                resumeTailoring: 2,
+                coverLetters: 1,
+              },
+              createdAt: '2024-11-15T00:00:00.000Z',
+            };
           } else if (email === 'pro@example.com') {
             // Pro account for testing unlimited features
             mockUser = {

@@ -376,6 +376,8 @@ const AuthPage: React.FC = () => {
                   Test Accounts (use any password):
                 </h3>
                 <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                  <div><strong>free@example.com</strong> - Free plan with 1 resume analysis used</div>
+                  <div><strong>freelimit@example.com</strong> - Free plan at usage limits</div>
                   <div><strong>test@example.com</strong> - Premium plan with usage data</div>
                   <div><strong>pro@example.com</strong> - Pro plan with unlimited features</div>
                   <div><strong>lifetime@example.com</strong> - Lifetime plan</div>
