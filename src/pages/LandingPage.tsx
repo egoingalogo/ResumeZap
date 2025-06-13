@@ -68,7 +68,7 @@ const LandingPage: React.FC = () => {
     {
       icon: Target,
       title: 'AI-Powered Resume Tailoring',
-      description: 'Transform your resume with Claude AI to perfectly match job requirements and increase your interview chances.',
+      description: 'Transform your resume with AI to perfectly match job requirements and increase your interview chances.',
     },
     {
       icon: Brain,
@@ -113,7 +113,7 @@ const LandingPage: React.FC = () => {
         '15 resume tailoring sessions per month',
         '10 cover letter generations per month',
         'Enhanced skill gap analysis with priority ranking',
-        'Detailed Claude AI learning recommendations',
+        'Detailed AI learning recommendations',
         'Multiple resume version storage',
         'Priority email support',
         'Usage analytics dashboard',
@@ -131,7 +131,7 @@ const LandingPage: React.FC = () => {
         'Unlimited resume tailoring',
         'Unlimited cover letter generation',
         'Advanced skill gap analysis with roadmaps',
-        'Comprehensive Claude AI learning recommendations',
+        'Comprehensive AI learning recommendations',
         'Unlimited document storage and version history',
         'Advanced analytics and success tracking',
         'Live chat support',
@@ -236,7 +236,7 @@ const LandingPage: React.FC = () => {
           >
             <div className="inline-flex items-center space-x-2 bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-full text-purple-600 dark:text-purple-400 text-sm font-medium mb-6">
               <Sparkles className="h-4 w-4" />
-              <span>Powered by Claude AI</span>
+              <span>Powered by AI</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
@@ -441,7 +441,7 @@ const LandingPage: React.FC = () => {
             </div>
             
             <div className="text-gray-400 dark:text-gray-500 text-sm">
-              © 2025 ResumeZap. All rights reserved. Powered by Claude AI.
+              © 2025 ResumeZap. All rights reserved. Powered by AI.
             </div>
           </div>
         </div>
