@@ -106,7 +106,7 @@ const LandingPage: React.FC = () => {
     },
     {
       name: 'Premium',
-      price: '$8.99',
+      price: '$7.99',
       period: '/month',
       description: 'Enhanced features for active job seekers',
       features: [

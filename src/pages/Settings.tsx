@@ -552,7 +552,7 @@ const Settings: React.FC = () => {
                             </div>
                             <div className="text-right">
                               <div className="font-medium text-gray-900 dark:text-white">
-                                {user.plan === 'premium' && '$8.99'}
+                                {user.plan === 'premium' && '$7.99'}
                                 {user.plan === 'pro' && '$14.99'}
                                 {user.plan === 'lifetime' && '$55.99'}
                               </div>
