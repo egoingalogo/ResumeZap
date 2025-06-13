@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Zap, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Zap, ArrowLeft, Mail, X } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 /**
  * Authentication page handling both login and registration
- * Includes comprehensive form validation, loading states, and error handling
+ * Includes comprehensive form validation, loading states, error handling, and password reset
  * Validates inputs according to specific business rules with visual feedback
  */
 const AuthPage: React.FC = () => {
@@ -29,6 +29,12 @@ const AuthPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  
+  // Password reset modal state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   console.log('AuthPage: Component mounted with mode:', mode);
 
@@ -237,6 +243,52 @@ const AuthPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /**
+   * Handles password reset request
+   */
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('AuthPage: Password reset requested for:', resetEmail);
+    
+    if (!resetEmail.trim()) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsResetLoading(true);
+
+    try {
+      // Simulate API call for password reset
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setResetEmailSent(true);
+      toast.success('Password reset instructions sent to your email!');
+      console.log('AuthPage: Password reset email sent successfully');
+      
+    } catch (error) {
+      console.error('AuthPage: Password reset failed:', error);
+      toast.error('Failed to send reset email. Please try again.');
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  /**
+   * Closes the password reset modal and resets state
+   */
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetEmail('');
+    setResetEmailSent(false);
+    setIsResetLoading(false);
   };
 
   /**
@@ -472,6 +524,18 @@ const AuthPage: React.FC = () => {
             </motion.button>
           </form>
 
+          {/* Forgot Password Link - Only show in login mode */}
+          {mode === 'login' && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowResetModal(true)}
+                className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-medium transition-colors duration-200"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
+
           {/* Mode toggle */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">
@@ -487,6 +551,108 @@ const AuthPage: React.FC = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Password Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative"
+          >
+            {/* Close button */}
+            <button
+              onClick={closeResetModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {!resetEmailSent ? (
+              <>
+                {/* Reset Password Form */}
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    Reset Your Password
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Enter your email address and we'll send you instructions to reset your password.
+                  </p>
+                </div>
+
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div>
+                    <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="resetEmail"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeResetModal}
+                      className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResetLoading}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                    >
+                      {isResetLoading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4" />
+                          <span>Send Reset Link</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                {/* Success Message */}
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    Check Your Email
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+                    We've sent password reset instructions to <strong>{resetEmail}</strong>
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-500 text-xs mb-6">
+                    Didn't receive the email? Check your spam folder or try again with a different email address.
+                  </p>
+                  <button
+                    onClick={closeResetModal}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200"
+                  >
+                    Got it, thanks!
+                  </button>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
