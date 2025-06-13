@@ -39,17 +39,62 @@ export const useAuthStore = create<AuthState>()(
           // Simulate API call - replace with actual authentication
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const mockUser: User = {
-            id: '1',
-            email,
-            name: email.split('@')[0],
-            plan: 'free',
-            usageThisMonth: {
-              resumeTailoring: 0,
-              coverLetters: 0,
-            },
-            createdAt: new Date().toISOString(),
-          };
+          // Mock account for testing - use test@example.com with any password
+          let mockUser: User;
+          
+          if (email === 'test@example.com') {
+            // Pre-configured test account with usage data
+            mockUser = {
+              id: 'test-user-123',
+              email: 'test@example.com',
+              name: 'Test User',
+              plan: 'premium',
+              usageThisMonth: {
+                resumeTailoring: 5,
+                coverLetters: 3,
+              },
+              createdAt: '2024-01-01T00:00:00.000Z',
+            };
+          } else if (email === 'pro@example.com') {
+            // Pro account for testing unlimited features
+            mockUser = {
+              id: 'pro-user-456',
+              email: 'pro@example.com',
+              name: 'Pro User',
+              plan: 'pro',
+              usageThisMonth: {
+                resumeTailoring: 25,
+                coverLetters: 15,
+              },
+              createdAt: '2024-01-01T00:00:00.000Z',
+            };
+          } else if (email === 'lifetime@example.com') {
+            // Lifetime account for testing
+            mockUser = {
+              id: 'lifetime-user-789',
+              email: 'lifetime@example.com',
+              name: 'Lifetime User',
+              plan: 'lifetime',
+              usageThisMonth: {
+                resumeTailoring: 50,
+                coverLetters: 30,
+              },
+              createdAt: '2023-06-15T00:00:00.000Z',
+            };
+          } else {
+            // Default new user
+            mockUser = {
+              id: Date.now().toString(),
+              email,
+              name: email.split('@')[0],
+              plan: 'free',
+              usageThisMonth: {
+                resumeTailoring: 0,
+                coverLetters: 0,
+              },
+              createdAt: new Date().toISOString(),
+            };
+          }
           
           set({ user: mockUser, isAuthenticated: true });
           console.log('AuthStore: Login successful');
