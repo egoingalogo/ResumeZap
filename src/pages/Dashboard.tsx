@@ -11,8 +11,7 @@ import {
   Clock,
   Award,
   Plus,
-  ChevronRight,
-  Mail
+  ChevronRight
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
