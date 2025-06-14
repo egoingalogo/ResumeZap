@@ -72,7 +72,7 @@ const LandingPage: React.FC = () => {
     },
     {
       icon: Brain,
-      title: 'Intelligent Skill Gap Analysis',
+      title: 'Intelligent Skill Gap Analysis & AI Learning Recommendations',
       description: 'Identify missing skills and get personalized learning recommendations with step-by-step development roadmaps.',
     },
     {
