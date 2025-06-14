@@ -150,7 +150,7 @@ const LandingPage: React.FC = () => {
         'All Pro Plan features permanently',
         'Exclusive early adopter badge',
         'Direct feedback channel to development team',
-        'Grandfathered access to future feature updates',
+        'Early access to future feature updates',
         'Limited to first 1,000 customers',
         '60-day money-back guarantee',
       ],
