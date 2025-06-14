@@ -107,6 +107,16 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 >
                   Applications
                 </Link>
+                <Link
+                  to="/support"
+                  className={`text-sm font-medium transition-colors duration-200 ${
+                    location.pathname === '/support'
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                  }`}
+                >
+                  Support
+                </Link>
               </>
             )}
           </div>
@@ -241,6 +251,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Applications
+                </Link>
+                <Link
+                  to="/support"
+                  className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Support
                 </Link>
               </>
             )}
