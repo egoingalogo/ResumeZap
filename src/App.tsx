@@ -8,6 +8,7 @@ import CoverLetterGenerator from './pages/CoverLetterGenerator';
 import SkillGapAnalysis from './pages/SkillGapAnalysis';
 import ApplicationTracker from './pages/ApplicationTracker';
 import Settings from './pages/Settings';
+import EmailSupport from './pages/EmailSupport';
 import AuthPage from './pages/AuthPage';
 import { useThemeStore } from './store/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -38,6 +39,7 @@ function App() {
               <Route path="/skill-gap-analysis" element={<SkillGapAnalysis />} />
               <Route path="/applications" element={<ApplicationTracker />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/support" element={<EmailSupport />} />
             </Routes>
             <Toaster 
               position="top-right"
