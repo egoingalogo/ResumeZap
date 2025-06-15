@@ -57,8 +57,6 @@ const Settings: React.FC = () => {
   const [preferences, setPreferences] = useState({
     emailNotifications: true,
     marketingEmails: false,
-    weeklyReports: true,
-    jobAlerts: true,
   });
 
   console.log('Settings: Component mounted for user:', user?.email);
@@ -593,16 +591,6 @@ const Settings: React.FC = () => {
                           key: 'marketingEmails',
                           title: 'Marketing Emails',
                           description: 'Receive tips, updates, and promotional content',
-                        },
-                        {
-                          key: 'weeklyReports',
-                          title: 'Weekly Reports',
-                          description: 'Weekly summary of your job search progress',
-                        },
-                        {
-                          key: 'jobAlerts',
-                          title: 'Job Alerts',
-                          description: 'Notifications about relevant job opportunities',
                         },
                       ].map((notification) => (
                         <div key={notification.key} className="flex items-center justify-between">
