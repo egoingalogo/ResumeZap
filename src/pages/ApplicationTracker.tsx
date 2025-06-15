@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
+import { LiveChatButton } from '../components/LiveChatButton';
 
 interface Application {
   id: string;
@@ -136,6 +137,9 @@ const ApplicationTracker: React.FC = () => {
   return (
     <div>
       <Navbar />
+      
+      {/* Live Chat Button for Pro & Lifetime users */}
+      <LiveChatButton />
       
       <div className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

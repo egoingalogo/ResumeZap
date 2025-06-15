@@ -18,6 +18,7 @@ import { Navbar } from '../components/Navbar';
 import { PricingCard } from '../components/PricingCard';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
+import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
 /**
@@ -224,6 +225,9 @@ const LandingPage: React.FC = () => {
           </motion.div>
         </div>
       </motion.button>
+      
+      {/* Live Chat Button for Pro & Lifetime users */}
+      <LiveChatButton />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
