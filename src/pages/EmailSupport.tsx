@@ -419,43 +419,6 @@ const EmailSupport: React.FC = () => {
                 </div>
               </div>
 
-              {/* Contact Methods */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-4">
-                  <MessageSquare className="h-6 w-6 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Other Ways to Reach Us
-                  </h3>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">Email</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">support@resumezap.com</div>
-                    </div>
-                  </div>
-                  
-                  {(user.plan === 'pro' || user.plan === 'lifetime') && (
-                    <div className="flex items-center space-x-3">
-                      <MessageSquare className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">Live Chat</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Available 9 AM - 6 PM EST</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center space-x-3">
-                    <Globe className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">Help Center</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">help.resumezap.com</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* FAQ Quick Links */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
