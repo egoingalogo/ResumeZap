@@ -30,8 +30,26 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const profileDropdownRef = React.useRef<HTMLDivElement>(null);
   
   console.log('Navbar: Rendering with authentication state:', isAuthenticated);
+
+  // Handle click outside to close profile dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   const handleLogout = () => {
     console.log('Navbar: User logout initiated');
@@ -139,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
 
             {isAuthenticated ? (
               /* User profile dropdown */
-              <div className="relative">
+              <div className="relative" ref={profileDropdownRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
