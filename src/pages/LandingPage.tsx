@@ -100,7 +100,7 @@ const LandingPage: React.FC = () => {
         '2 cover letter generations per month',
         'Basic skill gap analysis',
         'Standard export formats (PDF, DOCX)',
-        'Email support only',
+        'Email support (48-72 hours)',
         'Basic learning resource suggestions',
       ],
       buttonText: 'Get Started Free',
@@ -119,7 +119,7 @@ const LandingPage: React.FC = () => {
         'Enhanced skill gap analysis with priority ranking',
         'Detailed AI learning recommendations with time estimates',
         'Multiple resume version storage',
-        'Priority email support',
+        'Priority email support (24-48 hours)',
         'Usage analytics dashboard',
       ],
       isPopular: true,
@@ -140,7 +140,7 @@ const LandingPage: React.FC = () => {
         'Comprehensive AI learning recommendations including certification pathways',
         'Unlimited document storage and version history',
         'Advanced analytics and success tracking',
-        'Live chat support',
+        'Priority email support (4 hours)',
         'Custom cover letter templates',
         'Bulk processing for multiple job applications',
       ],
@@ -156,6 +156,7 @@ const LandingPage: React.FC = () => {
         'All Pro Plan features permanently',
         'Exclusive early adopter badge',
         'Direct feedback channel to development team',
+        'VIP email support (4 hours)',
         '30-day early access to future feature updates before general release',
         'Limited to first 1,000 customers',
         '60-day money-back guarantee',
@@ -234,7 +235,6 @@ const LandingPage: React.FC = () => {
       </motion.button>
       
       {/* Live Chat Button for Pro & Lifetime users */}
-      <LiveChatButton />
       
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">

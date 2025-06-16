@@ -74,10 +74,10 @@ const EmailSupport: React.FC = () => {
   ];
 
   const responseTimeInfo = {
-    free: { time: '48-72 hours', description: 'Email support only during business hours' },
+    free: { time: '48-72 hours', description: 'Email support during business hours' },
     premium: { time: '24-48 hours', description: 'Priority email support with faster response' },
-    pro: { time: '12-24 hours', description: 'Priority support with live chat option' },
-    lifetime: { time: '12-24 hours', description: 'VIP support with priority handling' },
+    pro: { time: '4 hours', description: 'Priority email support with rapid response' },
+    lifetime: { time: '4 hours', description: 'VIP email support with priority handling' },
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -137,9 +137,6 @@ const EmailSupport: React.FC = () => {
   return (
     <div>
       <Navbar />
-      
-      {/* Live Chat Button for Pro & Lifetime users */}
-      <LiveChatButton />
       
       <div className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

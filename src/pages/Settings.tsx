@@ -207,9 +207,6 @@ const Settings: React.FC = () => {
     <div>
       <Navbar />
       
-      {/* Live Chat Button for Pro & Lifetime users */}
-      <LiveChatButton />
-      
       <div className="pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -491,7 +488,7 @@ const Settings: React.FC = () => {
                             '2 cover letter generations per month',
                             'Basic skill gap analysis',
                             'Standard export formats',
-                            'Email support only',
+                            'Email support (48-72 hours)',
                           ].map((feature, index) => (
                             <div key={index} className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
@@ -504,7 +501,7 @@ const Settings: React.FC = () => {
                             '30 cover letter generations per month',
                             'Enhanced skill gap analysis',
                             'Detailed AI learning recommendations',
-                            'Priority email support',
+                            'Priority email support (24-48 hours)',
                             'Usage analytics dashboard',
                             'Multiple resume versions',
                           ].map((feature, index) => (
@@ -519,7 +516,7 @@ const Settings: React.FC = () => {
                             'Unlimited cover letter generation',
                             'Advanced skill gap analysis with roadmaps',
                             'Comprehensive AI learning recommendations',
-                            'Live chat support',
+                            user.plan === 'pro' ? 'Priority email support (4 hours)' : 'VIP email support (4 hours)',
                             'Custom templates',
                             'Bulk processing for multiple applications',
                             'Advanced analytics',
