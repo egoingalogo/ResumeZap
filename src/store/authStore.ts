@@ -24,6 +24,16 @@ interface AuthState {
 }
 
 /**
+ * Updated usage limits based on new monetization plan
+ */
+const USAGE_LIMITS = {
+  free: { resumeTailoring: 3, coverLetters: 2 },
+  premium: { resumeTailoring: 40, coverLetters: 30 },
+  pro: { resumeTailoring: Infinity, coverLetters: Infinity },
+  lifetime: { resumeTailoring: Infinity, coverLetters: Infinity },
+};
+
+/**
  * Authentication store managing user state, login/logout, and subscription management
  * Handles usage tracking for freemium model limitations
  */
@@ -76,8 +86,8 @@ export const useAuthStore = create<AuthState>()(
               name: 'Free Limit User',
               plan: 'free',
               usageThisMonth: {
-                resumeTailoring: 2,
-                coverLetters: 1,
+                resumeTailoring: 3,
+                coverLetters: 2,
               },
               createdAt: '2024-11-15T00:00:00.000Z',
             };
