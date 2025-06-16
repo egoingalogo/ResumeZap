@@ -6,6 +6,8 @@ interface PricingTier {
   name: string;
   price: string;
   period?: string;
+  originalPrice?: string | null;
+  savings?: string | null;
   description: string;
   features: string[];
   isPopular?: boolean;
@@ -71,23 +73,13 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
             </span>
           )}
         </div>
-        {tier.name === 'Premium' && (
+        {tier.originalPrice && tier.savings && (
           <div className="text-center mb-2">
             <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-              $95.88/year
+              {tier.originalPrice}
             </span>
             <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
-              Save $16 annually
-            </span>
-          </div>
-        )}
-        {tier.name === 'Pro' && (
-          <div className="text-center mb-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-              $179.88/year
-            </span>
-            <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
-              Save $30 annually
+              {tier.savings}
             </span>
           </div>
         )}

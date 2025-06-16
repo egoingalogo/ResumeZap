@@ -30,6 +30,7 @@ const LandingPage: React.FC = () => {
   const { isAuthenticated, upgradePlan } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   // Debug log for dark mode state
   console.log('LandingPage: isDarkMode state:', isDarkMode);
@@ -88,11 +89,11 @@ const LandingPage: React.FC = () => {
     },
   ];
 
-  const pricingTiers = [
+  const getPricingTiers = () => [
     {
       name: 'Free',
       price: '$0',
-      period: '/month',
+      period: isAnnual ? '/year' : '/month',
       description: 'Perfect for getting started with essential resume optimization',
       features: [
         '3 resume tailoring sessions per month',
@@ -107,8 +108,10 @@ const LandingPage: React.FC = () => {
     },
     {
       name: 'Premium',
-      price: '$7.99',
-      period: '/month',
+      price: isAnnual ? '$79.99' : '$7.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$95.88' : null,
+      savings: isAnnual ? 'Save $16 annually' : null,
       description: 'Enhanced features for serious job seekers',
       features: [
         '40 resume tailoring sessions per month',
@@ -125,8 +128,10 @@ const LandingPage: React.FC = () => {
     },
     {
       name: 'Pro',
-      price: '$14.99',
-      period: '/month',
+      price: isAnnual ? '$149.99' : '$14.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$179.88' : null,
+      savings: isAnnual ? 'Save $30 annually' : null,
       description: 'Complete suite for serious professionals',
       features: [
         'Unlimited resume tailoring',
@@ -160,6 +165,8 @@ const LandingPage: React.FC = () => {
       onSelect: () => handlePlanSelection('lifetime'),
     },
   ];
+
+  const pricingTiers = getPricingTiers();
 
   const testimonials = [
     {
@@ -395,6 +402,35 @@ const LandingPage: React.FC = () => {
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Start free and upgrade as your job search intensifies
             </p>
+            
+            {/* Pricing Toggle */}
+            <div className="flex items-center justify-center mt-8 mb-8">
+              <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center">
+                <button
+                  onClick={() => setIsAnnual(false)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    !isAnnual
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setIsAnnual(true)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 relative ${
+                    isAnnual
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Annual
+                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                    Save
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
