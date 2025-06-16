@@ -74,8 +74,8 @@ const EmailSupport: React.FC = () => {
   ];
 
   const responseTimeInfo = {
-    free: { time: '48-72 hours', description: 'Email support during business hours' },
-    premium: { time: '24-48 hours', description: 'Priority email support' },
+    free: { time: '48-72 hours', description: 'Email support only during business hours' },
+    premium: { time: '24-48 hours', description: 'Priority email support with faster response' },
     pro: { time: '12-24 hours', description: 'Priority support with live chat option' },
     lifetime: { time: '12-24 hours', description: 'VIP support with priority handling' },
   };

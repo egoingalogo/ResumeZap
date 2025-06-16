@@ -169,7 +169,7 @@ const Dashboard: React.FC = () => {
                   Welcome back, {user.name}!
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Let's accelerate your job search with AI-powered tools
+                  No credit card required • 5 free sessions monthly
                 </p>
               </div>
               

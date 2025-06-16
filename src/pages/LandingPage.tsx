@@ -93,13 +93,13 @@ const LandingPage: React.FC = () => {
       name: 'Free',
       price: '$0',
       period: '/month',
-      description: 'Perfect for getting started with basic resume optimization',
+      description: 'Perfect for getting started with essential resume optimization',
       features: [
-        '2 resume tailoring sessions per month',
-        '1 cover letter generation per month',
+        '3 resume tailoring sessions per month',
+        '2 cover letter generations per month',
         'Basic skill gap analysis',
         'Standard export formats (PDF, DOCX)',
-        'Email support',
+        'Email support only',
         'Basic learning resource suggestions',
       ],
       buttonText: 'Get Started Free',
@@ -109,12 +109,12 @@ const LandingPage: React.FC = () => {
       name: 'Premium',
       price: '$7.99',
       period: '/month',
-      description: 'Enhanced features for active job seekers',
+      description: 'Enhanced features for serious job seekers',
       features: [
-        '15 resume tailoring sessions per month',
-        '10 cover letter generations per month',
+        '40 resume tailoring sessions per month',
+        '30 cover letter generations per month',
         'Enhanced skill gap analysis with priority ranking',
-        'Detailed AI learning recommendations',
+        'Detailed AI learning recommendations with time estimates',
         'Multiple resume version storage',
         'Priority email support',
         'Usage analytics dashboard',
@@ -131,27 +131,27 @@ const LandingPage: React.FC = () => {
       features: [
         'Unlimited resume tailoring',
         'Unlimited cover letter generation',
-        'Advanced skill gap analysis with roadmaps',
-        'Comprehensive AI learning recommendations',
+        'Advanced skill gap analysis with development roadmaps',
+        'Comprehensive AI learning recommendations including certification pathways',
         'Unlimited document storage and version history',
         'Advanced analytics and success tracking',
         'Live chat support',
         'Custom cover letter templates',
-        'Bulk processing for multiple applications',
+        'Bulk processing for multiple job applications',
       ],
       buttonText: 'Go Pro',
       onSelect: () => handlePlanSelection('pro'),
     },
     {
       name: 'Lifetime',
-      price: '$55.99',
+      price: '$79.99',
       period: 'one-time',
       description: 'Limited early adopter offer - all Pro features forever',
       features: [
         'All Pro Plan features permanently',
         'Exclusive early adopter badge',
         'Direct feedback channel to development team',
-        'Early access to future feature updates',
+        '30-day early access to future feature updates before general release',
         'Limited to first 1,000 customers',
         '60-day money-back guarantee',
       ],
@@ -455,3 +455,5 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
+
+export default LandingPage

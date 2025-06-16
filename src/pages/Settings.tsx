@@ -175,8 +175,8 @@ const Settings: React.FC = () => {
     if (!user) return { resumeTailoring: 0, coverLetters: 0, totalLimit: 0, remainingLimit: 0 };
     
     const limits = {
-      free: { resumeTailoring: 2, coverLetters: 1 },
-      premium: { resumeTailoring: 15, coverLetters: 10 },
+      free: { resumeTailoring: 3, coverLetters: 2 },
+      premium: { resumeTailoring: 40, coverLetters: 30 },
       pro: { resumeTailoring: Infinity, coverLetters: Infinity },
       lifetime: { resumeTailoring: Infinity, coverLetters: Infinity },
     };
@@ -487,11 +487,11 @@ const Settings: React.FC = () => {
                         </h3>
                         <div className="grid md:grid-cols-2 gap-4">
                           {user.plan === 'free' && [
-                            '2 resume tailoring sessions per month',
-                            '1 cover letter generation per month',
+                            '3 resume tailoring sessions per month',
+                            '2 cover letter generations per month',
                             'Basic skill gap analysis',
                             'Standard export formats',
-                            'Email support',
+                            'Email support only',
                           ].map((feature, index) => (
                             <div key={index} className="flex items-center space-x-2">
                               <Check className="h-4 w-4 text-green-500" />
@@ -500,9 +500,10 @@ const Settings: React.FC = () => {
                           ))}
                           
                           {user.plan === 'premium' && [
-                            '15 resume tailoring sessions per month',
-                            '10 cover letter generations per month',
+                            '40 resume tailoring sessions per month',
+                            '30 cover letter generations per month',
                             'Enhanced skill gap analysis',
+                            'Detailed AI learning recommendations',
                             'Priority email support',
                             'Usage analytics dashboard',
                             'Multiple resume versions',
@@ -516,10 +517,11 @@ const Settings: React.FC = () => {
                           {(user.plan === 'pro' || user.plan === 'lifetime') && [
                             'Unlimited resume tailoring',
                             'Unlimited cover letter generation',
-                            'Advanced skill gap analysis',
+                            'Advanced skill gap analysis with roadmaps',
+                            'Comprehensive AI learning recommendations',
                             'Live chat support',
                             'Custom templates',
-                            'Bulk processing',
+                            'Bulk processing for multiple applications',
                             'Advanced analytics',
                             'Version history',
                           ].map((feature, index) => (
@@ -556,7 +558,7 @@ const Settings: React.FC = () => {
                               <div className="font-medium text-gray-900 dark:text-white">
                                 {user.plan === 'premium' && '$7.99'}
                                 {user.plan === 'pro' && '$14.99'}
-                                {user.plan === 'lifetime' && '$55.99'}
+                                {user.plan === 'lifetime' && '$79.99'}
                               </div>
                               <div className="text-sm text-green-600">Paid</div>
                             </div>
