@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
-import { LiveChatButton } from '../components/LiveChatButton';
+import { createSupportTicket } from '../lib/support';
 import toast from 'react-hot-toast';
 
 /**
@@ -24,14 +24,14 @@ import toast from 'react-hot-toast';
  */
 const EmailSupport: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isLoading } = useAuthStore();
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     subject: '',
     category: 'general',
-    priority: 'medium',
+    priority: 'medium' as 'low' | 'medium' | 'high',
     message: '',
   });
   
@@ -41,11 +41,11 @@ const EmailSupport: React.FC = () => {
   console.log('EmailSupport: Component mounted for user:', user?.email);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       console.log('EmailSupport: User not authenticated, redirecting');
       navigate('/auth');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Auto-fill user data when component mounts or user changes
   React.useEffect(() => {
@@ -97,8 +97,12 @@ const EmailSupport: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call to send email - replace with actual email service
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await createSupportTicket({
+        subject: formData.subject,
+        category: formData.category,
+        priority: formData.priority,
+        message: formData.message,
+      });
       
       setIsSubmitted(true);
       toast.success('Support request sent successfully!');
@@ -124,12 +128,16 @@ const EmailSupport: React.FC = () => {
     });
   };
 
-  if (!isAuthenticated || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
+  }
+
+  if (!isAuthenticated || !user) {
+    return null; // Will redirect in useEffect
   }
 
   const currentResponseTime = responseTimeInfo[user.plan];
@@ -419,7 +427,6 @@ const EmailSupport: React.FC = () => {
                   </p>
                 </div>
               </div>
-
 
               {/* FAQ Quick Links */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">

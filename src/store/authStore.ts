@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase, signUp, signIn, signOut, getCurrentUser, handleSupabaseError } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -16,194 +18,262 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
-  logout: () => void;
-  updateUsage: (type: 'resumeTailoring' | 'coverLetters') => void;
-  upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => void;
+  logout: () => Promise<void>;
+  updateUsage: (type: 'resumeTailoring' | 'coverLetters') => Promise<void>;
+  upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
+  initializeAuth: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 /**
- * Updated usage limits based on new monetization plan
- */
-const USAGE_LIMITS = {
-  free: { resumeTailoring: 3, coverLetters: 2 },
-  premium: { resumeTailoring: 40, coverLetters: 30 },
-  pro: { resumeTailoring: Infinity, coverLetters: Infinity },
-  lifetime: { resumeTailoring: Infinity, coverLetters: Infinity },
-};
-
-/**
- * Authentication store managing user state, login/logout, and subscription management
- * Handles usage tracking for freemium model limitations
+ * Authentication store with real Supabase integration
+ * Handles user authentication, profile management, and usage tracking
  */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
+      isLoading: false,
       
-      login: async (email: string, password: string) => {
-        console.log('AuthStore: Attempting login for:', email);
+      /**
+       * Initialize authentication state on app startup
+       */
+      initializeAuth: async () => {
+        console.log('AuthStore: Initializing authentication');
+        set({ isLoading: true });
+        
         try {
-          // Simulate API call - replace with actual authentication
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: { session } } = await supabase.auth.getSession();
           
-          // Mock account for testing - use test@example.com with any password
-          let mockUser: User;
-          
-          if (email === 'test@example.com') {
-            // Pre-configured test account with usage data
-            mockUser = {
-              id: 'test-user-123',
-              email: 'test@example.com',
-              name: 'Test User',
-              plan: 'premium',
-              usageThisMonth: {
-                resumeTailoring: 5,
-                coverLetters: 3,
-              },
-              createdAt: '2024-01-01T00:00:00.000Z',
-            };
-          } else if (email === 'free@example.com') {
-            // Free plan account for testing limitations
-            mockUser = {
-              id: 'free-user-123',
-              email: 'free@example.com',
-              name: 'Free User',
-              plan: 'free',
-              usageThisMonth: {
-                resumeTailoring: 1,
-                coverLetters: 0,
-              },
-              createdAt: '2024-12-01T00:00:00.000Z',
-            };
-          } else if (email === 'freelimit@example.com') {
-            // Free plan account that has reached limits
-            mockUser = {
-              id: 'freelimit-user-456',
-              email: 'freelimit@example.com',
-              name: 'Free Limit User',
-              plan: 'free',
-              usageThisMonth: {
-                resumeTailoring: 3,
-                coverLetters: 2,
-              },
-              createdAt: '2024-11-15T00:00:00.000Z',
-            };
-          } else if (email === 'pro@example.com') {
-            // Pro account for testing unlimited features
-            mockUser = {
-              id: 'pro-user-456',
-              email: 'pro@example.com',
-              name: 'Pro User',
-              plan: 'pro',
-              usageThisMonth: {
-                resumeTailoring: 25,
-                coverLetters: 15,
-              },
-              createdAt: '2024-01-01T00:00:00.000Z',
-            };
-          } else if (email === 'lifetime@example.com') {
-            // Lifetime account for testing
-            mockUser = {
-              id: 'lifetime-user-789',
-              email: 'lifetime@example.com',
-              name: 'Lifetime User',
-              plan: 'lifetime',
-              usageThisMonth: {
-                resumeTailoring: 50,
-                coverLetters: 30,
-              },
-              createdAt: '2023-06-15T00:00:00.000Z',
-            };
+          if (session?.user) {
+            await get().refreshUser();
           } else {
-            // Default new user
-            mockUser = {
-              id: Date.now().toString(),
-              email,
-              name: email.split('@')[0],
-              plan: 'free',
-              usageThisMonth: {
-                resumeTailoring: 0,
-                coverLetters: 0,
-              },
-              createdAt: new Date().toISOString(),
-            };
+            set({ user: null, isAuthenticated: false });
+          }
+        } catch (error) {
+          console.error('AuthStore: Failed to initialize auth:', error);
+          set({ user: null, isAuthenticated: false });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      
+      /**
+       * Refresh user data from database
+       */
+      refreshUser: async () => {
+        try {
+          const supabaseUser = await getCurrentUser();
+          if (!supabaseUser) {
+            set({ user: null, isAuthenticated: false });
+            return;
           }
           
-          set({ user: mockUser, isAuthenticated: true });
-          console.log('AuthStore: Login successful');
-          return true;
+          // Get user profile from database
+          const { data: userProfile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+          
+          if (error) {
+            console.error('AuthStore: Failed to fetch user profile:', error);
+            set({ user: null, isAuthenticated: false });
+            return;
+          }
+          
+          const user: User = {
+            id: userProfile.id,
+            email: userProfile.email,
+            name: userProfile.name,
+            plan: userProfile.plan,
+            usageThisMonth: userProfile.usage_this_month as any,
+            createdAt: userProfile.created_at,
+          };
+          
+          set({ user, isAuthenticated: true });
+        } catch (error) {
+          console.error('AuthStore: Failed to refresh user:', error);
+          set({ user: null, isAuthenticated: false });
+        }
+      },
+      
+      /**
+       * Login with email and password
+       */
+      login: async (email: string, password: string) => {
+        console.log('AuthStore: Attempting login for:', email);
+        set({ isLoading: true });
+        
+        try {
+          const { user: supabaseUser } = await signIn(email, password);
+          
+          if (supabaseUser) {
+            await get().refreshUser();
+            console.log('AuthStore: Login successful');
+            return true;
+          }
+          
+          return false;
         } catch (error) {
           console.error('AuthStore: Login failed:', error);
           return false;
+        } finally {
+          set({ isLoading: false });
         }
       },
       
+      /**
+       * Register new user
+       */
       register: async (email: string, password: string, name: string) => {
         console.log('AuthStore: Attempting registration for:', email);
+        set({ isLoading: true });
+        
         try {
-          // Simulate API call - replace with actual registration
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { user: supabaseUser } = await signUp(email, password, name);
           
-          const newUser: User = {
-            id: Date.now().toString(),
-            email,
-            name,
-            plan: 'free',
-            usageThisMonth: {
-              resumeTailoring: 0,
-              coverLetters: 0,
-            },
-            createdAt: new Date().toISOString(),
-          };
+          if (supabaseUser) {
+            // Create user profile in database
+            const { error: profileError } = await supabase
+              .from('users')
+              .insert({
+                id: supabaseUser.id,
+                email: supabaseUser.email!,
+                name,
+                plan: 'free',
+                usage_this_month: {
+                  resumeTailoring: 0,
+                  coverLetters: 0,
+                },
+              });
+            
+            if (profileError) {
+              console.error('AuthStore: Failed to create user profile:', profileError);
+              return false;
+            }
+            
+            await get().refreshUser();
+            console.log('AuthStore: Registration successful');
+            return true;
+          }
           
-          set({ user: newUser, isAuthenticated: true });
-          console.log('AuthStore: Registration successful');
-          return true;
+          return false;
         } catch (error) {
           console.error('AuthStore: Registration failed:', error);
           return false;
+        } finally {
+          set({ isLoading: false });
         }
       },
       
-      logout: () => {
+      /**
+       * Logout current user
+       */
+      logout: async () => {
         console.log('AuthStore: Logging out user');
-        set({ user: null, isAuthenticated: false });
+        set({ isLoading: true });
+        
+        try {
+          await signOut();
+          set({ user: null, isAuthenticated: false });
+        } catch (error) {
+          console.error('AuthStore: Logout failed:', error);
+        } finally {
+          set({ isLoading: false });
+        }
       },
       
-      updateUsage: (type: 'resumeTailoring' | 'coverLetters') => {
+      /**
+       * Update usage count for current user
+       */
+      updateUsage: async (type: 'resumeTailoring' | 'coverLetters') => {
         const { user } = get();
-        if (user) {
-          console.log(`AuthStore: Updating ${type} usage count`);
+        if (!user) return;
+        
+        console.log(`AuthStore: Updating ${type} usage count`);
+        
+        try {
+          const newUsage = {
+            ...user.usageThisMonth,
+            [type]: user.usageThisMonth[type] + 1,
+          };
+          
+          const { error } = await supabase
+            .from('users')
+            .update({ usage_this_month: newUsage })
+            .eq('id', user.id);
+          
+          if (error) {
+            console.error('AuthStore: Failed to update usage:', error);
+            return;
+          }
+          
+          // Update local state
           set({
             user: {
               ...user,
-              usageThisMonth: {
-                ...user.usageThisMonth,
-                [type]: user.usageThisMonth[type] + 1,
-              },
+              usageThisMonth: newUsage,
             },
           });
+        } catch (error) {
+          console.error('AuthStore: Failed to update usage:', error);
         }
       },
       
-      upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => {
+      /**
+       * Upgrade user plan
+       */
+      upgradePlan: async (plan: 'premium' | 'pro' | 'lifetime') => {
         const { user } = get();
-        if (user) {
-          console.log(`AuthStore: Upgrading user plan to ${plan}`);
+        if (!user) return;
+        
+        console.log(`AuthStore: Upgrading user plan to ${plan}`);
+        
+        try {
+          const { error } = await supabase
+            .from('users')
+            .update({ plan })
+            .eq('id', user.id);
+          
+          if (error) {
+            console.error('AuthStore: Failed to upgrade plan:', error);
+            return;
+          }
+          
+          // Update local state
           set({
             user: {
               ...user,
               plan,
             },
           });
+        } catch (error) {
+          console.error('AuthStore: Failed to upgrade plan:', error);
         }
       },
     }),
     {
       name: 'resumezap-auth',
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }),
     }
   )
 );
+
+// Set up auth state listener
+supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log('AuthStore: Auth state changed:', event);
+  
+  if (event === 'SIGNED_IN' && session?.user) {
+    await useAuthStore.getState().refreshUser();
+  } else if (event === 'SIGNED_OUT') {
+    useAuthStore.setState({ user: null, isAuthenticated: false });
+  }
+});

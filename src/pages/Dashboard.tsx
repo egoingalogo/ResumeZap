@@ -16,7 +16,6 @@ import {
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
-import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
 /**
@@ -26,30 +25,35 @@ import toast from 'react-hot-toast';
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated, upgradePlan } = useAuthStore();
-  const { resumes } = useResumeStore();
+  const { user, isAuthenticated, upgradePlan, isLoading } = useAuthStore();
+  const { resumes, fetchResumes } = useResumeStore();
 
   console.log('Dashboard: Component mounted for user:', user?.email);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       console.log('Dashboard: User not authenticated, redirecting to auth');
       navigate('/auth');
       return;
     }
 
-    // Handle upgrade parameter from registration
-    const upgradeParam = searchParams.get('upgrade');
-    if (upgradeParam && ['premium', 'pro', 'lifetime'].includes(upgradeParam)) {
-      console.log('Dashboard: Processing upgrade:', upgradeParam);
-      upgradePlan(upgradeParam as 'premium' | 'pro' | 'lifetime');
-      toast.success(`Welcome to ResumeZap ${upgradeParam}!`);
-      // Remove the parameter from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [isAuthenticated, navigate, searchParams, upgradePlan]);
+    if (isAuthenticated && user) {
+      // Fetch user's resumes
+      fetchResumes();
 
-  if (!isAuthenticated || !user) {
+      // Handle upgrade parameter from registration
+      const upgradeParam = searchParams.get('upgrade');
+      if (upgradeParam && ['premium', 'pro', 'lifetime'].includes(upgradeParam)) {
+        console.log('Dashboard: Processing upgrade:', upgradeParam);
+        upgradePlan(upgradeParam as 'premium' | 'pro' | 'lifetime');
+        toast.success(`Welcome to ResumeZap ${upgradeParam}!`);
+        // Remove the parameter from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [isAuthenticated, isLoading, navigate, searchParams, upgradePlan, user, fetchResumes]);
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -57,9 +61,13 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  if (!isAuthenticated || !user) {
+    return null; // Will redirect in useEffect
+  }
+
   const usageLimits = {
-    free: { resumeTailoring: 2, coverLetters: 1 },
-    premium: { resumeTailoring: 15, coverLetters: 10 },
+    free: { resumeTailoring: 3, coverLetters: 2 },
+    premium: { resumeTailoring: 40, coverLetters: 30 },
     pro: { resumeTailoring: Infinity, coverLetters: Infinity },
     lifetime: { resumeTailoring: Infinity, coverLetters: Infinity },
   };
@@ -166,7 +174,7 @@ const Dashboard: React.FC = () => {
                   Welcome back, {user.name}!
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  No credit card required • 5 free sessions monthly
+                  Ready to accelerate your job search with AI-powered tools
                 </p>
               </div>
               
@@ -337,7 +345,10 @@ const Dashboard: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Recent Activity
               </h2>
-              <button className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium">
+              <button 
+                onClick={() => navigate('/resume-analyzer')}
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium"
+              >
                 View All
               </button>
             </div>

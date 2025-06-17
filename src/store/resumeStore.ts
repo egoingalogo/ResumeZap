@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase, handleSupabaseError } from '../lib/supabase';
 
 interface Resume {
   id: string;
@@ -27,212 +28,92 @@ interface ResumeState {
   currentResume: Resume | null;
   skillGaps: SkillGap[];
   isAnalyzing: boolean;
+  isLoading: boolean;
   
+  fetchResumes: () => Promise<void>;
   analyzeResume: (resumeContent: string, jobPosting: string) => Promise<void>;
-  saveResume: (resume: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => void;
-  updateResume: (id: string, updates: Partial<Resume>) => void;
-  deleteResume: (id: string) => void;
+  saveResume: (resume: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => Promise<void>;
+  updateResume: (id: string, updates: Partial<Resume>) => Promise<void>;
+  deleteResume: (id: string) => Promise<void>;
   setCurrentResume: (resume: Resume | null) => void;
   analyzeSkillGaps: (resumeContent: string, jobPosting: string) => Promise<void>;
 }
 
 /**
- * Store for managing resume data, analysis results, and skill gap analysis
- * Handles AI-powered resume tailoring and learning recommendations
+ * Store for managing resume data with Supabase integration
+ * Handles AI-powered resume tailoring and skill gap analysis
  */
 export const useResumeStore = create<ResumeState>((set, get) => ({
-  resumes: [
-    // Mock resumes for testing
-    {
-      id: 'resume-1',
-      title: 'Software Engineer Resume - Google',
-      content: `John Doe
-Software Engineer
-
-EXPERIENCE
-• Senior Frontend Developer at TechCorp (2022-2024)
-  - Built scalable React applications serving 100K+ users
-  - Implemented modern JavaScript frameworks and TypeScript
-  - Collaborated with cross-functional teams using Agile methodologies
-
-• Full Stack Developer at StartupXYZ (2020-2022)
-  - Developed RESTful APIs using Node.js and Express
-  - Designed responsive user interfaces with React and CSS
-  - Optimized database queries improving performance by 40%
-
-SKILLS
-• Frontend: React, TypeScript, JavaScript, HTML5, CSS3, Tailwind CSS
-• Backend: Node.js, Express, Python, REST APIs
-• Database: PostgreSQL, MongoDB, Redis
-• Tools: Git, Docker, AWS, CI/CD, Jest
-
-EDUCATION
-Bachelor of Science in Computer Science
-University of Technology (2016-2020)`,
-      originalContent: `John Doe
-Software Engineer
-
-EXPERIENCE
-• Frontend Developer at TechCorp (2022-2024)
-• Full Stack Developer at StartupXYZ (2020-2022)
-
-SKILLS
-• React, JavaScript, Node.js, Python
-• Git, Docker, AWS
-
-EDUCATION
-Bachelor of Science in Computer Science`,
-      jobPosting: 'Senior Software Engineer position at Google requiring React, TypeScript, and cloud experience.',
-      matchScore: 92,
-      createdAt: '2025-01-10T10:00:00.000Z',
-      lastModified: '2025-01-10T10:00:00.000Z',
-    },
-    {
-      id: 'resume-2',
-      title: 'Product Manager Resume - Microsoft',
-      content: `John Doe
-Product Manager
-
-EXPERIENCE
-• Senior Product Manager at TechCorp (2021-2024)
-  - Led product strategy for B2B SaaS platform with $2M ARR
-  - Managed cross-functional teams of 12+ engineers and designers
-  - Increased user engagement by 35% through data-driven decisions
-
-• Associate Product Manager at StartupXYZ (2019-2021)
-  - Defined product roadmap and feature prioritization
-  - Conducted user research and A/B testing
-  - Collaborated with engineering teams on technical implementation
-
-SKILLS
-• Product Strategy, Roadmap Planning, User Research
-• Data Analysis, A/B Testing, Metrics & KPIs
-• Agile/Scrum, Stakeholder Management
-• SQL, Analytics Tools, Wireframing
-
-EDUCATION
-MBA in Technology Management
-Business School (2017-2019)`,
-      originalContent: `John Doe
-Product Manager
-
-EXPERIENCE
-• Product Manager at TechCorp (2021-2024)
-• Associate Product Manager at StartupXYZ (2019-2021)
-
-SKILLS
-• Product Strategy, Data Analysis
-• Agile, SQL
-
-EDUCATION
-MBA in Technology Management`,
-      jobPosting: 'Senior Product Manager role at Microsoft focusing on enterprise software and team leadership.',
-      matchScore: 87,
-      createdAt: '2025-01-08T14:30:00.000Z',
-      lastModified: '2025-01-08T14:30:00.000Z',
-    },
-    {
-      id: 'resume-3',
-      title: 'Data Scientist Resume - Netflix',
-      content: `John Doe
-Data Scientist
-
-EXPERIENCE
-• Senior Data Scientist at DataCorp (2022-2024)
-  - Built machine learning models improving recommendation accuracy by 25%
-  - Analyzed large datasets using Python, SQL, and Spark
-  - Deployed ML models to production serving millions of users
-
-• Data Analyst at AnalyticsCo (2020-2022)
-  - Created dashboards and reports for executive decision making
-  - Performed statistical analysis and hypothesis testing
-  - Automated data pipelines reducing processing time by 60%
-
-SKILLS
-• Programming: Python, R, SQL, Scala
-• ML/AI: Scikit-learn, TensorFlow, PyTorch, XGBoost
-• Data: Pandas, NumPy, Spark, Hadoop
-• Visualization: Tableau, Matplotlib, Seaborn
-• Cloud: AWS, GCP, Docker, Kubernetes
-
-EDUCATION
-Master of Science in Data Science
-Data University (2018-2020)`,
-      originalContent: `John Doe
-Data Scientist
-
-EXPERIENCE
-• Data Scientist at DataCorp (2022-2024)
-• Data Analyst at AnalyticsCo (2020-2022)
-
-SKILLS
-• Python, SQL, Machine Learning
-• Tableau, AWS
-
-EDUCATION
-Master of Science in Data Science`,
-      jobPosting: 'Senior Data Scientist position at Netflix working on recommendation systems and ML infrastructure.',
-      matchScore: 94,
-      createdAt: '2025-01-05T09:15:00.000Z',
-      lastModified: '2025-01-05T09:15:00.000Z',
-    },
-  ],
+  resumes: [],
   currentResume: null,
-  skillGaps: [
-    // Mock skill gaps for testing
-    {
-      skill: 'Kubernetes',
-      importance: 'high',
-      hasSkill: false,
-      recommendations: {
-        courses: ['Kubernetes Fundamentals', 'Certified Kubernetes Administrator (CKA)'],
-        resources: ['Kubernetes Official Documentation', 'Kubernetes by Example'],
-        timeEstimate: '4-6 weeks',
-      },
-    },
-    {
-      skill: 'React.js',
-      importance: 'high',
-      hasSkill: true,
-      recommendations: {
-        courses: ['Advanced React Patterns', 'React Performance Optimization'],
-        resources: ['React Official Docs', 'React DevTools'],
-        timeEstimate: '2-3 weeks',
-      },
-    },
-    {
-      skill: 'GraphQL',
-      importance: 'medium',
-      hasSkill: false,
-      recommendations: {
-        courses: ['GraphQL Fundamentals', 'Apollo GraphQL'],
-        resources: ['GraphQL.org', 'Apollo Documentation'],
-        timeEstimate: '3-4 weeks',
-      },
-    },
-    {
-      skill: 'System Design',
-      importance: 'high',
-      hasSkill: false,
-      recommendations: {
-        courses: ['System Design Interview', 'Designing Data-Intensive Applications'],
-        resources: ['High Scalability Blog', 'System Design Primer'],
-        timeEstimate: '8-12 weeks',
-      },
-    },
-  ],
+  skillGaps: [],
   isAnalyzing: false,
+  isLoading: false,
   
+  /**
+   * Fetch user's resumes from database
+   */
+  fetchResumes: async () => {
+    console.log('ResumeStore: Fetching user resumes');
+    set({ isLoading: true });
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('ResumeStore: No authenticated user');
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('ResumeStore: Failed to fetch resumes:', error);
+        return;
+      }
+      
+      const resumes: Resume[] = data.map(resume => ({
+        id: resume.id,
+        title: resume.title,
+        content: resume.content,
+        originalContent: resume.original_content,
+        jobPosting: resume.job_posting,
+        matchScore: resume.match_score,
+        createdAt: resume.created_at,
+        lastModified: resume.updated_at,
+      }));
+      
+      set({ resumes });
+    } catch (error) {
+      console.error('ResumeStore: Failed to fetch resumes:', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  /**
+   * Analyze resume with AI (simulated for now)
+   */
   analyzeResume: async (resumeContent: string, jobPosting: string) => {
     console.log('ResumeStore: Starting resume analysis');
     set({ isAnalyzing: true });
     
     try {
-      // Simulate AI analysis - replace with actual Claude API call
+      // Simulate AI analysis - replace with actual AI service
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Mock AI-tailored content
-      const tailoredContent = resumeContent + '\n\n[AI-ENHANCED]: Added relevant keywords and optimized for ATS compatibility based on job requirements.';
+      // Generate AI-tailored content (simulated)
+      const tailoredContent = `${resumeContent}
+
+[AI-ENHANCED SECTIONS]
+• Optimized keywords for ATS compatibility
+• Highlighted relevant experience matching job requirements
+• Improved formatting for better readability
+• Added quantifiable achievements where applicable`;
+      
       const matchScore = Math.floor(Math.random() * 20) + 80; // 80-100%
       
       const analyzedResume: Resume = {
@@ -251,45 +132,140 @@ Master of Science in Data Science`,
       
     } catch (error) {
       console.error('ResumeStore: Resume analysis failed:', error);
+      throw error;
     } finally {
       set({ isAnalyzing: false });
     }
   },
   
-  saveResume: (resumeData) => {
+  /**
+   * Save resume to database
+   */
+  saveResume: async (resumeData: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => {
     console.log('ResumeStore: Saving new resume');
-    const resume: Resume = {
-      ...resumeData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-    };
     
-    set((state) => ({
-      resumes: [...state.resumes, resume],
-    }));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+      
+      const { data, error } = await supabase
+        .from('resumes')
+        .insert({
+          user_id: user.id,
+          title: resumeData.title,
+          content: resumeData.content,
+          original_content: resumeData.originalContent,
+          job_posting: resumeData.jobPosting,
+          match_score: resumeData.matchScore,
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('ResumeStore: Failed to save resume:', error);
+        throw new Error(handleSupabaseError(error, 'save resume'));
+      }
+      
+      const newResume: Resume = {
+        id: data.id,
+        title: data.title,
+        content: data.content,
+        originalContent: data.original_content,
+        jobPosting: data.job_posting,
+        matchScore: data.match_score,
+        createdAt: data.created_at,
+        lastModified: data.updated_at,
+      };
+      
+      set((state) => ({
+        resumes: [newResume, ...state.resumes],
+      }));
+      
+      console.log('ResumeStore: Resume saved successfully');
+    } catch (error) {
+      console.error('ResumeStore: Failed to save resume:', error);
+      throw error;
+    }
   },
   
-  updateResume: (id: string, updates: Partial<Resume>) => {
+  /**
+   * Update existing resume
+   */
+  updateResume: async (id: string, updates: Partial<Resume>) => {
     console.log('ResumeStore: Updating resume:', id);
-    set((state) => ({
-      resumes: state.resumes.map((resume) =>
-        resume.id === id ? { ...resume, ...updates, lastModified: new Date().toISOString() } : resume
-      ),
-    }));
+    
+    try {
+      const { error } = await supabase
+        .from('resumes')
+        .update({
+          title: updates.title,
+          content: updates.content,
+          original_content: updates.originalContent,
+          job_posting: updates.jobPosting,
+          match_score: updates.matchScore,
+        })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('ResumeStore: Failed to update resume:', error);
+        throw new Error(handleSupabaseError(error, 'update resume'));
+      }
+      
+      set((state) => ({
+        resumes: state.resumes.map((resume) =>
+          resume.id === id 
+            ? { ...resume, ...updates, lastModified: new Date().toISOString() } 
+            : resume
+        ),
+      }));
+      
+      console.log('ResumeStore: Resume updated successfully');
+    } catch (error) {
+      console.error('ResumeStore: Failed to update resume:', error);
+      throw error;
+    }
   },
   
-  deleteResume: (id: string) => {
+  /**
+   * Delete resume from database
+   */
+  deleteResume: async (id: string) => {
     console.log('ResumeStore: Deleting resume:', id);
-    set((state) => ({
-      resumes: state.resumes.filter((resume) => resume.id !== id),
-    }));
+    
+    try {
+      const { error } = await supabase
+        .from('resumes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('ResumeStore: Failed to delete resume:', error);
+        throw new Error(handleSupabaseError(error, 'delete resume'));
+      }
+      
+      set((state) => ({
+        resumes: state.resumes.filter((resume) => resume.id !== id),
+      }));
+      
+      console.log('ResumeStore: Resume deleted successfully');
+    } catch (error) {
+      console.error('ResumeStore: Failed to delete resume:', error);
+      throw error;
+    }
   },
   
+  /**
+   * Set current resume for editing
+   */
   setCurrentResume: (resume: Resume | null) => {
     set({ currentResume: resume });
   },
   
+  /**
+   * Analyze skill gaps (simulated AI analysis)
+   */
   analyzeSkillGaps: async (resumeContent: string, jobPosting: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
     set({ isAnalyzing: true });
@@ -302,7 +278,7 @@ Master of Science in Data Science`,
         {
           skill: 'React.js',
           importance: 'high',
-          hasSkill: true,
+          hasSkill: resumeContent.toLowerCase().includes('react'),
           recommendations: {
             courses: ['Advanced React Patterns', 'React Performance Optimization'],
             resources: ['React Official Docs', 'React DevTools'],
@@ -312,7 +288,7 @@ Master of Science in Data Science`,
         {
           skill: 'TypeScript',
           importance: 'high',
-          hasSkill: false,
+          hasSkill: resumeContent.toLowerCase().includes('typescript'),
           recommendations: {
             courses: ['TypeScript Fundamentals', 'TypeScript with React'],
             resources: ['TypeScript Handbook', 'TypeScript Playground'],
@@ -322,11 +298,21 @@ Master of Science in Data Science`,
         {
           skill: 'AWS',
           importance: 'medium',
-          hasSkill: false,
+          hasSkill: resumeContent.toLowerCase().includes('aws'),
           recommendations: {
             courses: ['AWS Solutions Architect', 'AWS Developer Associate'],
             resources: ['AWS Free Tier', 'AWS Documentation'],
             timeEstimate: '6-8 weeks',
+          },
+        },
+        {
+          skill: 'Docker',
+          importance: 'medium',
+          hasSkill: resumeContent.toLowerCase().includes('docker'),
+          recommendations: {
+            courses: ['Docker Fundamentals', 'Docker for Developers'],
+            resources: ['Docker Official Docs', 'Docker Hub'],
+            timeEstimate: '2-3 weeks',
           },
         },
       ];
@@ -336,6 +322,7 @@ Master of Science in Data Science`,
       
     } catch (error) {
       console.error('ResumeStore: Skill gap analysis failed:', error);
+      throw error;
     } finally {
       set({ isAnalyzing: false });
     }
