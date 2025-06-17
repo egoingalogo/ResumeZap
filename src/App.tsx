@@ -29,10 +29,10 @@ function App() {
   console.log('App: Initializing ResumeZap application');
 
   // Initialize authentication on app start
-  /*useEffect(() => {
+  useEffect(() => {
     console.log('App: Initializing authentication');
     initializeAuth();
-  }, [initializeAuth]); */
+  }, [initializeAuth]);
 
   return (
     <ErrorBoundary>
