@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import EmailSupport from './pages/EmailSupport';
 import AuthPage from './pages/AuthPage';
 import { useThemeStore } from './store/themeStore';
+import { useAuthStore } from './store/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 /**
@@ -19,11 +20,17 @@ import { ErrorBoundary } from './components/ErrorBoundary';
  */
 function App() {
   const { isDarkMode } = useThemeStore();
+  const { checkSession } = useAuthStore();
 
   // Debug log for dark mode state
   console.log('App: isDarkMode state:', isDarkMode);
 
   console.log('App: Initializing ResumeZap application');
+
+  // Check for existing session on app load
+  React.useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   return (
     <ErrorBoundary>
