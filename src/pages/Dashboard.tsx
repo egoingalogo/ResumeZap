@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, upgradePlan } = useAuthStore();
-  const { resumes } = useResumeStore();
+  const { resumes, fetchUserResumes } = useResumeStore();
 
   console.log('Dashboard: Component mounted for user:', user?.email);
 
@@ -37,6 +37,9 @@ const Dashboard: React.FC = () => {
       navigate('/auth');
       return;
     }
+
+    // Fetch user's resumes when dashboard loads
+    fetchUserResumes();
 
     // Handle upgrade parameter from registration
     const upgradeParam = searchParams.get('upgrade');

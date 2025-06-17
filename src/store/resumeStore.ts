@@ -109,24 +109,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   
   deleteResume: (id: string) => {
     console.log('ResumeStore: Deleting resume:', id);
-    
-    // Delete from Supabase
-    supabase
-      .from('resumes')
-      .delete()
-      .eq('id', id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('ResumeStore: Delete error:', error.message);
-          return;
-        }
-        
-        console.log('ResumeStore: Resume deleted successfully');
-        // Update local state
-        set((state) => ({
-          resumes: state.resumes.filter((resume) => resume.id !== id),
-        }));
-      });
+    set((state) => ({
+      resumes: state.resumes.filter((resume) => resume.id !== id),
+    }));
   },
   
   setCurrentResume: (resume: Resume | null) => {
@@ -181,6 +166,55 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       console.error('ResumeStore: Skill gap analysis failed:', error);
     } finally {
       set({ isAnalyzing: false });
+    }
+  },
+
+  /**
+   * Fetch user's resumes from Supabase
+   */
+  fetchUserResumes: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) {
+      console.log('ResumeStore: No authenticated user for fetching resumes');
+      return;
+    }
+
+    console.log('ResumeStore: Fetching user resumes from database');
+    set({ isLoading: true });
+
+    try {
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('ResumeStore: Fetch resumes error:', error.message);
+        set({ isLoading: false });
+        return;
+      }
+
+      if (data) {
+        const resumes: Resume[] = data.map((resume) => ({
+          id: resume.id,
+          title: resume.title,
+          content: resume.content,
+          originalContent: resume.original_content,
+          jobPosting: resume.job_posting,
+          matchScore: resume.match_score,
+          createdAt: resume.created_at,
+          lastModified: resume.updated_at,
+        }));
+
+        set({ resumes, isLoading: false });
+        console.log('ResumeStore: Fetched', resumes.length, 'resumes');
+      } else {
+        set({ resumes: [], isLoading: false });
+      }
+    } catch (error) {
+      console.error('ResumeStore: Fetch resumes failed:', error);
+      set({ isLoading: false });
     }
   },
 }));
