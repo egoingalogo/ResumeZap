@@ -459,7 +459,7 @@ const EmailSupport: React.FC = () => {
                 </p>
                 
                 <div className="text-sm text-red-800 dark:text-red-200">
-                  <div className="font-medium">urgent@resumezap.site</div>
+                  <div className="font-medium">urgent@resumezap.ai</div>
                   <div className="text-xs mt-1">Response within 4 hours</div>
                 </div>
               </div>

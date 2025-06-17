@@ -1,5 +1,4 @@
 import React from 'react';
-import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LandingPage from './pages/LandingPage';
@@ -12,27 +11,19 @@ import Settings from './pages/Settings';
 import EmailSupport from './pages/EmailSupport';
 import AuthPage from './pages/AuthPage';
 import { useThemeStore } from './store/themeStore';
-import { useAuthStore } from './store/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 /**
  * Main App component that handles routing and global theme management
- * Provides error boundary protection, toast notifications, and auth initialization
+ * Provides error boundary protection and toast notifications
  */
 function App() {
   const { isDarkMode } = useThemeStore();
-  const { initializeAuth } = useAuthStore();
 
   // Debug log for dark mode state
   console.log('App: isDarkMode state:', isDarkMode);
 
   console.log('App: Initializing ResumeZap application');
-
-  // Initialize authentication on app start
-  useEffect(() => {
-    console.log('App: Initializing authentication');
-    initializeAuth();
-  }, [initializeAuth]);
 
   return (
     <ErrorBoundary>
