@@ -37,7 +37,7 @@ const ResumeAnalyzer: React.FC = () => {
 
   React.useEffect(() => {
     if (!isAuthenticated) {
-      console.log('ResumeAnalyzer: User not authenticated, redirecting');
+      console.log('ResumeAnalyzer: User not authenticated, redirecting to landing page');
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
