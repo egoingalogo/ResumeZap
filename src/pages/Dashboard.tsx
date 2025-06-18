@@ -32,8 +32,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      console.log('Dashboard: User not authenticated, redirecting to auth');
-      navigate('/auth');
+      console.log('Dashboard: User not authenticated, redirecting to landing page');
+      navigate('/');
       return;
     }
 

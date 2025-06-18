@@ -59,12 +59,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
     
     try {
       await logout();
-      console.log('Navbar: Logout completed, navigating to home');
-      // Navigation will happen automatically due to page reload in logout function
+      console.log('Navbar: Logout completed, user will be redirected to landing page');
+      // No need to navigate here as logout() handles the redirect
     } catch (error) {
       console.error('Navbar: Logout error:', error);
       // Force navigation in case of error
-      window.location.href = '/';
+      window.location.replace('/');
     } finally {
       setIsLoggingOut(false);
     }

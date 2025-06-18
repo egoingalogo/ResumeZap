@@ -42,8 +42,7 @@ const clearAllAuthStorage = () => {
       if (key && (
         key.startsWith('sb-') || 
         key.includes('supabase') || 
-        key === 'resumezap-auth' ||
-        key === 'resumezap-theme'
+        key === 'resumezap-auth'
       )) {
         localStorageKeysToRemove.push(key);
       }
@@ -252,7 +251,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user with complete cleanup
+       * Logout current user with complete cleanup and direct redirect to landing page
        */
       logout: async () => {
         console.log('AuthStore: Starting logout process');
@@ -286,13 +285,11 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Failed to clear Zustand storage:', error);
         }
         
-        // Force a page reload to ensure complete cleanup and prevent any cached state
-        setTimeout(() => {
-          console.log('AuthStore: Forcing page reload for complete cleanup');
-          window.location.href = '/';
-        }, 100);
+        console.log('AuthStore: Logout process completed, redirecting to landing page');
         
-        console.log('AuthStore: Logout process completed');
+        // Force redirect to landing page immediately without reload
+        // This prevents the intermediate redirect to auth page
+        window.location.replace('/');
       },
       
       /**
