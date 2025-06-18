@@ -255,11 +255,12 @@ export const useAuthStore = create<AuthState>()(
       
       /**
        * Logout current user with complete session cleanup and full page refresh
+       * The loading overlay will persist until the page refreshes
        */
       logout: async () => {
         console.log('AuthStore: Starting logout process');
         
-        // Set logout state to freeze UI
+        // Set logout state to freeze UI - this will persist until page refresh
         set({ isLoggingOut: true });
         
         try {
@@ -291,20 +292,14 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Failed to clear Zustand storage:', error);
         }
         
-        // Step 5: Clear local state
-        set({ 
-          user: null, 
-          isAuthenticated: false,
-          isLoading: false,
-          isLoggingOut: false
-        });
-        
         console.log('AuthStore: All cleanup completed, performing full page refresh...');
         
-        // Step 6: Wait a moment then perform full page refresh to landing page
+        // Step 5: Perform full page refresh to landing page
+        // Note: We don't clear isLoggingOut here - it will persist until the page refreshes
+        // This ensures the loading overlay stays visible throughout the entire process
         setTimeout(() => {
           window.location.href = '/';
-        }, 300);
+        }, 800); // Slightly longer delay to ensure all cleanup is complete
       },
       
       /**
