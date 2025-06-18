@@ -139,25 +139,39 @@ export const useAuthStore = create<AuthState>()(
           
           if (supabaseUser) {
             // Create user profile in database
-            const { error: profileError } = await supabase
+            const userProfileData = {
+              id: supabaseUser.id,
+              email: supabaseUser.email!,
+              name,
+              plan: 'free' as const,
+              usage_this_month: {
+                resumeTailoring: 0,
+                coverLetters: 0,
+              },
+            };
+            
+            const { data: insertedProfile, error: profileError } = await supabase
               .from('users')
-              .insert({
-                id: supabaseUser.id,
-                email: supabaseUser.email!,
-                name,
-                plan: 'free',
-                usage_this_month: {
-                  resumeTailoring: 0,
-                  coverLetters: 0,
-                },
-              });
+              .insert(userProfileData)
+              .select()
+              .single();
             
             if (profileError) {
               console.error('AuthStore: Failed to create user profile:', profileError);
               return false;
             }
             
-            await get().refreshUser();
+            // Use the inserted profile data directly to avoid race condition
+            const user: User = {
+              id: insertedProfile.id,
+              email: insertedProfile.email,
+              name: insertedProfile.name,
+              plan: insertedProfile.plan,
+              usageThisMonth: insertedProfile.usage_this_month as any,
+              createdAt: insertedProfile.created_at,
+            };
+            
+            set({ user, isAuthenticated: true });
             console.log('AuthStore: Registration successful');
             return true;
           }
