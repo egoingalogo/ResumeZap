@@ -7,8 +7,6 @@ import {
   Brain, 
   FileText, 
   BarChart3, 
-  Users, 
-  Star,
   ChevronRight,
   Sparkles,
   Sun,
@@ -22,8 +20,9 @@ import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
 /**
- * Landing page component with hero section, features, pricing, and testimonials
+ * Landing page component with hero section, features, and pricing
  * Implements smooth scrolling, animations, and responsive design
+ * Focused on MVP presentation without fake testimonials or inflated stats
  */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -169,30 +168,6 @@ const LandingPage: React.FC = () => {
 
   const pricingTiers = getPricingTiers();
 
-  const testimonials = [
-    {
-      name: 'Sarah Chen',
-      role: 'Software Engineer',
-      company: 'Google',
-      content: 'ResumeZap helped me land my dream job at Google. The AI tailoring increased my interview rate by 300%!',
-      rating: 5,
-    },
-    {
-      name: 'Michael Rodriguez',
-      role: 'Product Manager',
-      company: 'Microsoft',
-      content: 'The skill gap analysis was a game-changer. I focused my learning and got promoted within 6 months.',
-      rating: 5,
-    },
-    {
-      name: 'Emily Johnson',
-      role: 'Data Scientist',
-      company: 'Netflix',
-      content: 'Best investment for my career. The cover letter generator alone saved me hours and improved my response rate.',
-      rating: 5,
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       <Navbar isScrolled={isScrolled} />
@@ -233,8 +208,6 @@ const LandingPage: React.FC = () => {
           </motion.div>
         </div>
       </motion.button>
-      
-      {/* Live Chat Button for Pro & Lifetime users */}
       
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
@@ -320,54 +293,6 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Trusted by Professionals Worldwide
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Join thousands of successful job seekers who've transformed their careers
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700"
-              >
-                <div className="flex items-center mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-6 italic">
-                  "{testimonial.content}"
-                </p>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
-                      {testimonial.name}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {testimonial.role} at {testimonial.company}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section className="py-20 bg-white/50 dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -430,7 +355,7 @@ const LandingPage: React.FC = () => {
               Ready to Transform Your Career?
             </h2>
             <p className="text-xl mb-8 opacity-90">
-              Join thousands of professionals who've accelerated their job search with AI
+              Join the next generation of job seekers using AI to accelerate their careers
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
