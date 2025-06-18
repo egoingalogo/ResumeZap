@@ -19,6 +19,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isLoggingOut: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -42,7 +43,8 @@ const clearAllAuthStorage = () => {
       if (key && (
         key.startsWith('sb-') || 
         key.includes('supabase') || 
-        key === 'resumezap-auth'
+        key === 'resumezap-auth' ||
+        key === 'resumezap-theme'
       )) {
         localStorageKeysToRemove.push(key);
       }
@@ -103,6 +105,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      isLoggingOut: false,
       
       /**
        * Initialize authentication state on app startup
@@ -251,47 +254,57 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user with smooth transition and no visual glitches
+       * Logout current user with complete session cleanup and full page refresh
        */
       logout: async () => {
         console.log('AuthStore: Starting logout process');
         
+        // Set logout state to freeze UI
+        set({ isLoggingOut: true });
+        
         try {
-          // First, sign out from Supabase
-          const { error } = await supabase.auth.signOut({ scope: 'local' });
+          // Step 1: Sign out from Supabase
+          console.log('AuthStore: Signing out from Supabase...');
+          const { error } = await supabase.auth.signOut({ scope: 'global' });
           if (error) {
             console.error('AuthStore: Supabase logout error:', error);
           } else {
             console.log('AuthStore: Supabase logout successful');
           }
+          
+          // Step 2: Wait a moment to ensure Supabase cleanup is complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
         } catch (error) {
           console.error('AuthStore: Supabase logout failed:', error);
         }
         
-        // Clear all storage
+        // Step 3: Clear all local storage and session data
+        console.log('AuthStore: Clearing all local storage...');
         clearAllAuthStorage();
         
-        // Clear the Zustand persist storage specifically
+        // Step 4: Clear the Zustand persist storage specifically
         try {
           localStorage.removeItem('resumezap-auth');
+          localStorage.removeItem('resumezap-theme');
         } catch (error) {
           console.error('AuthStore: Failed to clear Zustand storage:', error);
         }
         
-        // Clear local state
+        // Step 5: Clear local state
         set({ 
           user: null, 
           isAuthenticated: false,
-          isLoading: false 
+          isLoading: false,
+          isLoggingOut: false
         });
         
-        console.log('AuthStore: Logout process completed');
+        console.log('AuthStore: All cleanup completed, performing full page refresh...');
         
-        // Use a small delay to ensure state is updated before redirect
-        // This prevents the visual glitch of showing logged-in state briefly
+        // Step 6: Wait a moment then perform full page refresh to landing page
         setTimeout(() => {
           window.location.href = '/';
-        }, 100);
+        }, 300);
       },
       
       /**
@@ -389,7 +402,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     // Only clear state if we're not in the middle of a logout process
     // This prevents the double state change that causes the glitch
     const currentState = useAuthStore.getState();
-    if (currentState.isAuthenticated) {
+    if (currentState.isAuthenticated && !currentState.isLoggingOut) {
       useAuthStore.setState({ 
         user: null, 
         isAuthenticated: false,
