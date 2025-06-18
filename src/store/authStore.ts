@@ -186,33 +186,33 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user - enhanced with proper cleanup
+       * Logout current user - enhanced with proper cleanup and immediate state clearing
        */
       logout: async () => {
         console.log('AuthStore: Logging out user');
-        set({ isLoading: true });
+        
+        // Clear state immediately to prevent UI lag
+        set({ 
+          user: null, 
+          isAuthenticated: false,
+          isLoading: false 
+        });
         
         try {
-          // Sign out from Supabase
+          // Sign out from Supabase in the background
           await signOut();
-          
-          // Clear all user state immediately
-          set({ 
-            user: null, 
-            isAuthenticated: false,
-            isLoading: false 
-          });
-          
-          console.log('AuthStore: Logout successful');
+          console.log('AuthStore: Supabase logout successful');
         } catch (error) {
-          console.error('AuthStore: Logout failed:', error);
-          // Even if logout fails, clear local state
-          set({ 
-            user: null, 
-            isAuthenticated: false,
-            isLoading: false 
-          });
+          console.error('AuthStore: Supabase logout failed:', error);
+          // Don't throw error since we already cleared local state
         }
+        
+        // Ensure state is cleared (redundant but safe)
+        set({ 
+          user: null, 
+          isAuthenticated: false,
+          isLoading: false 
+        });
       },
       
       /**
