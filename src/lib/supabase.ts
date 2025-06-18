@@ -83,36 +83,6 @@ export const signIn = async (email: string, password: string) => {
 };
 
 /**
- * Sign out the current user with complete session cleanup
- */
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  
-  if (error) {
-    throw new Error(handleSupabaseError(error, 'sign out'));
-  }
-  
-  // Additional cleanup: clear all Supabase-related localStorage
-  try {
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
-        keysToRemove.push(key);
-      }
-    }
-    
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
-    });
-    
-    console.log('Supabase: Cleared localStorage session data');
-  } catch (cleanupError) {
-    console.error('Supabase: Failed to clear localStorage:', cleanupError);
-  }
-};
-
-/**
  * Reset password
  */
 export const resetPassword = async (email: string) => {
