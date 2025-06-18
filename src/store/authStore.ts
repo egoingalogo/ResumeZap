@@ -251,20 +251,13 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user with complete cleanup and direct redirect to landing page
+       * Logout current user with smooth transition and no visual glitches
        */
       logout: async () => {
         console.log('AuthStore: Starting logout process');
         
-        // Immediately clear local state to prevent UI issues
-        set({ 
-          user: null, 
-          isAuthenticated: false,
-          isLoading: false 
-        });
-        
         try {
-          // Sign out from Supabase with scope 'local' to clear all storage
+          // First, sign out from Supabase
           const { error } = await supabase.auth.signOut({ scope: 'local' });
           if (error) {
             console.error('AuthStore: Supabase logout error:', error);
@@ -275,7 +268,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Supabase logout failed:', error);
         }
         
-        // Always clear all storage regardless of Supabase logout result
+        // Clear all storage
         clearAllAuthStorage();
         
         // Clear the Zustand persist storage specifically
@@ -285,11 +278,20 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Failed to clear Zustand storage:', error);
         }
         
-        console.log('AuthStore: Logout process completed, redirecting to landing page');
+        // Clear local state
+        set({ 
+          user: null, 
+          isAuthenticated: false,
+          isLoading: false 
+        });
         
-        // Force redirect to landing page immediately without reload
-        // This prevents the intermediate redirect to auth page
-        window.location.replace('/');
+        console.log('AuthStore: Logout process completed');
+        
+        // Use a small delay to ensure state is updated before redirect
+        // This prevents the visual glitch of showing logged-in state briefly
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       },
       
       /**
@@ -384,12 +386,15 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session?.user) {
     await useAuthStore.getState().refreshUser();
   } else if (event === 'SIGNED_OUT') {
-    // Ensure complete cleanup on sign out
-    useAuthStore.setState({ 
-      user: null, 
-      isAuthenticated: false,
-      isLoading: false 
-    });
-    clearAllAuthStorage();
+    // Only clear state if we're not in the middle of a logout process
+    // This prevents the double state change that causes the glitch
+    const currentState = useAuthStore.getState();
+    if (currentState.isAuthenticated) {
+      useAuthStore.setState({ 
+        user: null, 
+        isAuthenticated: false,
+        isLoading: false 
+      });
+    }
   }
 });

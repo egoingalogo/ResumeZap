@@ -64,10 +64,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
     } catch (error) {
       console.error('Navbar: Logout error:', error);
       // Force navigation in case of error
-      window.location.replace('/');
-    } finally {
-      setIsLoggingOut(false);
+      window.location.href = '/';
     }
+    // Note: We don't set isLoggingOut to false here because the page will redirect
   };
 
   const getPlanBadgeColor = (plan: string) => {
