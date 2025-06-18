@@ -387,12 +387,20 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Set up auth state listener with improved error handling
+// Set up auth state listener with improved error handling and race condition prevention
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('AuthStore: Auth state changed:', event);
   
   if (event === 'SIGNED_IN' && session?.user) {
-    await useAuthStore.getState().refreshUser();
+    // Prevent race condition during registration by checking if user is already set
+    const currentState = useAuthStore.getState();
+    
+    // Only refresh user if:
+    // 1. No user is currently set in the store, OR
+    // 2. The session user ID doesn't match the current store user ID
+    if (!currentState.user || currentState.user.id !== session.user.id) {
+      await useAuthStore.getState().refreshUser();
+    }
   } else if (event === 'SIGNED_OUT') {
     // Only clear state if we're not in the middle of a logout process
     // This prevents the double state change that causes the glitch
