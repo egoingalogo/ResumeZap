@@ -83,8 +83,8 @@ const ApplicationTracker: React.FC = () => {
 
   React.useEffect(() => {
     if (!isAuthenticated) {
-      console.log('ApplicationTracker: User not authenticated, redirecting');
-      navigate('/auth');
+      console.log('ApplicationTracker: User not authenticated, redirecting to landing page');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 

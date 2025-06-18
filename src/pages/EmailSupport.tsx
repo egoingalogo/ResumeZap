@@ -42,8 +42,8 @@ const EmailSupport: React.FC = () => {
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      console.log('EmailSupport: User not authenticated, redirecting');
-      navigate('/auth');
+      console.log('EmailSupport: User not authenticated, redirecting to landing page');
+      navigate('/');
     }
   }, [isAuthenticated, isLoading, navigate]);
 

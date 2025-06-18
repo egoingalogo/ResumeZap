@@ -35,8 +35,8 @@ const SkillGapAnalysis: React.FC = () => {
 
   React.useEffect(() => {
     if (!isAuthenticated) {
-      console.log('SkillGapAnalysis: User not authenticated, redirecting');
-      navigate('/auth');
+      console.log('SkillGapAnalysis: User not authenticated, redirecting to landing page');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 

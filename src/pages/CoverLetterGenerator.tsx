@@ -41,8 +41,8 @@ const CoverLetterGenerator: React.FC = () => {
 
   React.useEffect(() => {
     if (!isAuthenticated) {
-      console.log('CoverLetterGenerator: User not authenticated, redirecting');
-      navigate('/auth');
+      console.log('CoverLetterGenerator: User not authenticated, redirecting to landing page');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
