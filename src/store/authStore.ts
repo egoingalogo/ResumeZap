@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, signUp, signIn, signOut, getCurrentUser, handleSupabaseError } from '../lib/supabase';
+import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -27,6 +27,50 @@ interface AuthState {
   initializeAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
+
+/**
+ * Clear all authentication-related data from localStorage
+ */
+const clearAuthStorage = () => {
+  try {
+    console.log('AuthStore: Starting localStorage cleanup');
+    
+    // Get all localStorage keys
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('sb-') || 
+        key.includes('supabase') || 
+        key === 'resumezap-auth' ||
+        key === 'resumezap-theme'
+      )) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    // Remove all identified keys
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('AuthStore: Removed localStorage key:', key);
+    });
+    
+    // Force clear specific known keys
+    const specificKeys = [
+      'resumezap-auth',
+      'sb-xbonmxraxoziwtjezreb-auth-token',
+      'sb-xbonmxraxoziwtjezreb-auth-token-code-verifier'
+    ];
+    
+    specificKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    console.log('AuthStore: localStorage cleanup completed');
+  } catch (error) {
+    console.error('AuthStore: Failed to clear localStorage:', error);
+  }
+};
 
 /**
  * Authentication store with real Supabase integration
@@ -189,48 +233,36 @@ export const useAuthStore = create<AuthState>()(
        * Logout current user with complete cleanup
        */
       logout: async () => {
-        console.log('AuthStore: Logging out user');
+        console.log('AuthStore: Starting logout process');
         
-        try {
-          // First, sign out from Supabase to clear session
-          await signOut();
-          console.log('AuthStore: Supabase logout successful');
-        } catch (error) {
-          console.error('AuthStore: Supabase logout failed:', error);
-          // Continue with cleanup even if Supabase logout fails
-        }
-        
-        // Clear local state
+        // Immediately clear local state to prevent UI issues
         set({ 
           user: null, 
           isAuthenticated: false,
           isLoading: false 
         });
         
-        // Clear all Supabase-related localStorage items
         try {
-          const keysToRemove = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
-              keysToRemove.push(key);
-            }
+          // Sign out from Supabase
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('AuthStore: Supabase logout error:', error);
+          } else {
+            console.log('AuthStore: Supabase logout successful');
           }
-          
-          keysToRemove.forEach(key => {
-            localStorage.removeItem(key);
-            console.log('AuthStore: Removed localStorage key:', key);
-          });
-          
-          // Also clear the Zustand persisted state
-          localStorage.removeItem('resumezap-auth');
-          console.log('AuthStore: Cleared all localStorage data');
-          
         } catch (error) {
-          console.error('AuthStore: Failed to clear localStorage:', error);
+          console.error('AuthStore: Supabase logout failed:', error);
         }
         
-        console.log('AuthStore: Logout completed');
+        // Always clear localStorage regardless of Supabase logout result
+        clearAuthStorage();
+        
+        // Force a page reload to ensure complete cleanup
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+        
+        console.log('AuthStore: Logout process completed');
       },
       
       /**
@@ -331,5 +363,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       isAuthenticated: false,
       isLoading: false 
     });
+    clearAuthStorage();
   }
 });

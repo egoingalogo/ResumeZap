@@ -30,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const profileDropdownRef = React.useRef<HTMLDivElement>(null);
   
   console.log('Navbar: Rendering with authentication state:', isAuthenticated);
@@ -53,16 +54,19 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
 
   const handleLogout = async () => {
     console.log('Navbar: User logout initiated');
+    setIsLoggingOut(true);
     setIsProfileOpen(false);
     
     try {
       await logout();
-      // Navigate immediately after logout completes
-      navigate('/');
+      console.log('Navbar: Logout completed, navigating to home');
+      // Navigation will happen automatically due to page reload in logout function
     } catch (error) {
       console.error('Navbar: Logout error:', error);
-      // Navigate anyway in case of error
-      navigate('/');
+      // Force navigation in case of error
+      window.location.href = '/';
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -169,6 +173,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                  disabled={isLoggingOut}
                 >
                   <div className="h-8 w-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
@@ -188,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                   </div>
                 </button>
 
-                {isProfileOpen && (
+                {isProfileOpen && !isLoggingOut && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -205,10 +210,20 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left"
+                      disabled={isLoggingOut}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left disabled:opacity-50"
                     >
-                      <LogOut className="h-4 w-4" />
-                      <span>Sign out</span>
+                      {isLoggingOut ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin" />
+                          <span>Signing out...</span>
+                        </>
+                      ) : (
+                        <>
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign out</span>
+                        </>
+                      )}
                     </button>
                   </motion.div>
                 )}
