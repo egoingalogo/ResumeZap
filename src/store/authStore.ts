@@ -186,19 +186,32 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user
+       * Logout current user - enhanced with proper cleanup
        */
       logout: async () => {
         console.log('AuthStore: Logging out user');
         set({ isLoading: true });
         
         try {
+          // Sign out from Supabase
           await signOut();
-          set({ user: null, isAuthenticated: false });
+          
+          // Clear all user state immediately
+          set({ 
+            user: null, 
+            isAuthenticated: false,
+            isLoading: false 
+          });
+          
+          console.log('AuthStore: Logout successful');
         } catch (error) {
           console.error('AuthStore: Logout failed:', error);
-        } finally {
-          set({ isLoading: false });
+          // Even if logout fails, clear local state
+          set({ 
+            user: null, 
+            isAuthenticated: false,
+            isLoading: false 
+          });
         }
       },
       
@@ -277,17 +290,28 @@ export const useAuthStore = create<AuthState>()(
         user: state.user, 
         isAuthenticated: state.isAuthenticated 
       }),
+      // Clear persisted state on logout
+      onRehydrateStorage: () => (state) => {
+        if (state && !state.isAuthenticated) {
+          state.user = null;
+        }
+      },
     }
   )
 );
 
-// Set up auth state listener
+// Set up auth state listener with improved error handling
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('AuthStore: Auth state changed:', event);
   
   if (event === 'SIGNED_IN' && session?.user) {
     await useAuthStore.getState().refreshUser();
   } else if (event === 'SIGNED_OUT') {
-    useAuthStore.setState({ user: null, isAuthenticated: false });
+    // Ensure complete cleanup on sign out
+    useAuthStore.setState({ 
+      user: null, 
+      isAuthenticated: false,
+      isLoading: false 
+    });
   }
 });
