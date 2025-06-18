@@ -186,33 +186,51 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Logout current user - enhanced with proper cleanup and immediate state clearing
+       * Logout current user with complete cleanup
        */
       logout: async () => {
         console.log('AuthStore: Logging out user');
         
-        // Clear state immediately to prevent UI lag
-        set({ 
-          user: null, 
-          isAuthenticated: false,
-          isLoading: false 
-        });
-        
         try {
-          // Sign out from Supabase in the background
+          // First, sign out from Supabase to clear session
           await signOut();
           console.log('AuthStore: Supabase logout successful');
         } catch (error) {
           console.error('AuthStore: Supabase logout failed:', error);
-          // Don't throw error since we already cleared local state
+          // Continue with cleanup even if Supabase logout fails
         }
         
-        // Ensure state is cleared (redundant but safe)
+        // Clear local state
         set({ 
           user: null, 
           isAuthenticated: false,
           isLoading: false 
         });
+        
+        // Clear all Supabase-related localStorage items
+        try {
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+              keysToRemove.push(key);
+            }
+          }
+          
+          keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('AuthStore: Removed localStorage key:', key);
+          });
+          
+          // Also clear the Zustand persisted state
+          localStorage.removeItem('resumezap-auth');
+          console.log('AuthStore: Cleared all localStorage data');
+          
+        } catch (error) {
+          console.error('AuthStore: Failed to clear localStorage:', error);
+        }
+        
+        console.log('AuthStore: Logout completed');
       },
       
       /**
