@@ -65,7 +65,7 @@ const Settings: React.FC = () => {
   React.useEffect(() => {
     if (!isAuthenticated) {
       console.log('Settings: User not authenticated, redirecting');
-      navigate('/auth');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
