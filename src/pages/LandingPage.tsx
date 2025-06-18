@@ -275,34 +275,10 @@ const LandingPage: React.FC = () => {
               
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No credit card required • 2 free sessions
+                  No credit card required • Start with free plan
                 </p>
               </div>
             </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16"
-          >
-            {[
-              { number: '10K+', label: 'Resumes Optimized' },
-              { number: '85%', label: 'Interview Rate Increase' },
-              { number: '50+', label: 'Industries Supported' },
-              { number: '4.9/5', label: 'User Rating' },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-gray-600 dark:text-gray-400 text-sm">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </section>
