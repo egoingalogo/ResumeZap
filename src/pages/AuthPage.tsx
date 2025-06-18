@@ -369,18 +369,16 @@ const AuthPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Test Account Info */}
+            {/* Getting Started Info */}
             {mode === 'login' && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
                 <h3 className="text-sm font-medium text-blue-900 dark:text-blue-400 mb-2">
-                  Test Accounts (use any password):
+                  Getting Started:
                 </h3>
                 <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                  <div><strong>free@example.com</strong> - Free plan with 1 resume analysis used</div>
-                  <div><strong>freelimit@example.com</strong> - Free plan at usage limits</div>
-                  <div><strong>test@example.com</strong> - Premium plan with usage data</div>
-                  <div><strong>pro@example.com</strong> - Pro plan with unlimited features</div>
-                  <div><strong>lifetime@example.com</strong> - Lifetime plan</div>
+                  <div>• <strong>New user?</strong> Click "Sign Up" below to create an account</div>
+                  <div>• <strong>Existing user?</strong> Enter your registered email and password</div>
+                  <div>• <strong>Demo?</strong> Create a test account to explore features</div>
                 </div>
               </div>
             )}
