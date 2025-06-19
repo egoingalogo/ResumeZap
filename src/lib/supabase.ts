@@ -46,6 +46,34 @@ export const getCurrentUser = async () => {
 };
 
 /**
+ * Get the current count of lifetime plan users
+ * Used to determine if the lifetime plan quota (1000 users) has been reached
+ */
+export const getLifetimeUserCount = async (): Promise<number> => {
+  console.log('Supabase: Fetching lifetime user count');
+  
+  try {
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('plan', 'lifetime');
+    
+    if (error) {
+      console.error('Supabase: Failed to fetch lifetime user count:', error);
+      throw new Error(handleSupabaseError(error, 'fetch lifetime user count'));
+    }
+    
+    const lifetimeCount = count || 0;
+    console.log('Supabase: Current lifetime user count:', lifetimeCount);
+    return lifetimeCount;
+  } catch (error) {
+    console.error('Supabase: Error getting lifetime user count:', error);
+    // Return 0 as fallback to allow upgrades if we can't determine the count
+    return 0;
+  }
+};
+
+/**
  * Sign up a new user
  */
 export const signUp = async (email: string, password: string, name: string) => {

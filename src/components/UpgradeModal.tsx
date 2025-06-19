@@ -17,17 +17,20 @@ interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentPlan?: 'free' | 'premium' | 'pro' | 'lifetime';
+  lifetimeUserCount?: number | null;
 }
 
 /**
  * Upgrade modal component for in-app plan upgrades
  * Provides seamless upgrade experience without redirecting to landing page
  * Prevents body scroll and ensures proper content visibility
+ * Handles lifetime quota checking based on current user count
  */
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ 
   isOpen, 
   onClose, 
-  currentPlan = 'free' 
+  currentPlan = 'free',
+  lifetimeUserCount = null
 }) => {
   const { upgradePlan, user } = useAuthStore();
   const [isAnnual, setIsAnnual] = useState(false);
@@ -35,6 +38,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<'premium' | 'pro' | 'lifetime' | null>(null);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
+  console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -51,6 +55,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       };
     }
   }, [isOpen]);
+
+  // Check if lifetime quota has been reached
+  const isLifetimeQuotaReached = lifetimeUserCount !== null && lifetimeUserCount >= 1000;
 
   const plans = [
     {
@@ -103,7 +110,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       name: 'Lifetime',
       price: '$79.99',
       period: 'one-time',
-      description: 'Limited early adopter offer - all Pro features forever',
+      description: isLifetimeQuotaReached 
+        ? 'Limited early adopter offer - SOLD OUT' 
+        : `Limited early adopter offer - all Pro features forever (${lifetimeUserCount || 0}/1000 claimed)`,
       icon: Crown,
       color: 'from-amber-500 to-orange-500',
       features: [
@@ -112,16 +121,25 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         'Direct feedback channel to development team',
         'VIP email support (4 hours)',
         '30-day early access to future feature updates before general release',
-        'Limited to first 1,000 customers',
+        isLifetimeQuotaReached 
+          ? 'Limited to first 1,000 customers - QUOTA REACHED'
+          : `Limited to first 1,000 customers (${1000 - (lifetimeUserCount || 0)} remaining)`,
         '60-day money-back guarantee',
       ],
       isLifetime: true,
-      disabled: currentPlan === 'lifetime',
+      disabled: currentPlan === 'lifetime' || isLifetimeQuotaReached,
     },
   ];
 
   const handleUpgrade = async (planId: 'premium' | 'pro' | 'lifetime') => {
     console.log('UpgradeModal: Upgrading to plan:', planId);
+    
+    // Additional check for lifetime quota
+    if (planId === 'lifetime' && isLifetimeQuotaReached) {
+      toast.error('Lifetime plan quota has been reached. Please choose a different plan.');
+      return;
+    }
+    
     setIsProcessing(true);
     setSelectedPlan(planId);
 
@@ -278,6 +296,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         </div>
                       )}
 
+                      {/* Sold out badge for lifetime */}
+                      {plan.isLifetime && isLifetimeQuotaReached && (
+                        <div className="absolute -top-3 right-4 z-10">
+                          <div className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 whitespace-nowrap">
+                            <X className="h-4 w-4" />
+                            <span>Sold Out</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Current plan badge */}
                       {isCurrentPlan && (
                         <div className="absolute -top-3 left-4 z-10">
@@ -367,7 +395,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                             <span>Processing...</span>
                           </>
                         ) : plan.disabled ? (
-                          isCurrentPlan ? 'Current Plan' : 'Not Available'
+                          isCurrentPlan ? 'Current Plan' : 
+                          (plan.isLifetime && isLifetimeQuotaReached) ? 'Sold Out' : 'Not Available'
                         ) : (
                           <>
                             <CreditCard className="h-4 w-4" />

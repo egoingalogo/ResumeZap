@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError } from '../lib/supabase';
+import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -20,6 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isLoggingOut: boolean;
+  lifetimeUserCount: number | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -27,6 +28,7 @@ interface AuthState {
   upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
   initializeAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  fetchLifetimeUserCount: () => Promise<void>;
 }
 
 /**
@@ -97,7 +99,7 @@ const clearAllAuthStorage = () => {
 
 /**
  * Authentication store with real Supabase integration
- * Handles user authentication, profile management, and usage tracking
+ * Handles user authentication, profile management, usage tracking, and lifetime quota monitoring
  */
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -106,15 +108,20 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       isLoggingOut: false,
+      lifetimeUserCount: null,
       
       /**
        * Initialize authentication state on app startup
+       * Also fetches the current lifetime user count
        */
       initializeAuth: async () => {
         console.log('AuthStore: Initializing authentication');
         set({ isLoading: true });
         
         try {
+          // Fetch lifetime user count first (doesn't require authentication)
+          await get().fetchLifetimeUserCount();
+          
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session?.user) {
@@ -127,6 +134,23 @@ export const useAuthStore = create<AuthState>()(
           set({ user: null, isAuthenticated: false });
         } finally {
           set({ isLoading: false });
+        }
+      },
+      
+      /**
+       * Fetch the current count of lifetime plan users
+       * Used to determine if upgrade to lifetime should be available
+       */
+      fetchLifetimeUserCount: async () => {
+        try {
+          console.log('AuthStore: Fetching lifetime user count');
+          const count = await getLifetimeUserCount();
+          set({ lifetimeUserCount: count });
+          console.log('AuthStore: Lifetime user count updated:', count);
+        } catch (error) {
+          console.error('AuthStore: Failed to fetch lifetime user count:', error);
+          // Set to null to indicate we couldn't fetch the count
+          set({ lifetimeUserCount: null });
         }
       },
       
@@ -427,7 +451,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Upgrade user plan
+       * Upgrade user plan and refresh lifetime user count
        */
       upgradePlan: async (plan: 'premium' | 'pro' | 'lifetime') => {
         const { user } = get();
@@ -453,6 +477,11 @@ export const useAuthStore = create<AuthState>()(
               plan,
             },
           });
+          
+          // If upgrading to lifetime, refresh the lifetime user count
+          if (plan === 'lifetime') {
+            await get().fetchLifetimeUserCount();
+          }
         } catch (error) {
           console.error('AuthStore: Failed to upgrade plan:', error);
         }
@@ -462,7 +491,8 @@ export const useAuthStore = create<AuthState>()(
       name: 'resumezap-auth',
       partialize: (state) => ({ 
         user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+        isAuthenticated: state.isAuthenticated,
+        lifetimeUserCount: state.lifetimeUserCount
       }),
       // Clear persisted state on logout
       onRehydrateStorage: () => (state) => {

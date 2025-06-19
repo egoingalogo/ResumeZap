@@ -26,11 +26,12 @@ import toast from 'react-hot-toast';
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated, upgradePlan, isLoading } = useAuthStore();
+  const { user, isAuthenticated, upgradePlan, isLoading, lifetimeUserCount } = useAuthStore();
   const { resumes, fetchResumes } = useResumeStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   console.log('Dashboard: Component mounted for user:', user?.email);
+  console.log('Dashboard: Lifetime user count:', lifetimeUserCount);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -162,6 +163,10 @@ const Dashboard: React.FC = () => {
     setShowUpgradeModal(true);
   };
 
+  // Determine if upgrade button should be shown
+  // Show for all plans except lifetime
+  const shouldShowUpgradeButton = user.plan !== 'lifetime';
+
   return (
     <div>
       <Navbar />
@@ -193,7 +198,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                {user.plan !== 'pro' && user.plan !== 'lifetime' && (
+                {shouldShowUpgradeButton && (
                   <button
                     onClick={handleUpgradeClick}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200"
@@ -409,6 +414,7 @@ const Dashboard: React.FC = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={user.plan}
+        lifetimeUserCount={lifetimeUserCount}
       />
     </div>
   );

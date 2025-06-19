@@ -40,7 +40,7 @@ import toast from 'react-hot-toast';
  */
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout, upgradePlan } = useAuthStore();
+  const { user, isAuthenticated, logout, upgradePlan, lifetimeUserCount } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { resumes } = useResumeStore();
   
@@ -64,6 +64,7 @@ const Settings: React.FC = () => {
   });
 
   console.log('Settings: Component mounted for user:', user?.email);
+  console.log('Settings: Lifetime user count:', lifetimeUserCount);
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -273,6 +274,10 @@ const Settings: React.FC = () => {
   };
 
   const usageData = getUsageData();
+
+  // Determine if upgrade button should be shown
+  // Show for all plans except lifetime
+  const shouldShowUpgradeButton = user?.plan !== 'lifetime';
 
   if (!isAuthenticated || !user) {
     return (
@@ -545,7 +550,7 @@ const Settings: React.FC = () => {
                           </p>
                         </div>
                         
-                        {user.plan !== 'pro' && user.plan !== 'lifetime' && (
+                        {shouldShowUpgradeButton && (
                           <button
                             onClick={handleUpgradeClick}
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
@@ -929,6 +934,7 @@ const Settings: React.FC = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={user.plan}
+        lifetimeUserCount={lifetimeUserCount}
       />
     </div>
   );
