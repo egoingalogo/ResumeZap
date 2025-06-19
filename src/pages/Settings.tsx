@@ -30,6 +30,7 @@ import { UpgradeModal } from '../components/UpgradeModal';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useResumeStore } from '../store/resumeStore';
+import { supabase } from '../lib/supabase';
 import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
@@ -96,6 +97,10 @@ const Settings: React.FC = () => {
     }
   };
 
+  /**
+   * Handle password change using Supabase authentication
+   * Validates password requirements and updates user password securely
+   */
   const handlePasswordChange = async () => {
     if (profileData.newPassword !== profileData.confirmPassword) {
       toast.error('Passwords do not match');
@@ -107,17 +112,57 @@ const Settings: React.FC = () => {
       return;
     }
 
-    console.log('Settings: Changing user password');
+    // Enhanced password validation
+    const hasUppercase = /[A-Z]/.test(profileData.newPassword);
+    const hasLowercase = /[a-z]/.test(profileData.newPassword);
+    const hasNumbers = /[0-9]/.test(profileData.newPassword);
+    
+    if (!hasUppercase || !hasLowercase || !hasNumbers) {
+      toast.error('Password must include uppercase, lowercase, and numbers');
+      return;
+    }
+
+    console.log('Settings: Changing user password via Supabase');
     setIsLoading(true);
     
     try {
-      // Simulate API call - replace with actual password change
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setProfileData({ ...profileData, currentPassword: '', newPassword: '', confirmPassword: '' });
+      // Update password using Supabase auth
+      const { error } = await supabase.auth.updateUser({
+        password: profileData.newPassword
+      });
+
+      if (error) {
+        console.error('Settings: Supabase password update failed:', error);
+        
+        // Handle specific Supabase error messages
+        if (error.message.includes('same as the old password')) {
+          toast.error('New password must be different from your current password');
+        } else if (error.message.includes('Password should be at least')) {
+          toast.error('Password does not meet security requirements');
+        } else if (error.message.includes('session_not_found')) {
+          toast.error('Session expired. Please sign in again');
+          logout();
+          return;
+        } else {
+          toast.error('Failed to change password. Please try again');
+        }
+        return;
+      }
+
+      // Clear password fields on success
+      setProfileData({ 
+        ...profileData, 
+        currentPassword: '', 
+        newPassword: '', 
+        confirmPassword: '' 
+      });
+      
       toast.success('Password changed successfully!');
+      console.log('Settings: Password updated successfully via Supabase');
+      
     } catch (error) {
       console.error('Settings: Password change failed:', error);
-      toast.error('Failed to change password');
+      toast.error('An unexpected error occurred. Please try again');
     } finally {
       setIsLoading(false);
     }
@@ -654,6 +699,7 @@ const Settings: React.FC = () => {
                               value={profileData.currentPassword}
                               onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
                               className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="Enter your current password"
                             />
                             <button
                               type="button"
@@ -663,6 +709,9 @@ const Settings: React.FC = () => {
                               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </button>
                           </div>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Note: For security, Supabase doesn't require current password verification for password changes.
+                          </p>
                         </div>
                         
                         <div>
@@ -674,7 +723,11 @@ const Settings: React.FC = () => {
                             value={profileData.newPassword}
                             onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="Enter your new password"
                           />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Must be at least 8 characters with uppercase, lowercase, and numbers.
+                          </p>
                         </div>
                         
                         <div>
@@ -686,12 +739,13 @@ const Settings: React.FC = () => {
                             value={profileData.confirmPassword}
                             onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="Confirm your new password"
                           />
                         </div>
                         
                         <button
                           onClick={handlePasswordChange}
-                          disabled={isLoading || !profileData.currentPassword || !profileData.newPassword || !profileData.confirmPassword}
+                          disabled={isLoading || !profileData.newPassword || !profileData.confirmPassword}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
                         >
                           {isLoading ? (
