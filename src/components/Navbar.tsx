@@ -139,6 +139,16 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                     Resume Analyzer
                   </Link>
                   <Link
+                    to="/skill-gap-analysis"
+                    className={`text-sm font-medium transition-colors duration-200 ${
+                      location.pathname === '/skill-gap-analysis'
+                        ? 'text-purple-600 dark:text-purple-400'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                    }`}
+                  >
+                    Skill Gap Analysis
+                  </Link>
+                  <Link
                     to="/applications"
                     className={`text-sm font-medium transition-colors duration-200 ${
                       location.pathname === '/applications'
@@ -289,6 +299,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Resume Analyzer
+                  </Link>
+                  <Link
+                    to="/skill-gap-analysis"
+                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Skill Gap Analysis
                   </Link>
                   <Link
                     to="/applications"
