@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
       
       /**
        * Refresh user data from database
-       * Uses maybeSingle() to handle race conditions during registration
+       * Uses single() to ensure authenticated users have valid profiles
        */
       refreshUser: async () => {
         try {
@@ -142,22 +142,15 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
           
-          // Get user profile from database - use maybeSingle() to handle race conditions
+          // Get user profile from database - use single() to treat missing profiles as errors
           const { data: userProfile, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', supabaseUser.id)
-            .maybeSingle();
+            .single();
           
           if (error) {
             console.error('AuthStore: Failed to fetch user profile:', error);
-            set({ user: null, isAuthenticated: false });
-            return;
-          }
-          
-          // Handle case where user profile doesn't exist yet (race condition during registration)
-          if (!userProfile) {
-            console.log('AuthStore: User profile not found, likely during registration process');
             set({ user: null, isAuthenticated: false });
             return;
           }
