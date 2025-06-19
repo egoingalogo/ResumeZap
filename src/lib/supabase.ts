@@ -67,11 +67,18 @@ export const signUp = async (email: string, password: string, name: string) => {
 };
 
 /**
- * Sign in an existing user with proper error handling
- * Ensures no session is created for invalid credentials
+ * Sign in an existing user with strict error handling
+ * Completely prevents session creation for invalid credentials
  */
 export const signIn = async (email: string, password: string) => {
   console.log('Supabase: Attempting sign in for:', email);
+  
+  // First, ensure we start with a completely clean state
+  try {
+    await supabase.auth.signOut({ scope: 'global' });
+  } catch (cleanupError) {
+    console.log('Supabase: Initial cleanup error (expected):', cleanupError);
+  }
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -81,40 +88,69 @@ export const signIn = async (email: string, password: string) => {
   if (error) {
     console.error('Supabase: Sign in failed:', error);
     
-    // Ensure no session exists after failed login
-    if (error.message.includes('Invalid login credentials') || 
-        error.message.includes('Email not confirmed') ||
-        error.message.includes('Invalid email or password')) {
-      
-      console.log('Supabase: Clearing any existing session after failed login');
-      
+    // For ANY error, ensure no session exists
+    console.log('Supabase: Ensuring no session exists after failed login');
+    
+    try {
       // Force sign out to clear any potential session artifacts
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Clear any auth tokens from storage
-      try {
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.startsWith('sb-') && key.includes('auth-token')) {
-            localStorage.removeItem(key);
-            console.log('Supabase: Removed auth token:', key);
-          }
-        });
-      } catch (storageError) {
-        console.error('Supabase: Failed to clear storage:', storageError);
-      }
+      // Clear any auth tokens from storage immediately
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('sb-') && (key.includes('auth-token') || key.includes('auth'))) {
+          localStorage.removeItem(key);
+          console.log('Supabase: Removed auth token:', key);
+        }
+      });
+      
+      // Also clear from sessionStorage
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.startsWith('sb-') && (key.includes('auth-token') || key.includes('auth'))) {
+          sessionStorage.removeItem(key);
+          console.log('Supabase: Removed session auth token:', key);
+        }
+      });
+      
+    } catch (storageError) {
+      console.error('Supabase: Failed to clear storage after failed login:', storageError);
     }
     
+    // Throw the original error to be handled by the auth store
     throw new Error(handleSupabaseError(error, 'sign in'));
   }
   
   // Verify that we actually have a valid session and user
   if (!data.session || !data.user) {
     console.error('Supabase: Sign in succeeded but no session/user returned');
+    
+    // Clean up any potential artifacts
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (cleanupError) {
+      console.error('Supabase: Cleanup error after invalid session:', cleanupError);
+    }
+    
     throw new Error('Authentication failed - no session created');
   }
   
-  console.log('Supabase: Sign in successful for user:', data.user.id);
+  // Additional verification: check that the session is actually valid
+  try {
+    const { data: sessionCheck, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !sessionCheck.session || sessionCheck.session.user.id !== data.user.id) {
+      console.error('Supabase: Session verification failed');
+      await supabase.auth.signOut({ scope: 'global' });
+      throw new Error('Session verification failed');
+    }
+  } catch (verificationError) {
+    console.error('Supabase: Session verification error:', verificationError);
+    await supabase.auth.signOut({ scope: 'global' });
+    throw new Error('Session verification failed');
+  }
+  
+  console.log('Supabase: Sign in successful and verified for user:', data.user.id);
   return data;
 };
 

@@ -187,41 +187,71 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
-          // Clear any existing session before attempting login
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (currentSession.session) {
-            console.log('AuthStore: Clearing existing session before login');
-            await supabase.auth.signOut({ scope: 'global' });
-          }
+          // Step 1: Clear any existing session before attempting login
+          console.log('AuthStore: Clearing any existing session before login attempt');
+          await supabase.auth.signOut({ scope: 'global' });
+          clearAllAuthStorage();
           
+          // Step 2: Wait a moment to ensure cleanup is complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Step 3: Attempt login
+          console.log('AuthStore: Attempting Supabase sign in');
           const { user: supabaseUser } = await signIn(email, password);
           
-          if (supabaseUser) {
-            // Verify the session was actually created
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (!session) {
-              console.error('AuthStore: Login succeeded but no session found');
-              // Clear any potential auth artifacts
-              clearAllAuthStorage();
-              return false;
-            }
-            
-            await get().refreshUser();
-            console.log('AuthStore: Login successful');
-            return true;
+          if (!supabaseUser) {
+            console.error('AuthStore: Sign in returned no user');
+            return false;
           }
           
-          return false;
-        } catch (error) {
-          console.error('AuthStore: Login failed:', error);
+          // Step 4: Verify the session was actually created and is valid
+          console.log('AuthStore: Verifying session after login');
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
-          // Ensure clean state after failed login
+          if (sessionError) {
+            console.error('AuthStore: Session verification failed:', sessionError);
+            await supabase.auth.signOut({ scope: 'global' });
+            clearAllAuthStorage();
+            return false;
+          }
+          
+          if (!session || !session.user || session.user.id !== supabaseUser.id) {
+            console.error('AuthStore: Invalid session after login');
+            await supabase.auth.signOut({ scope: 'global' });
+            clearAllAuthStorage();
+            return false;
+          }
+          
+          // Step 5: Refresh user profile from database
+          console.log('AuthStore: Refreshing user profile');
+          await get().refreshUser();
+          
+          // Step 6: Final verification that user was set in store
+          const currentState = get();
+          if (!currentState.user || !currentState.isAuthenticated) {
+            console.error('AuthStore: User not set in store after successful login');
+            await supabase.auth.signOut({ scope: 'global' });
+            clearAllAuthStorage();
+            return false;
+          }
+          
+          console.log('AuthStore: Login successful for user:', supabaseUser.id);
+          return true;
+          
+        } catch (error) {
+          console.error('AuthStore: Login failed with error:', error);
+          
+          // Ensure completely clean state after any login failure
           set({ user: null, isAuthenticated: false });
           
-          // Clear any potential session artifacts
+          // Force cleanup of any potential session artifacts
           try {
+            console.log('AuthStore: Performing cleanup after login failure');
             await supabase.auth.signOut({ scope: 'global' });
+            clearAllAuthStorage();
+            
+            // Additional cleanup - wait and clear again to be absolutely sure
+            await new Promise(resolve => setTimeout(resolve, 100));
             clearAllAuthStorage();
           } catch (cleanupError) {
             console.error('AuthStore: Failed to cleanup after login error:', cleanupError);
