@@ -168,23 +168,72 @@ const Settings: React.FC = () => {
     }
   };
 
+  /**
+   * Handle account deletion using Supabase
+   * Deletes user from public.users table which cascades to auth.users and all related data
+   * Implements proper error handling and user feedback
+   */
   const handleDeleteAccount = async () => {
-    console.log('Settings: Deleting user account');
+    if (!user) {
+      toast.error('No user session found');
+      return;
+    }
+
+    console.log('Settings: Starting account deletion process for user:', user.id);
     setIsLoading(true);
     
     try {
-      // Simulate API call - replace with actual account deletion
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      logout();
-      toast.success('Account deleted successfully');
-      navigate('/');
+      // Step 1: Delete user profile from public.users table
+      // This will cascade delete all related data (resumes, applications, support_tickets)
+      // due to foreign key constraints with ON DELETE CASCADE
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', user.id);
+      
+      if (deleteError) {
+        console.error('Settings: Failed to delete user profile:', deleteError);
+        
+        // Handle specific error cases
+        if (deleteError.code === 'PGRST301') {
+          toast.error('Permission denied. Please contact support for account deletion.');
+        } else if (deleteError.message.includes('violates foreign key constraint')) {
+          toast.error('Cannot delete account due to existing data. Please contact support.');
+        } else {
+          toast.error('Failed to delete account. Please try again or contact support.');
+        }
+        return;
+      }
+
+      console.log('Settings: User profile deleted successfully, cascading to auth user');
+
+      // Step 2: Sign out the user (this will also clean up the auth session)
+      const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (signOutError) {
+        console.error('Settings: Sign out after deletion failed:', signOutError);
+        // Don't show error to user as the account is already deleted
+      }
+
+      // Step 3: Clear local state and redirect
+      console.log('Settings: Account deletion completed successfully');
+      toast.success('Account deleted successfully. We\'re sorry to see you go!');
+      
+      // Use the logout function to clear all local state and redirect
+      await logout();
+      
     } catch (error) {
-      console.error('Settings: Account deletion failed:', error);
-      toast.error('Failed to delete account');
+      console.error('Settings: Account deletion failed with unexpected error:', error);
+      toast.error('An unexpected error occurred during account deletion. Please contact support.');
     } finally {
       setIsLoading(false);
       setShowDeleteModal(false);
     }
+  };
+
+  const handleUpgradeClick = () => {
+    console.log('Settings: Opening upgrade modal');
+    setShowUpgradeModal(true);
   };
 
   const handleExportData = () => {
@@ -207,11 +256,6 @@ const Settings: React.FC = () => {
     URL.revokeObjectURL(url);
     
     toast.success('Data exported successfully!');
-  };
-
-  const handleUpgradeClick = () => {
-    console.log('Settings: Opening upgrade modal');
-    setShowUpgradeModal(true);
   };
 
   const getPlanBadgeColor = (plan: string) => {
@@ -764,11 +808,12 @@ const Settings: React.FC = () => {
                         Danger Zone
                       </h2>
                       <p className="text-red-700 dark:text-red-300 mb-6">
-                        Once you delete your account, there is no going back. This action cannot be undone.
+                        Once you delete your account, there is no going back. This action cannot be undone and will permanently delete all your data including resumes, applications, and support tickets.
                       </p>
                       <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+                        disabled={isLoading}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span>Delete Account</span>
@@ -855,14 +900,27 @@ const Settings: React.FC = () => {
               </div>
             </div>
             
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete your account? All your data, including resumes and settings, will be permanently removed.
-            </p>
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete your account? This will permanently remove:
+              </p>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
+                <li>• Your profile and account settings</li>
+                <li>• All saved resumes and versions</li>
+                <li>• Job application tracking data</li>
+                <li>• Support ticket history</li>
+                <li>• Usage analytics and preferences</li>
+              </ul>
+              <p className="text-red-600 dark:text-red-400 text-sm font-medium mt-4">
+                This action cannot be undone and your data cannot be recovered.
+              </p>
+            </div>
             
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                disabled={isLoading}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -876,7 +934,7 @@ const Settings: React.FC = () => {
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
-                <span>Delete</span>
+                <span>Delete Forever</span>
               </button>
             </div>
           </motion.div>
