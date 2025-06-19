@@ -166,3 +166,44 @@ export const resetPassword = async (email: string) => {
     throw new Error(handleSupabaseError(error, 'password reset'));
   }
 };
+
+/**
+ * Delete user account completely using Supabase Edge Function
+ * This function calls the delete-user edge function which uses admin privileges
+ * to delete the user from auth.users, cascading to all related data
+ */
+export const deleteUserAccount = async (): Promise<void> => {
+  console.log('Supabase: Starting complete account deletion process');
+  
+  try {
+    // Get current session to include in request
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      throw new Error('No valid session found for account deletion');
+    }
+
+    // Call the edge function to delete the user
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) {
+      console.error('Supabase: Edge function error:', error);
+      throw new Error(`Account deletion failed: ${error.message}`);
+    }
+
+    if (!data?.success) {
+      console.error('Supabase: Edge function returned failure:', data);
+      throw new Error(data?.error || 'Account deletion failed');
+    }
+
+    console.log('Supabase: Account deletion completed successfully');
+    
+  } catch (error) {
+    console.error('Supabase: Account deletion failed:', error);
+    throw error;
+  }
+};

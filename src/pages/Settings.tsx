@@ -30,7 +30,7 @@ import { UpgradeModal } from '../components/UpgradeModal';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useResumeStore } from '../store/resumeStore';
-import { supabase } from '../lib/supabase';
+import { supabase, deleteUserAccount } from '../lib/supabase';
 import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
@@ -169,8 +169,8 @@ const Settings: React.FC = () => {
   };
 
   /**
-   * Handle account deletion using Supabase
-   * Deletes user from public.users table which cascades to auth.users and all related data
+   * Handle complete account deletion using Supabase Edge Function
+   * Deletes user from auth.users table which cascades to all related data
    * Implements proper error handling and user feedback
    */
   const handleDeleteAccount = async () => {
@@ -179,43 +179,13 @@ const Settings: React.FC = () => {
       return;
     }
 
-    console.log('Settings: Starting account deletion process for user:', user.id);
+    console.log('Settings: Starting complete account deletion process for user:', user.id);
     setIsLoading(true);
     
     try {
-      // Step 1: Delete user profile from public.users table
-      // This will cascade delete all related data (resumes, applications, support_tickets)
-      // due to foreign key constraints with ON DELETE CASCADE
-      const { error: deleteError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user.id);
-      
-      if (deleteError) {
-        console.error('Settings: Failed to delete user profile:', deleteError);
-        
-        // Handle specific error cases
-        if (deleteError.code === 'PGRST301') {
-          toast.error('Permission denied. Please contact support for account deletion.');
-        } else if (deleteError.message.includes('violates foreign key constraint')) {
-          toast.error('Cannot delete account due to existing data. Please contact support.');
-        } else {
-          toast.error('Failed to delete account. Please try again or contact support.');
-        }
-        return;
-      }
+      // Call the edge function to completely delete the user account
+      await deleteUserAccount();
 
-      console.log('Settings: User profile deleted successfully, cascading to auth user');
-
-      // Step 2: Sign out the user (this will also clean up the auth session)
-      const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (signOutError) {
-        console.error('Settings: Sign out after deletion failed:', signOutError);
-        // Don't show error to user as the account is already deleted
-      }
-
-      // Step 3: Clear local state and redirect
       console.log('Settings: Account deletion completed successfully');
       toast.success('Account deleted successfully. We\'re sorry to see you go!');
       
@@ -223,8 +193,21 @@ const Settings: React.FC = () => {
       await logout();
       
     } catch (error) {
-      console.error('Settings: Account deletion failed with unexpected error:', error);
-      toast.error('An unexpected error occurred during account deletion. Please contact support.');
+      console.error('Settings: Account deletion failed:', error);
+      
+      // Handle specific error cases
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('No valid session')) {
+        toast.error('Session expired. Please sign in again to delete your account.');
+        logout();
+      } else if (errorMessage.includes('Permission denied')) {
+        toast.error('Permission denied. Please contact support for account deletion.');
+      } else if (errorMessage.includes('Edge function')) {
+        toast.error('Account deletion service is temporarily unavailable. Please try again later or contact support.');
+      } else {
+        toast.error('Failed to delete account. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setIsLoading(false);
       setShowDeleteModal(false);
