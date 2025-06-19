@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
       
       /**
        * Refresh user data from database
-       * Uses single() to ensure authenticated users have valid profiles
+       * Handles cases where user profile might not exist yet (race conditions during registration)
        */
       refreshUser: async () => {
         try {
@@ -142,18 +142,31 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
           
-          // Get user profile from database - use single() to treat missing profiles as errors
-          const { data: userProfile, error } = await supabase
+          // Get user profile from database - remove single() to handle missing profiles gracefully
+          const { data: userProfiles, error } = await supabase
             .from('users')
             .select('*')
-            .eq('id', supabaseUser.id)
-            .single();
+            .eq('id', supabaseUser.id);
           
           if (error) {
             console.error('AuthStore: Failed to fetch user profile:', error);
             set({ user: null, isAuthenticated: false });
             return;
           }
+          
+          // Check if profile exists
+          if (!userProfiles || userProfiles.length === 0) {
+            console.warn('AuthStore: User profile not found, this may be a temporary race condition during registration');
+            set({ user: null, isAuthenticated: false });
+            return;
+          }
+          
+          // Handle multiple profiles (shouldn't happen but be defensive)
+          if (userProfiles.length > 1) {
+            console.warn('AuthStore: Multiple user profiles found, using the first one');
+          }
+          
+          const userProfile = userProfiles[0];
           
           const user: User = {
             id: userProfile.id,
@@ -215,21 +228,33 @@ export const useAuthStore = create<AuthState>()(
             return false;
           }
           
-          // Step 5: Refresh user profile from database
+          // Step 5: Refresh user profile from database with retry logic for race conditions
           console.log('AuthStore: Refreshing user profile');
-          await get().refreshUser();
+          let retryCount = 0;
+          const maxRetries = 3;
           
-          // Step 6: Final verification that user was set in store
-          const currentState = get();
-          if (!currentState.user || !currentState.isAuthenticated) {
-            console.error('AuthStore: User not set in store after successful login');
-            await supabase.auth.signOut({ scope: 'global' });
-            clearAllAuthStorage();
-            return false;
+          while (retryCount < maxRetries) {
+            await get().refreshUser();
+            
+            const currentState = get();
+            if (currentState.user && currentState.isAuthenticated) {
+              console.log('AuthStore: Login successful for user:', supabaseUser.id);
+              return true;
+            }
+            
+            // If profile not found, wait and retry (handles race condition during registration)
+            retryCount++;
+            if (retryCount < maxRetries) {
+              console.log(`AuthStore: Profile not found, retrying (${retryCount}/${maxRetries})...`);
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
           
-          console.log('AuthStore: Login successful for user:', supabaseUser.id);
-          return true;
+          // If we get here, profile fetch failed after all retries
+          console.error('AuthStore: User profile not found after all retries');
+          await supabase.auth.signOut({ scope: 'global' });
+          clearAllAuthStorage();
+          return false;
           
         } catch (error) {
           console.error('AuthStore: Login failed with error:', error);
