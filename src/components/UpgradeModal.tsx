@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -22,6 +22,7 @@ interface UpgradeModalProps {
 /**
  * Upgrade modal component for in-app plan upgrades
  * Provides seamless upgrade experience without redirecting to landing page
+ * Prevents body scroll and ensures proper content visibility
  */
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ 
   isOpen, 
@@ -34,6 +35,22 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<'premium' | 'pro' | 'lifetime' | null>(null);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Store original overflow style
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      
+      // Prevent scrolling
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup function to restore scroll
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
 
   const plans = [
     {
@@ -139,16 +156,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-6xl max-h-[90vh] overflow-hidden"
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Upgrade Your Plan
@@ -168,7 +185,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           </div>
 
           {/* Current Plan Info */}
-          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Current Plan:</span>
@@ -189,7 +206,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           </div>
 
           {/* Billing Toggle */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-center">
               <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center">
                 <button
@@ -221,157 +238,159 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             </div>
           </div>
 
-          {/* Plans */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
-            <div className="grid md:grid-cols-3 gap-6">
-              {plans.map((plan) => {
-                const PlanIcon = plan.icon;
-                const isCurrentlySelected = selectedPlan === plan.id;
-                const isCurrentPlan = currentPlan === plan.id;
-                
-                return (
-                  <motion.div
-                    key={plan.id}
-                    whileHover={{ scale: plan.disabled ? 1 : 1.02 }}
-                    className={`relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border transition-all duration-300 ${
-                      plan.isPopular && !plan.disabled
-                        ? 'border-purple-500 ring-2 ring-purple-500/20 scale-105' 
-                        : plan.disabled
-                        ? 'border-gray-200 dark:border-gray-700 opacity-60'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
-                    }`}
-                  >
-                    {/* Popular badge */}
-                    {plan.isPopular && !plan.disabled && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                          Most Popular
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Lifetime badge */}
-                    {plan.isLifetime && !plan.disabled && (
-                      <div className="absolute -top-4 right-8">
-                        <div className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
-                          <Crown className="h-4 w-4" />
-                          <span>Limited Time</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Current plan badge */}
-                    {isCurrentPlan && (
-                      <div className="absolute -top-4 left-8">
-                        <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
-                          <Check className="h-4 w-4" />
-                          <span>Current Plan</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Header */}
-                    <div className="text-center mb-6">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${plan.color} flex items-center justify-center mb-4 mx-auto`}>
-                        <PlanIcon className="h-6 w-6 text-white" />
-                      </div>
-                      
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        {plan.name}
-                      </h3>
-                      
-                      <div className="flex items-baseline justify-center mb-4">
-                        <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                          {plan.price}
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-400 ml-2">
-                          {plan.period}
-                        </span>
-                      </div>
-                      
-                      {plan.originalPrice && plan.savings && (
-                        <div className="text-center mb-2">
-                          <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                            {plan.originalPrice}
-                          </span>
-                          <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
-                            {plan.savings}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        {plan.description}
-                      </p>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-3 mb-6">
-                      {plan.features.map((feature, index) => (
-                        <div key={index} className="flex items-start space-x-3">
-                          <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                            plan.isPopular && !plan.disabled
-                              ? 'bg-purple-100 dark:bg-purple-900' 
-                              : 'bg-green-100 dark:bg-green-900'
-                          }`}>
-                            <Check className={`h-3 w-3 ${
-                              plan.isPopular && !plan.disabled
-                                ? 'text-purple-600 dark:text-purple-400' 
-                                : 'text-green-600 dark:text-green-400'
-                            }`} />
-                          </div>
-                          <span className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA Button */}
-                    <button
-                      onClick={() => handleUpgrade(plan.id)}
-                      disabled={plan.disabled || isProcessing}
-                      className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                        plan.disabled
-                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                          : isCurrentlySelected && isProcessing
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : plan.isPopular
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
-                          : plan.isLifetime
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
-                          : 'bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900'
+          {/* Plans - Scrollable Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6">
+              <div className="grid md:grid-cols-3 gap-6">
+                {plans.map((plan) => {
+                  const PlanIcon = plan.icon;
+                  const isCurrentlySelected = selectedPlan === plan.id;
+                  const isCurrentPlan = currentPlan === plan.id;
+                  
+                  return (
+                    <motion.div
+                      key={plan.id}
+                      whileHover={{ scale: plan.disabled ? 1 : 1.02 }}
+                      className={`relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border transition-all duration-300 ${
+                        plan.isPopular && !plan.disabled
+                          ? 'border-purple-500 ring-2 ring-purple-500/20' 
+                          : plan.disabled
+                          ? 'border-gray-200 dark:border-gray-700 opacity-60'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
                       }`}
                     >
-                      {isCurrentlySelected && isProcessing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Processing...</span>
-                        </>
-                      ) : plan.disabled ? (
-                        isCurrentPlan ? 'Current Plan' : 'Not Available'
-                      ) : (
-                        <>
-                          <CreditCard className="h-4 w-4" />
-                          <span>Upgrade to {plan.name}</span>
-                        </>
+                      {/* Popular badge */}
+                      {plan.isPopular && !plan.disabled && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                          <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap">
+                            Most Popular
+                          </span>
+                        </div>
                       )}
-                    </button>
 
-                    {/* Guarantee for lifetime */}
-                    {plan.isLifetime && !plan.disabled && (
-                      <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-                        60-day money-back guarantee
-                      </p>
-                    )}
-                  </motion.div>
-                );
-              })}
+                      {/* Lifetime badge */}
+                      {plan.isLifetime && !plan.disabled && (
+                        <div className="absolute -top-3 right-4 z-10">
+                          <div className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 whitespace-nowrap">
+                            <Crown className="h-4 w-4" />
+                            <span>Limited Time</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Current plan badge */}
+                      {isCurrentPlan && (
+                        <div className="absolute -top-3 left-4 z-10">
+                          <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 whitespace-nowrap">
+                            <Check className="h-4 w-4" />
+                            <span>Current Plan</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Header */}
+                      <div className="text-center mb-6 pt-4">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${plan.color} flex items-center justify-center mb-4 mx-auto`}>
+                          <PlanIcon className="h-6 w-6 text-white" />
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                          {plan.name}
+                        </h3>
+                        
+                        <div className="flex items-baseline justify-center mb-4">
+                          <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                            {plan.price}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">
+                            {plan.period}
+                          </span>
+                        </div>
+                        
+                        {plan.originalPrice && plan.savings && (
+                          <div className="text-center mb-2">
+                            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                              {plan.originalPrice}
+                            </span>
+                            <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
+                              {plan.savings}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          {plan.description}
+                        </p>
+                      </div>
+
+                      {/* Features */}
+                      <div className="space-y-3 mb-6">
+                        {plan.features.map((feature, index) => (
+                          <div key={index} className="flex items-start space-x-3">
+                            <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
+                              plan.isPopular && !plan.disabled
+                                ? 'bg-purple-100 dark:bg-purple-900' 
+                                : 'bg-green-100 dark:bg-green-900'
+                            }`}>
+                              <Check className={`h-3 w-3 ${
+                                plan.isPopular && !plan.disabled
+                                  ? 'text-purple-600 dark:text-purple-400' 
+                                  : 'text-green-600 dark:text-green-400'
+                              }`} />
+                            </div>
+                            <span className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                              {feature}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA Button */}
+                      <button
+                        onClick={() => handleUpgrade(plan.id)}
+                        disabled={plan.disabled || isProcessing}
+                        className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                          plan.disabled
+                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : isCurrentlySelected && isProcessing
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : plan.isPopular
+                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+                            : plan.isLifetime
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
+                            : 'bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900'
+                        }`}
+                      >
+                        {isCurrentlySelected && isProcessing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : plan.disabled ? (
+                          isCurrentPlan ? 'Current Plan' : 'Not Available'
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4" />
+                            <span>Upgrade to {plan.name}</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* Guarantee for lifetime */}
+                      {plan.isLifetime && !plan.disabled && (
+                        <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+                          60-day money-back guarantee
+                        </p>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center space-x-2">
                 <Shield className="h-4 w-4" />
