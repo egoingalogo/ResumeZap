@@ -545,7 +545,7 @@ const Settings: React.FC = () => {
                           </p>
                         </div>
                         
-                        {user.plan === 'free' && (
+                        {user.plan !== 'pro' && user.plan !== 'lifetime' && (
                           <button
                             onClick={handleUpgradeClick}
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
