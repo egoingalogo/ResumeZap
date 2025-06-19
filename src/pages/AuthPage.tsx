@@ -253,7 +253,7 @@ const AuthPage: React.FC = () => {
             `This email is already registered. Please sign in instead or use a different email address.`,
             { duration: 5000 }
           );
-          // Optionally switch to login mode
+          // Switch to login mode when user already exists
           setMode('login');
         } else if (mode === 'login' && (
           errorMessage.includes('invalid credentials') ||
