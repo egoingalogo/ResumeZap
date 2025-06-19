@@ -369,20 +369,6 @@ const AuthPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Getting Started Info */}
-            {mode === 'login' && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-400 mb-2">
-                  Getting Started:
-                </h3>
-                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                  <div>• <strong>New user?</strong> Click "Sign Up" below to create an account</div>
-                  <div>• <strong>Existing user?</strong> Enter your registered email and password</div>
-                  <div>• <strong>Demo?</strong> Create a test account to explore features</div>
-                </div>
-              </div>
-            )}
-
             {mode === 'register' && (
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -464,9 +450,6 @@ const AuthPage: React.FC = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                At least 8 characters, including uppercase A–Z, lowercase a–z, and numbers 0–9.
-              </p>
               {hasError('password') && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
               )}
