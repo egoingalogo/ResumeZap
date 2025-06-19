@@ -152,6 +152,79 @@ export interface Database {
           updated_at?: string
         }
       }
+      skill_analyses: {
+        Row: {
+          id: string
+          user_id: string
+          resume_id: string | null
+          job_posting_content: string
+          resume_content_snapshot: string
+          analysis_date: string
+          overall_summary: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          resume_id?: string | null
+          job_posting_content: string
+          resume_content_snapshot: string
+          analysis_date?: string
+          overall_summary?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          resume_id?: string | null
+          job_posting_content?: string
+          resume_content_snapshot?: string
+          analysis_date?: string
+          overall_summary?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      skill_recommendations: {
+        Row: {
+          id: string
+          skill_analysis_id: string
+          skill_name: string
+          importance: 'low' | 'medium' | 'high'
+          has_skill: boolean
+          recommended_courses: Json
+          recommended_resources: Json
+          time_estimate: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          skill_analysis_id: string
+          skill_name: string
+          importance?: 'low' | 'medium' | 'high'
+          has_skill?: boolean
+          recommended_courses?: Json
+          recommended_resources?: Json
+          time_estimate?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          skill_analysis_id?: string
+          skill_name?: string
+          importance?: 'low' | 'medium' | 'high'
+          has_skill?: boolean
+          recommended_courses?: Json
+          recommended_resources?: Json
+          time_estimate?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -164,6 +237,7 @@ export interface Database {
       application_status: 'applied' | 'interview' | 'offer' | 'rejected'
       ticket_priority: 'low' | 'medium' | 'high'
       ticket_status: 'open' | 'in_progress' | 'resolved' | 'closed'
+      skill_importance: 'low' | 'medium' | 'high'
     }
   }
 }

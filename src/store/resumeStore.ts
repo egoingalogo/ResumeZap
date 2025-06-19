@@ -1,5 +1,14 @@
 import { create } from 'zustand';
 import { supabase, handleSupabaseError } from '../lib/supabase';
+import { 
+  createSkillAnalysis, 
+  fetchSkillAnalyses, 
+  fetchSkillAnalysisById,
+  deleteSkillAnalysis,
+  convertAnalysisToSkillGaps,
+  type SkillGap,
+  type SkillAnalysisWithRecommendations
+} from '../lib/skillAnalysis';
 
 interface Resume {
   id: string;
@@ -12,21 +21,12 @@ interface Resume {
   lastModified: string;
 }
 
-interface SkillGap {
-  skill: string;
-  importance: 'high' | 'medium' | 'low';
-  hasSkill: boolean;
-  recommendations: {
-    courses: string[];
-    resources: string[];
-    timeEstimate: string;
-  };
-}
-
 interface ResumeState {
   resumes: Resume[];
   currentResume: Resume | null;
   skillGaps: SkillGap[];
+  skillAnalyses: SkillAnalysisWithRecommendations[];
+  currentSkillAnalysis: SkillAnalysisWithRecommendations | null;
   isAnalyzing: boolean;
   isLoading: boolean;
   
@@ -36,17 +36,23 @@ interface ResumeState {
   updateResume: (id: string, updates: Partial<Resume>) => Promise<void>;
   deleteResume: (id: string) => Promise<void>;
   setCurrentResume: (resume: Resume | null) => void;
-  analyzeSkillGaps: (resumeContent: string, jobPosting: string) => Promise<void>;
+  analyzeSkillGaps: (resumeContent: string, jobPosting: string, resumeId?: string) => Promise<void>;
+  fetchSkillAnalyses: () => Promise<void>;
+  loadSkillAnalysis: (analysisId: string) => Promise<void>;
+  deleteSkillAnalysis: (analysisId: string) => Promise<void>;
+  clearCurrentSkillAnalysis: () => void;
 }
 
 /**
- * Store for managing resume data with Supabase integration
- * Handles AI-powered resume tailoring and skill gap analysis
+ * Store for managing resume data and skill gap analysis with Supabase integration
+ * Handles AI-powered resume tailoring and persistent skill gap analysis storage
  */
 export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
   skillGaps: [],
+  skillAnalyses: [],
+  currentSkillAnalysis: null,
   isAnalyzing: false,
   isLoading: false,
   
@@ -264,9 +270,10 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze skill gaps (simulated AI analysis)
+   * Analyze skill gaps and save to database
+   * Performs AI analysis and persists results for future reference
    */
-  analyzeSkillGaps: async (resumeContent: string, jobPosting: string) => {
+  analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
     set({ isAnalyzing: true });
     
@@ -315,10 +322,45 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
             timeEstimate: '2-3 weeks',
           },
         },
+        {
+          skill: 'GraphQL',
+          importance: 'low',
+          hasSkill: resumeContent.toLowerCase().includes('graphql'),
+          recommendations: {
+            courses: ['GraphQL Fundamentals', 'Apollo Client'],
+            resources: ['GraphQL.org', 'Apollo Documentation'],
+            timeEstimate: '3-4 weeks',
+          },
+        },
       ];
       
-      set({ skillGaps: mockSkillGaps });
-      console.log('ResumeStore: Skill gap analysis completed');
+      // Generate overall summary
+      const totalSkills = mockSkillGaps.length;
+      const skillsHave = mockSkillGaps.filter(gap => gap.hasSkill).length;
+      const skillsNeed = totalSkills - skillsHave;
+      const highPriorityGaps = mockSkillGaps.filter(gap => gap.importance === 'high' && !gap.hasSkill).length;
+      
+      const overallSummary = `Analysis of ${totalSkills} key skills: You have ${skillsHave} skills and need to develop ${skillsNeed} skills. ${highPriorityGaps} high-priority skills require immediate attention.`;
+      
+      // Save to database
+      const savedAnalysis = await createSkillAnalysis(
+        resumeContent,
+        jobPosting,
+        mockSkillGaps,
+        resumeId || null,
+        overallSummary
+      );
+      
+      // Update local state
+      set({ 
+        skillGaps: mockSkillGaps,
+        currentSkillAnalysis: savedAnalysis,
+      });
+      
+      // Refresh the analyses list
+      await get().fetchSkillAnalyses();
+      
+      console.log('ResumeStore: Skill gap analysis completed and saved');
       
     } catch (error) {
       console.error('ResumeStore: Skill gap analysis failed:', error);
@@ -326,5 +368,90 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     } finally {
       set({ isAnalyzing: false });
     }
+  },
+  
+  /**
+   * Fetch all skill analyses for the current user
+   */
+  fetchSkillAnalyses: async () => {
+    console.log('ResumeStore: Fetching skill analyses');
+    set({ isLoading: true });
+    
+    try {
+      const analyses = await fetchSkillAnalyses();
+      set({ skillAnalyses: analyses });
+      console.log('ResumeStore: Fetched', analyses.length, 'skill analyses');
+    } catch (error) {
+      console.error('ResumeStore: Failed to fetch skill analyses:', error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  /**
+   * Load a specific skill analysis and set it as current
+   */
+  loadSkillAnalysis: async (analysisId: string) => {
+    console.log('ResumeStore: Loading skill analysis:', analysisId);
+    set({ isLoading: true });
+    
+    try {
+      const analysis = await fetchSkillAnalysisById(analysisId);
+      
+      if (analysis) {
+        const skillGaps = convertAnalysisToSkillGaps(analysis);
+        set({ 
+          currentSkillAnalysis: analysis,
+          skillGaps,
+        });
+        console.log('ResumeStore: Skill analysis loaded successfully');
+      } else {
+        console.warn('ResumeStore: Skill analysis not found');
+        set({ 
+          currentSkillAnalysis: null,
+          skillGaps: [],
+        });
+      }
+    } catch (error) {
+      console.error('ResumeStore: Failed to load skill analysis:', error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  /**
+   * Delete a skill analysis
+   */
+  deleteSkillAnalysis: async (analysisId: string) => {
+    console.log('ResumeStore: Deleting skill analysis:', analysisId);
+    
+    try {
+      await deleteSkillAnalysis(analysisId);
+      
+      // Update local state
+      set((state) => ({
+        skillAnalyses: state.skillAnalyses.filter(analysis => analysis.id !== analysisId),
+        // Clear current analysis if it was the one deleted
+        currentSkillAnalysis: state.currentSkillAnalysis?.id === analysisId ? null : state.currentSkillAnalysis,
+        skillGaps: state.currentSkillAnalysis?.id === analysisId ? [] : state.skillGaps,
+      }));
+      
+      console.log('ResumeStore: Skill analysis deleted successfully');
+    } catch (error) {
+      console.error('ResumeStore: Failed to delete skill analysis:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Clear current skill analysis and skill gaps
+   */
+  clearCurrentSkillAnalysis: () => {
+    set({ 
+      currentSkillAnalysis: null,
+      skillGaps: [],
+    });
   },
 }));
