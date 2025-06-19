@@ -190,7 +190,7 @@ const AuthPage: React.FC = () => {
   };
 
   /**
-   * Handles form submission with comprehensive validation
+   * Handles form submission with comprehensive validation and specific error handling
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,7 +239,35 @@ const AuthPage: React.FC = () => {
       }
     } catch (error) {
       console.error('AuthPage: Authentication error:', error);
-      toast.error('An unexpected error occurred');
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+        
+        if (mode === 'register' && (
+          errorMessage.includes('user already registered') || 
+          errorMessage.includes('user already exists') ||
+          errorMessage.includes('already registered')
+        )) {
+          toast.error(
+            `This email is already registered. Please sign in instead or use a different email address.`,
+            { duration: 5000 }
+          );
+          // Optionally switch to login mode
+          setMode('login');
+        } else if (mode === 'login' && (
+          errorMessage.includes('invalid credentials') ||
+          errorMessage.includes('invalid login') ||
+          errorMessage.includes('email not confirmed')
+        )) {
+          toast.error('Invalid email or password. Please check your credentials and try again.');
+        } else {
+          // Generic error fallback
+          toast.error(mode === 'register' ? 'Registration failed. Please try again.' : 'Login failed. Please try again.');
+        }
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

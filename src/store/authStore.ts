@@ -282,7 +282,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Register new user
+       * Register new user with proper error propagation
        */
       register: async (email: string, password: string, name: string) => {
         console.log('AuthStore: Attempting registration for:', email);
@@ -333,7 +333,8 @@ export const useAuthStore = create<AuthState>()(
           return false;
         } catch (error) {
           console.error('AuthStore: Registration failed:', error);
-          return false;
+          // Re-throw the error to allow the calling component to handle it specifically
+          throw error;
         } finally {
           set({ isLoading: false });
         }
