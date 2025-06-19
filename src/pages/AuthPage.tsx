@@ -478,6 +478,12 @@ const AuthPage: React.FC = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {/* Show helper text only in registration mode */}
+              {mode === 'register' && (
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  At least 8 characters, including uppercase A–Z, lowercase a–z, and numbers 0–9.
+                </p>
+              )}
               {hasError('password') && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
               )}
