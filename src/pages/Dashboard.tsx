@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
@@ -14,6 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { UpgradeModal } from '../components/UpgradeModal';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -27,6 +28,7 @@ const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, upgradePlan, isLoading } = useAuthStore();
   const { resumes, fetchResumes } = useResumeStore();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   console.log('Dashboard: Component mounted for user:', user?.email);
 
@@ -155,6 +157,11 @@ const Dashboard: React.FC = () => {
     navigate(action.path);
   };
 
+  const handleUpgradeClick = () => {
+    console.log('Dashboard: Opening upgrade modal');
+    setShowUpgradeModal(true);
+  };
+
   return (
     <div>
       <Navbar />
@@ -188,7 +195,7 @@ const Dashboard: React.FC = () => {
                 
                 {user.plan === 'free' && (
                   <button
-                    onClick={() => navigate('/#pricing')}
+                    onClick={handleUpgradeClick}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200"
                   >
                     Upgrade
@@ -396,6 +403,13 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={user.plan}
+      />
     </div>
   );
 };

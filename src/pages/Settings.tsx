@@ -26,6 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { UpgradeModal } from '../components/UpgradeModal';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useResumeStore } from '../store/resumeStore';
@@ -45,6 +46,7 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'billing' | 'notifications' | 'security' | 'data'>('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
@@ -160,6 +162,11 @@ const Settings: React.FC = () => {
     URL.revokeObjectURL(url);
     
     toast.success('Data exported successfully!');
+  };
+
+  const handleUpgradeClick = () => {
+    console.log('Settings: Opening upgrade modal');
+    setShowUpgradeModal(true);
   };
 
   const getPlanBadgeColor = (plan: string) => {
@@ -468,7 +475,7 @@ const Settings: React.FC = () => {
                         
                         {user.plan === 'free' && (
                           <button
-                            onClick={() => navigate('/#pricing')}
+                            onClick={handleUpgradeClick}
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
                           >
                             <Zap className="h-4 w-4" />
@@ -821,6 +828,13 @@ const Settings: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={user.plan}
+      />
     </div>
   );
 };
