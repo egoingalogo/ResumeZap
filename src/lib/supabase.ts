@@ -67,18 +67,54 @@ export const signUp = async (email: string, password: string, name: string) => {
 };
 
 /**
- * Sign in an existing user
+ * Sign in an existing user with proper error handling
+ * Ensures no session is created for invalid credentials
  */
 export const signIn = async (email: string, password: string) => {
+  console.log('Supabase: Attempting sign in for:', email);
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
   
   if (error) {
+    console.error('Supabase: Sign in failed:', error);
+    
+    // Ensure no session exists after failed login
+    if (error.message.includes('Invalid login credentials') || 
+        error.message.includes('Email not confirmed') ||
+        error.message.includes('Invalid email or password')) {
+      
+      console.log('Supabase: Clearing any existing session after failed login');
+      
+      // Force sign out to clear any potential session artifacts
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear any auth tokens from storage
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith('sb-') && key.includes('auth-token')) {
+            localStorage.removeItem(key);
+            console.log('Supabase: Removed auth token:', key);
+          }
+        });
+      } catch (storageError) {
+        console.error('Supabase: Failed to clear storage:', storageError);
+      }
+    }
+    
     throw new Error(handleSupabaseError(error, 'sign in'));
   }
   
+  // Verify that we actually have a valid session and user
+  if (!data.session || !data.user) {
+    console.error('Supabase: Sign in succeeded but no session/user returned');
+    throw new Error('Authentication failed - no session created');
+  }
+  
+  console.log('Supabase: Sign in successful for user:', data.user.id);
   return data;
 };
 

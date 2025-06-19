@@ -179,16 +179,34 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Login with email and password
+       * Login with email and password with enhanced error handling
+       * Ensures no session artifacts remain after failed login attempts
        */
       login: async (email: string, password: string) => {
         console.log('AuthStore: Attempting login for:', email);
         set({ isLoading: true });
         
         try {
+          // Clear any existing session before attempting login
+          const { data: currentSession } = await supabase.auth.getSession();
+          if (currentSession.session) {
+            console.log('AuthStore: Clearing existing session before login');
+            await supabase.auth.signOut({ scope: 'global' });
+          }
+          
           const { user: supabaseUser } = await signIn(email, password);
           
           if (supabaseUser) {
+            // Verify the session was actually created
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+              console.error('AuthStore: Login succeeded but no session found');
+              // Clear any potential auth artifacts
+              clearAllAuthStorage();
+              return false;
+            }
+            
             await get().refreshUser();
             console.log('AuthStore: Login successful');
             return true;
@@ -197,6 +215,18 @@ export const useAuthStore = create<AuthState>()(
           return false;
         } catch (error) {
           console.error('AuthStore: Login failed:', error);
+          
+          // Ensure clean state after failed login
+          set({ user: null, isAuthenticated: false });
+          
+          // Clear any potential session artifacts
+          try {
+            await supabase.auth.signOut({ scope: 'global' });
+            clearAllAuthStorage();
+          } catch (cleanupError) {
+            console.error('AuthStore: Failed to cleanup after login error:', cleanupError);
+          }
+          
           return false;
         } finally {
           set({ isLoading: false });
