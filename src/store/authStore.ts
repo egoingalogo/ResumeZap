@@ -8,6 +8,7 @@ interface User {
   email: string;
   name: string;
   plan: 'free' | 'premium' | 'pro' | 'lifetime';
+  profilePictureUrl?: string | null;
   usageThisMonth: {
     resumeTailoring: number;
     coverLetters: number;
@@ -26,6 +27,7 @@ interface AuthState {
   logout: () => Promise<void>;
   updateUsage: (type: 'resumeTailoring' | 'coverLetters') => Promise<void>;
   upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
+  updateProfilePicture: (profilePictureUrl: string | null) => Promise<void>;
   initializeAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
   fetchLifetimeUserCount: () => Promise<void>;
@@ -197,6 +199,7 @@ export const useAuthStore = create<AuthState>()(
             email: userProfile.email,
             name: userProfile.name,
             plan: userProfile.plan,
+            profilePictureUrl: userProfile.profile_picture_url,
             usageThisMonth: userProfile.usage_this_month as any,
             createdAt: userProfile.created_at,
           };
@@ -322,6 +325,7 @@ export const useAuthStore = create<AuthState>()(
               email: supabaseUser.email!,
               name,
               plan: 'free' as const,
+              profile_picture_url: null,
               usage_this_month: {
                 resumeTailoring: 0,
                 coverLetters: 0,
@@ -345,6 +349,7 @@ export const useAuthStore = create<AuthState>()(
               email: insertedProfile.email,
               name: insertedProfile.name,
               plan: insertedProfile.plan,
+              profilePictureUrl: insertedProfile.profile_picture_url,
               usageThisMonth: insertedProfile.usage_this_month as any,
               createdAt: insertedProfile.created_at,
             };
@@ -484,6 +489,41 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('AuthStore: Failed to upgrade plan:', error);
+        }
+      },
+      
+      /**
+       * Update user profile picture URL
+       */
+      updateProfilePicture: async (profilePictureUrl: string | null) => {
+        const { user } = get();
+        if (!user) return;
+        
+        console.log('AuthStore: Updating profile picture URL');
+        
+        try {
+          const { error } = await supabase
+            .from('users')
+            .update({ 
+              profile_picture_url: profilePictureUrl,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', user.id);
+          
+          if (error) {
+            console.error('AuthStore: Failed to update profile picture:', error);
+            return;
+          }
+          
+          // Update local state
+          set({
+            user: {
+              ...user,
+              profilePictureUrl,
+            },
+          });
+        } catch (error) {
+          console.error('AuthStore: Failed to update profile picture:', error);
         }
       },
     }),

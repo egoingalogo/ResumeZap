@@ -23,24 +23,25 @@ import {
   Moon,
   Sun,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Camera
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { UpgradeModal } from '../components/UpgradeModal';
+import { ProfilePictureUpload } from '../components/ProfilePictureUpload';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useResumeStore } from '../store/resumeStore';
 import { supabase, deleteUserAccount } from '../lib/supabase';
-import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
 /**
  * Comprehensive settings page for user profile, subscription, and preferences management
- * Includes security settings, usage analytics, and account customization options
+ * Includes security settings, usage analytics, account customization options, and profile picture upload
  */
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout, upgradePlan, lifetimeUserCount } = useAuthStore();
+  const { user, isAuthenticated, logout, upgradePlan, updateProfilePicture, lifetimeUserCount } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { resumes } = useResumeStore();
   
@@ -242,6 +243,21 @@ const Settings: React.FC = () => {
     toast.success('Data exported successfully!');
   };
 
+  /**
+   * Handle profile picture update from the upload component
+   */
+  const handleProfilePictureUpdate = async (newImageUrl: string | null) => {
+    console.log('Settings: Profile picture updated:', newImageUrl);
+    
+    try {
+      await updateProfilePicture(newImageUrl);
+      console.log('Settings: Profile picture updated in store');
+    } catch (error) {
+      console.error('Settings: Failed to update profile picture in store:', error);
+      toast.error('Failed to update profile picture');
+    }
+  };
+
   const getPlanBadgeColor = (plan: string) => {
     switch (plan) {
       case 'premium': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
@@ -347,14 +363,57 @@ const Settings: React.FC = () => {
                 {/* Profile Tab */}
                 {activeTab === 'profile' && (
                   <div className="space-y-6">
+                    {/* Profile Picture Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                        Profile Picture
+                      </h2>
+                      
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-8">
+                        <div className="flex-shrink-0 mb-6 lg:mb-0">
+                          <ProfilePictureUpload
+                            currentImageUrl={user.profilePictureUrl}
+                            onImageUpdate={handleProfilePictureUpdate}
+                            size="lg"
+                          />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            Upload Guidelines
+                          </h3>
+                          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            <li>• Use a clear, professional photo</li>
+                            <li>• Square images work best (1:1 aspect ratio)</li>
+                            <li>• Maximum file size: 10MB</li>
+                            <li>• Supported formats: JPEG, PNG, WebP</li>
+                            <li>• Images are automatically optimized for web</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Profile Information */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                         Profile Information
                       </h2>
                       
                       <div className="flex items-center space-x-6 mb-8">
-                        <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                          <User className="h-10 w-10 text-white" />
+                        <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                          {user.profilePictureUrl ? (
+                            <img
+                              src={user.profilePictureUrl}
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Settings: Failed to load profile picture:', user.profilePictureUrl);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <User className="h-10 w-10 text-white" />
+                          )}
                         </div>
                         <div>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -898,6 +957,7 @@ const Settings: React.FC = () => {
                 <li>• Job application tracking data</li>
                 <li>• Support ticket history</li>
                 <li>• Usage analytics and preferences</li>
+                <li>• Profile picture and personal data</li>
               </ul>
               <p className="text-red-600 dark:text-red-400 text-sm font-medium mt-4">
                 This action cannot be undone and your data cannot be recovered.

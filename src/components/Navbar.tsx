@@ -22,6 +22,7 @@ interface NavbarProps {
 /**
  * Navigation bar component with responsive design and theme toggle
  * Handles user authentication state and subscription plan display
+ * Shows user profile picture when available
  */
 export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const location = useLocation();
@@ -33,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const profileDropdownRef = React.useRef<HTMLDivElement>(null);
   
   console.log('Navbar: Rendering with authentication state:', isAuthenticated);
+  console.log('Navbar: User profile picture URL:', user?.profilePictureUrl);
 
   // Handle click outside to close profile dropdown
   React.useEffect(() => {
@@ -197,8 +199,21 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                     disabled={isLoggingOut}
                     className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
                   >
-                    <div className="h-8 w-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
+                    <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600">
+                      {user?.profilePictureUrl ? (
+                        <img
+                          src={user.profilePictureUrl}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Navbar: Failed to load profile picture:', user.profilePictureUrl);
+                            // Hide the image and show fallback
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <User className="h-4 w-4 text-white" />
+                      )}
                     </div>
                     <div className="hidden md:block text-left">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
