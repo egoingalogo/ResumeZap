@@ -164,13 +164,15 @@ export const compressImage = async (
 
 /**
  * Generate a unique filename for storage
+ * Returns path relative to the storage bucket (not including bucket name)
  */
 export const generateImageFilename = (userId: string, originalName: string): string => {
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(2, 8);
   const extension = 'webp'; // Always use WebP for compressed images
   
-  return `profile-pictures/${userId}/${timestamp}-${randomString}.${extension}`;
+  // Return path relative to bucket: userId/filename.webp
+  return `${userId}/${timestamp}-${randomString}.${extension}`;
 };
 
 /**

@@ -18,6 +18,7 @@ export interface Database {
           usage_this_month: Json
           created_at: string
           updated_at: string
+          profile_picture_url: string | null
         }
         Insert: {
           id: string
@@ -27,6 +28,7 @@ export interface Database {
           usage_this_month?: Json
           created_at?: string
           updated_at?: string
+          profile_picture_url?: string | null
         }
         Update: {
           id?: string
@@ -36,6 +38,7 @@ export interface Database {
           usage_this_month?: Json
           created_at?: string
           updated_at?: string
+          profile_picture_url?: string | null
         }
       }
       resumes: {

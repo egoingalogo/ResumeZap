@@ -52,7 +52,7 @@ export const uploadProfilePicture = async (file: File): Promise<ProfilePictureUp
     // Step 4: Delete existing profile picture if it exists
     await deleteExistingProfilePicture(user.id);
     
-    // Step 5: Generate unique filename
+    // Step 5: Generate unique filename (relative to bucket)
     const filename = generateImageFilename(user.id, file.name);
     
     // Step 6: Upload to Supabase Storage
@@ -140,16 +140,20 @@ const deleteExistingProfilePicture = async (userId: string): Promise<void> => {
     
     // Extract filename from URL
     const url = userData.profile_picture_url;
-    const urlParts = url.split('/');
-    const filename = urlParts.slice(-2).join('/'); // Get "userId/filename.webp"
     
-    if (filename.startsWith('profile-pictures/')) {
-      const actualFilename = filename.replace('profile-pictures/', '');
+    // Parse the URL to extract the file path
+    // URL format: https://[project].supabase.co/storage/v1/object/public/profile-pictures/userId/filename.webp
+    const urlParts = url.split('/');
+    const bucketIndex = urlParts.findIndex(part => part === 'profile-pictures');
+    
+    if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+      // Get everything after 'profile-pictures' in the URL
+      const filename = urlParts.slice(bucketIndex + 1).join('/');
       
-      console.log('ProfilePicture: Deleting existing file:', actualFilename);
+      console.log('ProfilePicture: Deleting existing file:', filename);
       const { error: deleteError } = await supabase.storage
         .from('profile-pictures')
-        .remove([actualFilename]);
+        .remove([filename]);
       
       if (deleteError) {
         console.warn('ProfilePicture: Failed to delete existing file:', deleteError);
