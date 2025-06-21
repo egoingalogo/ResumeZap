@@ -118,3 +118,74 @@ export const getCurrentUser = async () => {
     throw error;
   }
 };
+
+/**
+ * Sign up a new user with email and password
+ * Creates both auth user and user profile
+ */
+export const signUp = async (email: string, password: string, name: string) => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'sign up'));
+    }
+
+    return { user: data.user };
+  } catch (error) {
+    console.error('Sign up error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sign in user with email and password
+ */
+export const signIn = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'sign in'));
+    }
+
+    return { user: data.user };
+  } catch (error) {
+    console.error('Sign in error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get the count of users with lifetime plan
+ * Used to determine if lifetime plan upgrades should be available
+ */
+export const getLifetimeUserCount = async (): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('plan', 'lifetime');
+
+    if (error) {
+      console.error('Failed to get lifetime user count:', error);
+      throw new Error(handleSupabaseError(error, 'get lifetime user count'));
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Get lifetime user count error:', error);
+    throw error;
+  }
+};
