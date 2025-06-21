@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Zap, ArrowLeft, Mail, X } from 'lucide-react';
+import { Eye, EyeOff, Zap, ArrowLeft, Mail, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { resetPassword, resendVerification } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 /**
- * Authentication page handling both login and registration
- * Includes comprehensive form validation, loading states, error handling, and password reset
+ * Authentication page handling login, registration, password reset, and email verification
+ * Includes comprehensive form validation, loading states, error handling, and email verification flow
  * Validates inputs according to specific business rules with visual feedback
  */
 const AuthPage: React.FC = () => {
@@ -36,6 +37,11 @@ const AuthPage: React.FC = () => {
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
+  // Email verification state
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+
   console.log('AuthPage: Component mounted with mode:', mode);
 
   useEffect(() => {
@@ -43,7 +49,21 @@ const AuthPage: React.FC = () => {
       console.log('AuthPage: User already authenticated, redirecting');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+
+    // Handle email verification callback
+    const verified = searchParams.get('verified');
+    const reset = searchParams.get('reset');
+    
+    if (verified === 'true') {
+      toast.success('Email verified successfully! You can now sign in.');
+      setMode('login');
+    }
+    
+    if (reset === 'true') {
+      toast.success('Password reset successfully! You can now sign in with your new password.');
+      setMode('login');
+    }
+  }, [isAuthenticated, navigate, searchParams]);
 
   /**
    * Validates form inputs according to business rules
@@ -215,9 +235,14 @@ const AuthPage: React.FC = () => {
       let success = false;
       
       if (mode === 'register') {
-        success = await register(formData.email, formData.password, formData.name);
-        if (success) {
+        const result = await register(formData.email, formData.password, formData.name);
+        if (result.needsVerification) {
+          setVerificationEmail(formData.email);
+          setShowVerificationModal(true);
+          toast.success('Registration successful! Please check your email to verify your account.');
+        } else if (result.success) {
           toast.success('Account created successfully!');
+          success = true;
         }
       } else {
         success = await login(formData.email, formData.password);
@@ -234,8 +259,6 @@ const AuthPage: React.FC = () => {
         } else {
           navigate('/dashboard');
         }
-      } else {
-        toast.error(mode === 'register' ? 'Registration failed' : 'Invalid credentials');
       }
     } catch (error) {
       console.error('AuthPage: Authentication error:', error);
@@ -260,7 +283,13 @@ const AuthPage: React.FC = () => {
           errorMessage.includes('invalid login') ||
           errorMessage.includes('email not confirmed')
         )) {
-          toast.error('Invalid email or password. Please check your credentials and try again.');
+          if (errorMessage.includes('email not confirmed')) {
+            toast.error('Please verify your email address before signing in.');
+            setVerificationEmail(formData.email);
+            setShowVerificationModal(true);
+          } else {
+            toast.error('Invalid email or password. Please check your credentials and try again.');
+          }
         } else {
           // Generic error fallback
           toast.error(mode === 'register' ? 'Registration failed. Please try again.' : 'Login failed. Please try again.');
@@ -294,9 +323,7 @@ const AuthPage: React.FC = () => {
     setIsResetLoading(true);
 
     try {
-      // Simulate API call for password reset
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await resetPassword(resetEmail);
       setResetEmailSent(true);
       toast.success('Password reset instructions sent to your email!');
       console.log('AuthPage: Password reset email sent successfully');
@@ -310,6 +337,30 @@ const AuthPage: React.FC = () => {
   };
 
   /**
+   * Handles email verification resend
+   */
+  const handleResendVerification = async () => {
+    if (!verificationEmail.trim()) {
+      toast.error('No email address available for verification');
+      return;
+    }
+
+    setIsResendingVerification(true);
+
+    try {
+      await resendVerification(verificationEmail);
+      toast.success('Verification email sent! Please check your inbox.');
+      console.log('AuthPage: Verification email resent successfully');
+      
+    } catch (error) {
+      console.error('AuthPage: Resend verification failed:', error);
+      toast.error('Failed to resend verification email. Please try again.');
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
+  /**
    * Closes the password reset modal and resets state
    */
   const closeResetModal = () => {
@@ -317,6 +368,15 @@ const AuthPage: React.FC = () => {
     setResetEmail('');
     setResetEmailSent(false);
     setIsResetLoading(false);
+  };
+
+  /**
+   * Closes the verification modal and resets state
+   */
+  const closeVerificationModal = () => {
+    setShowVerificationModal(false);
+    setVerificationEmail('');
+    setIsResendingVerification(false);
   };
 
   /**
@@ -648,7 +708,7 @@ const AuthPage: React.FC = () => {
                 {/* Success Message */}
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     Check Your Email
@@ -668,6 +728,66 @@ const AuthPage: React.FC = () => {
                 </div>
               </>
             )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Email Verification Modal */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md relative"
+          >
+            {/* Close button */}
+            <button
+              onClick={closeVerificationModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Verify Your Email
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+                We've sent a verification email to <strong>{verificationEmail}</strong>. Please click the link in the email to verify your account.
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {isResendingVerification ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      <span>Resend Verification Email</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={closeVerificationModal}
+                  className="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
+                >
+                  I'll verify later
+                </button>
+              </div>
+              
+              <p className="text-gray-500 dark:text-gray-500 text-xs mt-4">
+                Didn't receive the email? Check your spam folder.
+              </p>
+            </div>
           </motion.div>
         </div>
       )}

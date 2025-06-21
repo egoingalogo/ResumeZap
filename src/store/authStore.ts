@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount } from '../lib/supabase';
+import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount, updateEmail } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -23,11 +23,12 @@ interface AuthState {
   isLoggingOut: boolean;
   lifetimeUserCount: number | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<{ success: boolean; needsVerification: boolean }>;
   logout: () => Promise<void>;
   updateUsage: (type: 'resumeTailoring' | 'coverLetters') => Promise<void>;
   upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
   updateProfilePicture: (profilePictureUrl: string | null) => Promise<void>;
+  updateUserEmail: (newEmail: string) => Promise<void>;
   initializeAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
   fetchLifetimeUserCount: () => Promise<void>;
@@ -309,57 +310,66 @@ export const useAuthStore = create<AuthState>()(
       },
       
       /**
-       * Register new user with proper error propagation
+       * Register new user with email verification
+       * Returns success status and whether email verification is needed
        */
       register: async (email: string, password: string, name: string) => {
         console.log('AuthStore: Attempting registration for:', email);
         set({ isLoading: true });
         
         try {
-          const { user: supabaseUser } = await signUp(email, password, name);
+          const { user: supabaseUser, session } = await signUp(email, password, name);
           
           if (supabaseUser) {
-            // Create user profile in database
-            const userProfileData = {
-              id: supabaseUser.id,
-              email: supabaseUser.email!,
-              name,
-              plan: 'free' as const,
-              profile_picture_url: null,
-              usage_this_month: {
-                resumeTailoring: 0,
-                coverLetters: 0,
-              },
-            };
-            
-            const { data: insertedProfile, error: profileError } = await supabase
-              .from('users')
-              .insert(userProfileData)
-              .select()
-              .single();
-            
-            if (profileError) {
-              console.error('AuthStore: Failed to create user profile:', profileError);
-              return false;
+            // Check if email verification is required
+            if (!session) {
+              // Email verification required - user will receive verification email
+              console.log('AuthStore: Registration successful, email verification required');
+              return { success: true, needsVerification: true };
+            } else {
+              // User is immediately signed in (email confirmation disabled)
+              // Create user profile in database
+              const userProfileData = {
+                id: supabaseUser.id,
+                email: supabaseUser.email!,
+                name,
+                plan: 'free' as const,
+                profile_picture_url: null,
+                usage_this_month: {
+                  resumeTailoring: 0,
+                  coverLetters: 0,
+                },
+              };
+              
+              const { data: insertedProfile, error: profileError } = await supabase
+                .from('users')
+                .insert(userProfileData)
+                .select()
+                .single();
+              
+              if (profileError) {
+                console.error('AuthStore: Failed to create user profile:', profileError);
+                return { success: false, needsVerification: false };
+              }
+              
+              // Use the inserted profile data directly to avoid race condition
+              const user: User = {
+                id: insertedProfile.id,
+                email: insertedProfile.email,
+                name: insertedProfile.name,
+                plan: insertedProfile.plan,
+                profilePictureUrl: insertedProfile.profile_picture_url,
+                usageThisMonth: insertedProfile.usage_this_month as any,
+                createdAt: insertedProfile.created_at,
+              };
+              
+              set({ user, isAuthenticated: true });
+              console.log('AuthStore: Registration and login successful');
+              return { success: true, needsVerification: false };
             }
-            
-            // Use the inserted profile data directly to avoid race condition
-            const user: User = {
-              id: insertedProfile.id,
-              email: insertedProfile.email,
-              name: insertedProfile.name,
-              plan: insertedProfile.plan,
-              profilePictureUrl: insertedProfile.profile_picture_url,
-              usageThisMonth: insertedProfile.usage_this_month as any,
-              createdAt: insertedProfile.created_at,
-            };
-            
-            set({ user, isAuthenticated: true });
-            console.log('AuthStore: Registration successful');
-            return true;
           }
           
-          return false;
+          return { success: false, needsVerification: false };
         } catch (error) {
           console.error('AuthStore: Registration failed:', error);
           // Re-throw the error to allow the calling component to handle it specifically
@@ -526,6 +536,27 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Failed to update profile picture:', error);
         }
       },
+
+      /**
+       * Update user email address with verification
+       */
+      updateUserEmail: async (newEmail: string) => {
+        const { user } = get();
+        if (!user) return;
+        
+        console.log('AuthStore: Updating user email address');
+        
+        try {
+          await updateEmail(newEmail);
+          
+          // Note: Email won't be updated in the database until the user verifies the new email
+          // The user will receive a verification email at the new address
+          console.log('AuthStore: Email update verification sent');
+        } catch (error) {
+          console.error('AuthStore: Failed to update email:', error);
+          throw error;
+        }
+      },
     }),
     {
       name: 'resumezap-auth',
@@ -549,6 +580,35 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('AuthStore: Auth state changed:', event);
   
   if (event === 'SIGNED_IN' && session?.user) {
+    // Handle email verification completion
+    if (session.user.email_confirmed_at && !session.user.user_metadata?.profile_created) {
+      // User just verified their email, create profile
+      const userProfileData = {
+        id: session.user.id,
+        email: session.user.email!,
+        name: session.user.user_metadata?.name || 'User',
+        plan: 'free' as const,
+        profile_picture_url: null,
+        usage_this_month: {
+          resumeTailoring: 0,
+          coverLetters: 0,
+        },
+      };
+      
+      try {
+        await supabase
+          .from('users')
+          .insert(userProfileData);
+        
+        // Mark profile as created
+        await supabase.auth.updateUser({
+          data: { profile_created: true }
+        });
+      } catch (error) {
+        console.error('AuthStore: Failed to create profile after email verification:', error);
+      }
+    }
+    
     // Prevent race condition during registration by checking if user is already set
     const currentState = useAuthStore.getState();
     

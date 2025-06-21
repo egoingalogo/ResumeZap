@@ -154,8 +154,8 @@ export const getCurrentUser = async () => {
 };
 
 /**
- * Sign up a new user with email and password
- * Creates both auth user and user profile
+ * Sign up a new user with email verification
+ * Creates both auth user and user profile after email confirmation
  */
 export const signUp = async (email: string, password: string, name: string) => {
   try {
@@ -166,6 +166,7 @@ export const signUp = async (email: string, password: string, name: string) => {
         data: {
           name,
         },
+        emailRedirectTo: `${window.location.origin}/auth?verified=true`,
       },
     });
 
@@ -173,7 +174,7 @@ export const signUp = async (email: string, password: string, name: string) => {
       throw new Error(handleSupabaseError(error, 'sign up'));
     }
 
-    return { user: data.user };
+    return { user: data.user, session: data.session };
   } catch (error) {
     console.error('Sign up error:', error);
     throw error;
@@ -182,6 +183,7 @@ export const signUp = async (email: string, password: string, name: string) => {
 
 /**
  * Sign in user with email and password
+ * Requires email verification to be completed
  */
 export const signIn = async (email: string, password: string) => {
   try {
@@ -194,9 +196,98 @@ export const signIn = async (email: string, password: string) => {
       throw new Error(handleSupabaseError(error, 'sign in'));
     }
 
-    return { user: data.user };
+    return { user: data.user, session: data.session };
   } catch (error) {
     console.error('Sign in error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send password reset email
+ * Uses the configured SMTP settings and custom email template
+ */
+export const resetPassword = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'send password reset email'));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Password reset error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update user password (used after reset or in settings)
+ */
+export const updatePassword = async (newPassword: string) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'update password'));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update password error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update user email address with verification
+ * Sends confirmation email to new address
+ */
+export const updateEmail = async (newEmail: string) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail
+    }, {
+      emailRedirectTo: `${window.location.origin}/settings?email-updated=true`
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'update email'));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update email error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Resend email verification
+ * For users who didn't receive the initial verification email
+ */
+export const resendVerification = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth?verified=true`,
+      }
+    });
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'resend verification email'));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Resend verification error:', error);
     throw error;
   }
 };

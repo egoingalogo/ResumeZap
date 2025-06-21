@@ -24,7 +24,8 @@ import {
   Sun,
   Trash2,
   AlertTriangle,
-  Camera
+  Camera,
+  CheckCircle
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { UpgradeModal } from '../components/UpgradeModal';
@@ -32,16 +33,16 @@ import { ProfilePictureUpload } from '../components/ProfilePictureUpload';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useResumeStore } from '../store/resumeStore';
-import { supabase, deleteUserAccount } from '../lib/supabase';
+import { supabase, deleteUserAccount, updatePassword } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 /**
  * Comprehensive settings page for user profile, subscription, and preferences management
- * Includes security settings, usage analytics, account customization options, and profile picture upload
+ * Includes security settings, usage analytics, account customization options, profile picture upload, and email change
  */
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout, upgradePlan, updateProfilePicture, lifetimeUserCount } = useAuthStore();
+  const { user, isAuthenticated, logout, upgradePlan, updateProfilePicture, updateUserEmail, lifetimeUserCount } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { resumes } = useResumeStore();
   
@@ -51,11 +52,13 @@ const Settings: React.FC = () => {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    newEmail: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -102,6 +105,61 @@ const Settings: React.FC = () => {
   };
 
   /**
+   * Handle email change with verification
+   * Sends verification email to new address
+   */
+  const handleEmailChange = async () => {
+    if (!profileData.newEmail.trim()) {
+      toast.error('Please enter a new email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profileData.newEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    if (profileData.newEmail === user?.email) {
+      toast.error('New email must be different from current email');
+      return;
+    }
+
+    console.log('Settings: Changing user email via Supabase');
+    setIsLoading(true);
+    
+    try {
+      await updateUserEmail(profileData.newEmail);
+      
+      setShowEmailChangeModal(false);
+      setProfileData({ ...profileData, newEmail: '' });
+      
+      toast.success(`Verification email sent to ${profileData.newEmail}. Please check your inbox and click the verification link.`, {
+        duration: 8000,
+      });
+      
+      console.log('Settings: Email change verification sent successfully');
+      
+    } catch (error) {
+      console.error('Settings: Email change failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('email address is already registered')) {
+        toast.error('This email address is already registered with another account');
+      } else if (errorMessage.includes('session_not_found')) {
+        toast.error('Session expired. Please sign in again');
+        logout();
+        return;
+      } else {
+        toast.error('Failed to change email. Please try again');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
    * Handle password change using Supabase authentication
    * Validates password requirements and updates user password securely
    */
@@ -130,28 +188,7 @@ const Settings: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Update password using Supabase auth
-      const { error } = await supabase.auth.updateUser({
-        password: profileData.newPassword
-      });
-
-      if (error) {
-        console.error('Settings: Supabase password update failed:', error);
-        
-        // Handle specific Supabase error messages
-        if (error.message.includes('same as the old password')) {
-          toast.error('New password must be different from your current password');
-        } else if (error.message.includes('Password should be at least')) {
-          toast.error('Password does not meet security requirements');
-        } else if (error.message.includes('session_not_found')) {
-          toast.error('Session expired. Please sign in again');
-          logout();
-          return;
-        } else {
-          toast.error('Failed to change password. Please try again');
-        }
-        return;
-      }
+      await updatePassword(profileData.newPassword);
 
       // Clear password fields on success
       setProfileData({ 
@@ -166,7 +203,20 @@ const Settings: React.FC = () => {
       
     } catch (error) {
       console.error('Settings: Password change failed:', error);
-      toast.error('An unexpected error occurred. Please try again');
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('same as the old password')) {
+        toast.error('New password must be different from your current password');
+      } else if (errorMessage.includes('Password should be at least')) {
+        toast.error('Password does not meet security requirements');
+      } else if (errorMessage.includes('session_not_found')) {
+        toast.error('Session expired. Please sign in again');
+        logout();
+        return;
+      } else {
+        toast.error('Failed to change password. Please try again');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -450,12 +500,20 @@ const Settings: React.FC = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Email Address
                           </label>
-                          <input
-                            type="email"
-                            value={profileData.email}
-                            onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                          />
+                          <div className="flex space-x-2">
+                            <input
+                              type="email"
+                              value={profileData.email}
+                              readOnly
+                              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
+                            />
+                            <button
+                              onClick={() => setShowEmailChangeModal(true)}
+                              className="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200"
+                            >
+                              Change
+                            </button>
+                          </div>
                         </div>
                       </div>
                       
@@ -945,6 +1003,81 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
+      {/* Email Change Modal */}
+      {showEmailChangeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Change Email Address
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  You'll need to verify your new email
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Current Email
+              </label>
+              <input
+                type="email"
+                value={user.email}
+                readOnly
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 mb-4"
+              />
+              
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                New Email Address
+              </label>
+              <input
+                type="email"
+                value={profileData.newEmail}
+                onChange={(e) => setProfileData({ ...profileData, newEmail: e.target.value })}
+                placeholder="Enter your new email address"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                A verification email will be sent to your new address. Your email won't change until you verify it.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowEmailChangeModal(false)}
+                disabled={isLoading}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEmailChange}
+                disabled={isLoading || !profileData.newEmail.trim()}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Send Verification</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -988,7 +1121,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={isLoading}
-                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2  rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
               >
                 Cancel
               </button>
