@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase, handleSupabaseError } from '../lib/supabase';
+import { supabase, handleSupabaseError, getCurrentUser, testSupabaseConnection } from '../lib/supabase';
 import { 
   createSkillAnalysis, 
   fetchSkillAnalyses, 
@@ -29,6 +29,7 @@ interface ResumeState {
   currentSkillAnalysis: SkillAnalysisWithRecommendations | null;
   isAnalyzing: boolean;
   isLoading: boolean;
+  error: string | null;
   
   fetchResumes: () => Promise<void>;
   analyzeResume: (resumeContent: string, jobPosting: string) => Promise<void>;
@@ -41,6 +42,7 @@ interface ResumeState {
   loadSkillAnalysis: (analysisId: string) => Promise<void>;
   deleteSkillAnalysis: (analysisId: string) => Promise<void>;
   clearCurrentSkillAnalysis: () => void;
+  clearError: () => void;
 }
 
 /**
@@ -55,21 +57,31 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   currentSkillAnalysis: null,
   isAnalyzing: false,
   isLoading: false,
+  error: null,
   
   /**
-   * Fetch user's resumes from database
+   * Fetch user's resumes from database with enhanced error handling
    */
   fetchResumes: async () => {
     console.log('ResumeStore: Fetching user resumes');
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('ResumeStore: No authenticated user');
-        return;
+      // Test connection first
+      const connectionOk = await testSupabaseConnection();
+      if (!connectionOk) {
+        throw new Error('Unable to connect to the database. Please check your Supabase configuration.');
       }
       
+      // Get current user with error handling
+      const user = await getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user found. Please log in again.');
+      }
+      
+      console.log('ResumeStore: Authenticated user found:', user.id);
+      
+      // Fetch resumes with detailed error handling
       const { data, error } = await supabase
         .from('resumes')
         .select('*')
@@ -77,11 +89,13 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('ResumeStore: Failed to fetch resumes:', error);
-        return;
+        console.error('ResumeStore: Database query failed:', error);
+        throw new Error(handleSupabaseError(error, 'fetch resumes'));
       }
       
-      const resumes: Resume[] = data.map(resume => ({
+      console.log('ResumeStore: Successfully fetched', data?.length || 0, 'resumes');
+      
+      const resumes: Resume[] = (data || []).map(resume => ({
         id: resume.id,
         title: resume.title,
         content: resume.content,
@@ -92,9 +106,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         lastModified: resume.updated_at,
       }));
       
-      set({ resumes });
+      set({ resumes, error: null });
     } catch (error) {
-      console.error('ResumeStore: Failed to fetch resumes:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch resumes';
+      console.error('ResumeStore: Failed to fetch resumes:', errorMessage);
+      set({ error: errorMessage });
+      throw error;
     } finally {
       set({ isLoading: false });
     }
@@ -105,7 +122,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
    */
   analyzeResume: async (resumeContent: string, jobPosting: string) => {
     console.log('ResumeStore: Starting resume analysis');
-    set({ isAnalyzing: true });
+    set({ isAnalyzing: true, error: null });
     
     try {
       // Simulate AI analysis - replace with actual AI service
@@ -133,11 +150,13 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         lastModified: new Date().toISOString(),
       };
       
-      set({ currentResume: analyzedResume });
+      set({ currentResume: analyzedResume, error: null });
       console.log('ResumeStore: Resume analysis completed with score:', matchScore);
       
     } catch (error) {
-      console.error('ResumeStore: Resume analysis failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Resume analysis failed';
+      console.error('ResumeStore: Resume analysis failed:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     } finally {
       set({ isAnalyzing: false });
@@ -145,15 +164,16 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Save resume to database
+   * Save resume to database with enhanced error handling
    */
   saveResume: async (resumeData: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => {
     console.log('ResumeStore: Saving new resume');
+    set({ error: null });
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
-        throw new Error('No authenticated user');
+        throw new Error('No authenticated user found. Please log in again.');
       }
       
       const { data, error } = await supabase
@@ -187,20 +207,24 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       
       set((state) => ({
         resumes: [newResume, ...state.resumes],
+        error: null,
       }));
       
       console.log('ResumeStore: Resume saved successfully');
     } catch (error) {
-      console.error('ResumeStore: Failed to save resume:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save resume';
+      console.error('ResumeStore: Failed to save resume:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     }
   },
   
   /**
-   * Update existing resume
+   * Update existing resume with enhanced error handling
    */
   updateResume: async (id: string, updates: Partial<Resume>) => {
     console.log('ResumeStore: Updating resume:', id);
+    set({ error: null });
     
     try {
       const { error } = await supabase
@@ -225,20 +249,24 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
             ? { ...resume, ...updates, lastModified: new Date().toISOString() } 
             : resume
         ),
+        error: null,
       }));
       
       console.log('ResumeStore: Resume updated successfully');
     } catch (error) {
-      console.error('ResumeStore: Failed to update resume:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update resume';
+      console.error('ResumeStore: Failed to update resume:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     }
   },
   
   /**
-   * Delete resume from database
+   * Delete resume from database with enhanced error handling
    */
   deleteResume: async (id: string) => {
     console.log('ResumeStore: Deleting resume:', id);
+    set({ error: null });
     
     try {
       const { error } = await supabase
@@ -253,11 +281,14 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       
       set((state) => ({
         resumes: state.resumes.filter((resume) => resume.id !== id),
+        error: null,
       }));
       
       console.log('ResumeStore: Resume deleted successfully');
     } catch (error) {
-      console.error('ResumeStore: Failed to delete resume:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete resume';
+      console.error('ResumeStore: Failed to delete resume:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     }
   },
@@ -270,12 +301,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze skill gaps and save to database
+   * Analyze skill gaps and save to database with enhanced error handling
    * Performs AI analysis and persists results for future reference
    */
   analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
-    set({ isAnalyzing: true });
+    set({ isAnalyzing: true, error: null });
     
     try {
       // Simulate AI skill gap analysis
@@ -355,6 +386,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       set({ 
         skillGaps: mockSkillGaps,
         currentSkillAnalysis: savedAnalysis,
+        error: null,
       });
       
       // Refresh the analyses list
@@ -363,7 +395,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       console.log('ResumeStore: Skill gap analysis completed and saved');
       
     } catch (error) {
-      console.error('ResumeStore: Skill gap analysis failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Skill gap analysis failed';
+      console.error('ResumeStore: Skill gap analysis failed:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     } finally {
       set({ isAnalyzing: false });
@@ -371,18 +405,20 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Fetch all skill analyses for the current user
+   * Fetch all skill analyses for the current user with enhanced error handling
    */
   fetchSkillAnalyses: async () => {
     console.log('ResumeStore: Fetching skill analyses');
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     
     try {
       const analyses = await fetchSkillAnalyses();
-      set({ skillAnalyses: analyses });
+      set({ skillAnalyses: analyses, error: null });
       console.log('ResumeStore: Fetched', analyses.length, 'skill analyses');
     } catch (error) {
-      console.error('ResumeStore: Failed to fetch skill analyses:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch skill analyses';
+      console.error('ResumeStore: Failed to fetch skill analyses:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     } finally {
       set({ isLoading: false });
@@ -390,11 +426,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Load a specific skill analysis and set it as current
+   * Load a specific skill analysis and set it as current with enhanced error handling
    */
   loadSkillAnalysis: async (analysisId: string) => {
     console.log('ResumeStore: Loading skill analysis:', analysisId);
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     
     try {
       const analysis = await fetchSkillAnalysisById(analysisId);
@@ -404,6 +440,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         set({ 
           currentSkillAnalysis: analysis,
           skillGaps,
+          error: null,
         });
         console.log('ResumeStore: Skill analysis loaded successfully');
       } else {
@@ -411,10 +448,13 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         set({ 
           currentSkillAnalysis: null,
           skillGaps: [],
+          error: 'Skill analysis not found',
         });
       }
     } catch (error) {
-      console.error('ResumeStore: Failed to load skill analysis:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load skill analysis';
+      console.error('ResumeStore: Failed to load skill analysis:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     } finally {
       set({ isLoading: false });
@@ -422,10 +462,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Delete a skill analysis
+   * Delete a skill analysis with enhanced error handling
    */
   deleteSkillAnalysis: async (analysisId: string) => {
     console.log('ResumeStore: Deleting skill analysis:', analysisId);
+    set({ error: null });
     
     try {
       await deleteSkillAnalysis(analysisId);
@@ -436,11 +477,14 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         // Clear current analysis if it was the one deleted
         currentSkillAnalysis: state.currentSkillAnalysis?.id === analysisId ? null : state.currentSkillAnalysis,
         skillGaps: state.currentSkillAnalysis?.id === analysisId ? [] : state.skillGaps,
+        error: null,
       }));
       
       console.log('ResumeStore: Skill analysis deleted successfully');
     } catch (error) {
-      console.error('ResumeStore: Failed to delete skill analysis:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete skill analysis';
+      console.error('ResumeStore: Failed to delete skill analysis:', errorMessage);
+      set({ error: errorMessage });
       throw error;
     }
   },
@@ -453,5 +497,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       currentSkillAnalysis: null,
       skillGaps: [],
     });
+  },
+  
+  /**
+   * Clear error state
+   */
+  clearError: () => {
+    set({ error: null });
   },
 }));
