@@ -168,6 +168,61 @@ export const signIn = async (email: string, password: string) => {
 };
 
 /**
+ * Delete user account completely using Supabase Edge Function
+ * This function calls the delete-user edge function which handles complete account deletion
+ * including auth.users record and all related data via CASCADE constraints
+ */
+export const deleteUserAccount = async (): Promise<void> => {
+  try {
+    console.log('deleteUserAccount: Starting account deletion process');
+    
+    // Get current session to ensure user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('deleteUserAccount: Failed to get session:', sessionError);
+      throw new Error('No valid session found. Please sign in again.');
+    }
+    
+    if (!session?.access_token) {
+      console.error('deleteUserAccount: No access token in session');
+      throw new Error('No valid session found. Please sign in again.');
+    }
+    
+    console.log('deleteUserAccount: Session validated, calling edge function');
+    
+    // Call the delete-user edge function
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    
+    if (error) {
+      console.error('deleteUserAccount: Edge function error:', error);
+      throw new Error(`Edge function error: ${error.message}`);
+    }
+    
+    if (data?.error) {
+      console.error('deleteUserAccount: Edge function returned error:', data.error);
+      throw new Error(data.error);
+    }
+    
+    console.log('deleteUserAccount: Account deletion completed successfully');
+    
+  } catch (error) {
+    console.error('deleteUserAccount: Account deletion failed:', error);
+    
+    // Re-throw the error to be handled by the calling component
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error('An unexpected error occurred during account deletion');
+    }
+  }
+};
+
+/**
  * Get the count of users with lifetime plan
  * Used to determine if lifetime plan upgrades should be available
  */
