@@ -41,6 +41,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 export const handleSupabaseError = (error: any, operation: string): string => {
   console.error(`Supabase ${operation} error:`, error);
   
+  // Handle network/fetch errors first
+  if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError') {
+    console.error('Network error details:', {
+      message: error.message,
+      name: error.name,
+      supabaseUrl,
+      hasAnonKey: !!supabaseAnonKey
+    });
+    return 'Unable to connect to Supabase. Please check your environment configuration and internet connection.';
+  }
+  
   // Handle specific error types
   if (error?.code === 'PGRST116') {
     return 'No data found for this request';
@@ -62,10 +73,6 @@ export const handleSupabaseError = (error: any, operation: string): string => {
     return 'Your session has expired. Please log in again';
   }
   
-  if (error?.message?.includes('Failed to fetch')) {
-    return 'Unable to connect to the database. Please check your internet connection and try again';
-  }
-  
   if (error?.message?.includes('row-level security')) {
     return 'Access denied. You can only access your own data';
   }
@@ -82,20 +89,47 @@ export const testSupabaseConnection = async (): Promise<boolean> => {
   try {
     console.log('Testing Supabase connection...');
     console.log('Supabase URL:', supabaseUrl);
-    console.log('Supabase Anon Key:', supabaseAnonKey ? 'Present' : 'Missing');
+    console.log('Supabase Anon Key:', supabaseAnonKey ? `Present (${supabaseAnonKey.substring(0, 20)}...)` : 'Missing');
     
-    // Test basic connection
-    const { data, error } = await supabase.from('users').select('count').limit(1);
+    // Validate URL format
+    if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+      console.error('Invalid Supabase URL format:', supabaseUrl);
+      return false;
+    }
+    
+    // Validate anon key format (should be a JWT)
+    if (!supabaseAnonKey.startsWith('eyJ')) {
+      console.error('Invalid Supabase anon key format');
+      return false;
+    }
+    
+    // Test basic connection with a simple query
+    const { error } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
     
     if (error) {
       console.error('Supabase connection test failed:', error);
+      
+      // Provide more specific error information
+      if (error.message?.includes('Failed to fetch')) {
+        console.error('Network connectivity issue - check internet connection and Supabase URL');
+      } else if (error.message?.includes('Invalid API key')) {
+        console.error('Authentication issue - check Supabase anon key');
+      }
+      
       return false;
     }
     
     console.log('Supabase connection test successful');
     return true;
   } catch (error) {
-    console.error('Supabase connection test error:', error);
+    console.error('Supabase connection test error:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return false;
   }
 };

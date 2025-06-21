@@ -70,7 +70,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // Test connection first
       const connectionOk = await testSupabaseConnection();
       if (!connectionOk) {
-        throw new Error('Unable to connect to the database. Please check your Supabase configuration.');
+        throw new Error('Unable to connect to Supabase. Please check your environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) and internet connection.');
       }
       
       // Get current user with error handling
@@ -110,6 +110,14 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch resumes';
       console.error('ResumeStore: Failed to fetch resumes:', errorMessage);
+      
+      // Log additional debugging information
+      console.error('ResumeStore: Environment check:', {
+        hasSupabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
+        hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      });
+      
       set({ error: errorMessage });
       throw error;
     } finally {
