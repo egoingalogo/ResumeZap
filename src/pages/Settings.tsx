@@ -47,6 +47,8 @@ const Settings: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'billing' | 'notifications' | 'security' | 'data'>('profile');
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -809,13 +811,22 @@ const Settings: React.FC = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             New Password
                           </label>
-                          <input
-                            type="password"
-                            value={profileData.newPassword}
-                            onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                            placeholder="Enter your new password"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? 'text' : 'password'}
+                              value={profileData.newPassword}
+                              onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="Enter your new password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                            >
+                              {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Must be at least 8 characters with uppercase, lowercase, and numbers.
                           </p>
@@ -825,13 +836,22 @@ const Settings: React.FC = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Confirm New Password
                           </label>
-                          <input
-                            type="password"
-                            value={profileData.confirmPassword}
-                            onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                            placeholder="Confirm your new password"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showConfirmNewPassword ? 'text' : 'password'}
+                              value={profileData.confirmPassword}
+                              onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="Confirm your new password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                            >
+                              {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
                         </div>
                         
                         <button
