@@ -47,6 +47,8 @@ const Settings: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'billing' | 'notifications' | 'security' | 'data'>('profile');
   const [showPassword, setShowPassword] = useState(false);
+ const [showNewPassword, setShowNewPassword] = useState(false);
+ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -809,8 +811,216 @@ const Settings: React.FC = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             New Password
                           </label>
-                          <input
-                            type="password"
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? 'text' : 'password'}
+                              value={profileData.newPassword}
+                              onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="Enter your new password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                            >
+                              {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Must be at least 8 characters with uppercase, lowercase, and numbers.
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Confirm New Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              value={profileData.confirmPassword}
+                              onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="Confirm your new password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={handlePasswordChange}
+                          disabled={isLoading || !profileData.newPassword || !profileData.confirmPassword}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
+                        >
+                          {isLoading ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <Shield className="h-4 w-4" />
+                          )}
+                          <span>Update Password</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Delete Account */}
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+                      <h2 className="text-xl font-semibold text-red-900 dark:text-red-400 mb-4">
+                        Danger Zone
+                      </h2>
+                      <p className="text-red-700 dark:text-red-300 mb-6">
+                        Once you delete your account, there is no going back. This action cannot be undone and will permanently delete all your data including resumes, applications, and support tickets.
+                      </p>
+                      <button
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={isLoading}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete Account</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Data Tab */}
+                {activeTab === 'data' && (
+                  <div className="space-y-6">
+                    {/* Export Data */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                        Export Your Data
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-400 mb-6">
+                        Download a copy of all your data including resumes, settings, and usage history.
+                      </p>
+                      <button
+                        onClick={handleExportData}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Export Data</span>
+                      </button>
+                    </div>
+                    
+                    {/* Data Summary */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                        Data Summary
+                      </h2>
+                      
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                          <FileText className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {resumes.length}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Saved Resumes
+                          </div>
+                        </div>
+                        
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                          <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Days Active
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Delete Account
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete your account? This will permanently remove:
+              </p>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
+                <li>• Your profile and account settings</li>
+                <li>• All saved resumes and versions</li>
+                <li>• Job application tracking data</li>
+                <li>• Support ticket history</li>
+                <li>• Usage analytics and preferences</li>
+                <li>• Profile picture and personal data</li>
+              </ul>
+              <p className="text-red-600 dark:text-red-400 text-sm font-medium mt-4">
+                This action cannot be undone and your data cannot be recovered.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isLoading}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isLoading}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                <span>Delete Forever</span>
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={user.plan}
+        lifetimeUserCount={lifetimeUserCount}
+      />
+    </div>
+  );
+};
+
+export default Settings;
                             value={profileData.newPassword}
                             onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
