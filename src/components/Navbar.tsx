@@ -275,23 +275,25 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
               )}
 
               {/* Mobile menu button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                disabled={isLoggingOut}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
-              >
-                {isMenuOpen ? (
-                  <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                ) : (
-                  <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                )}
-              </button>
+              {isAuthenticated && (
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  disabled={isLoggingOut}
+                  className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
+                >
+                  {isMenuOpen ? (
+                    <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  ) : (
+                    <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
 
         {/* Mobile menu */}
-        {isMenuOpen && !isLoggingOut && (
+        {isMenuOpen && !isLoggingOut && isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -299,45 +301,41 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
             className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
           >
             <div className="px-4 py-4 space-y-2">
-              {isAuthenticated && (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/resume-analyzer"
-                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Resume Analyzer
-                  </Link>
-                  <Link
-                    to="/skill-gap-analysis"
-                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Skill Gap Analysis
-                  </Link>
-                  <Link
-                    to="/applications"
-                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Applications
-                  </Link>
-                  <Link
-                    to="/support"
-                    className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Support
-                  </Link>
-                </>
-              )}
+              <Link
+                to="/dashboard"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/resume-analyzer"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Resume Analyzer
+              </Link>
+              <Link
+                to="/skill-gap-analysis"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Skill Gap Analysis
+              </Link>
+              <Link
+                to="/applications"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Applications
+              </Link>
+              <Link
+                to="/support"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Support
+              </Link>
             </div>
           </motion.div>
         )}
