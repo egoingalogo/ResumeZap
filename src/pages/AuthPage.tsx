@@ -359,20 +359,21 @@ const AuthPage: React.FC = () => {
       {/* Back button - positioned at top of screen */}
       <button
         onClick={() => navigate('/')}
-        className="fixed top-6 left-6 z-50 flex items-center space-x-2 text-white/90 hover:text-white transition-all duration-200 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2"
+        className="fixed top-4 left-4 z-50 flex items-center space-x-2 text-white/90 hover:text-white transition-all duration-200 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 sm:top-6 sm:left-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span className="font-medium">Back to Home</span>
+        <span className="font-medium hidden sm:inline">Back to Home</span>
+        <span className="font-medium sm:hidden">Back</span>
       </button>
 
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="max-w-md w-full relative"
+        className="max-w-md w-full relative mt-16 sm:mt-0"
       >
         {/* Auth card */}
-        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl p-8 shadow-2xl">
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-2xl mx-4 sm:mx-0">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
