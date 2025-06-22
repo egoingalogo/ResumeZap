@@ -1,109 +1,164 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+/*
+  # Get Lifetime User Count Edge Function
+
+  This function provides a secure way to get the count of users with lifetime plans
+  by bypassing Row Level Security (RLS) restrictions using service role access.
+
+  ## Purpose
+  - Count users with 'lifetime' plan status
+  - Bypass RLS to get accurate global count
+  - Provide secure access without exposing sensitive data
+
+  ## Security
+  - Uses service role key for database access
+  - No authentication required (public endpoint)
+  - Only returns count, no user data
+*/
+
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-}
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+};
 
-/**
- * Supabase Edge Function to get the count of users with lifetime plan
- * Uses service role key to bypass RLS and get accurate global count
- */
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+Deno.serve(async (req: Request) => {
   try {
-    // Only allow GET requests
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // Only allow GET requests for this endpoint
     if (req.method !== 'GET') {
       return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        JSON.stringify({ 
+          error: 'Method not allowed',
+          success: false 
+        }),
+        {
+          status: 405,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          },
         }
-      )
+      );
     }
 
-    console.log('get-lifetime-user-count: Starting count query')
+    console.log('get-lifetime-user-count: Starting function execution');
 
-    // Create Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    // Get environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     // Validate environment variables
-    if (!Deno.env.get('SUPABASE_URL') || !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
-      console.error('get-lifetime-user-count: Missing required environment variables')
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Query the users table to count lifetime plan users
-    // Using service role bypasses RLS policies
-    const { count, error } = await supabaseAdmin
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .eq('plan', 'lifetime')
-
-    if (error) {
-      console.error('get-lifetime-user-count: Database query failed:', error)
+    if (!supabaseUrl) {
+      console.error('get-lifetime-user-count: Missing SUPABASE_URL environment variable');
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to fetch lifetime user count',
-          details: error.message 
+          error: 'Server configuration error: Missing Supabase URL',
+          success: false 
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          },
         }
-      )
+      );
     }
 
-    const lifetimeUserCount = count || 0
-    console.log('get-lifetime-user-count: Successfully fetched count:', lifetimeUserCount)
+    if (!supabaseServiceKey) {
+      console.error('get-lifetime-user-count: Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: Missing service role key',
+          success: false 
+        }),
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
+    }
+
+    console.log('get-lifetime-user-count: Environment variables validated');
+
+    // Create Supabase client with service role key to bypass RLS
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    console.log('get-lifetime-user-count: Supabase client created, querying database');
+
+    // Query the users table for lifetime plan count
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('plan', 'lifetime');
+
+    if (error) {
+      console.error('get-lifetime-user-count: Database query error:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: `Database query failed: ${error.message}`,
+          success: false 
+        }),
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
+    }
+
+    const lifetimeUserCount = count || 0;
+    console.log('get-lifetime-user-count: Query successful, count:', lifetimeUserCount);
 
     // Return the count
     return new Response(
       JSON.stringify({ 
-        success: true,
         count: lifetimeUserCount,
-        timestamp: new Date().toISOString()
+        success: true 
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        },
       }
-    )
+    );
 
   } catch (error) {
-    console.error('get-lifetime-user-count: Unexpected error:', error)
+    console.error('get-lifetime-user-count: Unexpected error:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message 
+        error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false 
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        },
       }
-    )
+    );
   }
-})
+});

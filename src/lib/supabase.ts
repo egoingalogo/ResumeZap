@@ -348,55 +348,78 @@ export const deleteUserAccount = async (): Promise<void> => {
 };
 
 /**
- * Get the count of users with lifetime plan using Edge Function
- * Uses Edge Function to bypass RLS and get accurate global count
+ * Get the count of users with lifetime plan
+ * Uses Edge Function with graceful fallback to direct database query
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
-    console.log('getLifetimeUserCount: Calling Edge Function for accurate count');
+    console.log('getLifetimeUserCount: Attempting to call Edge Function');
     
-    // Call the get-lifetime-user-count edge function
+    // Try calling the Edge Function first
     const { data, error } = await supabase.functions.invoke('get-lifetime-user-count');
     
     if (error) {
-      console.error('getLifetimeUserCount: Edge function error:', error);
-      throw new Error(`Failed to get lifetime user count: ${error.message}`);
+      console.warn('getLifetimeUserCount: Edge function failed, using fallback:', error.message);
+      
+      // Fallback to direct database query
+      return await getLifetimeUserCountFallback();
     }
     
     if (data?.error) {
-      console.error('getLifetimeUserCount: Edge function returned error:', data.error);
-      throw new Error(data.error);
+      console.warn('getLifetimeUserCount: Edge function returned error, using fallback:', data.error);
+      
+      // Fallback to direct database query
+      return await getLifetimeUserCountFallback();
     }
     
     if (!data?.success || typeof data.count !== 'number') {
-      console.error('getLifetimeUserCount: Invalid response format:', data);
-      throw new Error('Invalid response from lifetime user count service');
+      console.warn('getLifetimeUserCount: Invalid Edge function response, using fallback:', data);
+      
+      // Fallback to direct database query
+      return await getLifetimeUserCountFallback();
     }
     
-    console.log('getLifetimeUserCount: Successfully fetched count:', data.count);
+    console.log('getLifetimeUserCount: Edge Function successful, count:', data.count);
     return data.count;
     
   } catch (error) {
-    console.error('getLifetimeUserCount: Failed to get lifetime user count:', error);
+    console.warn('getLifetimeUserCount: Edge Function call failed, using fallback:', error);
     
-    // Fallback: try direct database query (will be limited by RLS but better than nothing)
-    console.log('getLifetimeUserCount: Attempting fallback direct query');
-    try {
-      const { count, error: fallbackError } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('plan', 'lifetime');
+    // Fallback to direct database query
+    return await getLifetimeUserCountFallback();
+  }
+};
 
-      if (fallbackError) {
-        console.error('getLifetimeUserCount: Fallback query also failed:', fallbackError);
-        throw new Error(handleSupabaseError(fallbackError, 'get lifetime user count'));
-      }
+/**
+ * Fallback method to get lifetime user count using direct database query
+ * This will be limited by RLS but provides a working alternative
+ */
+const getLifetimeUserCountFallback = async (): Promise<number> => {
+  try {
+    console.log('getLifetimeUserCountFallback: Using direct database query');
+    
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('plan', 'lifetime');
 
-      console.log('getLifetimeUserCount: Fallback query returned count:', count || 0);
-      return count || 0;
-    } catch (fallbackError) {
-      console.error('getLifetimeUserCount: Both Edge Function and fallback failed');
-      throw error; // Re-throw the original error
+    if (error) {
+      console.error('getLifetimeUserCountFallback: Database query failed:', error);
+      
+      // Return 0 as a safe fallback instead of throwing an error
+      console.log('getLifetimeUserCountFallback: Returning 0 as safe fallback');
+      return 0;
     }
+
+    const fallbackCount = count || 0;
+    console.log('getLifetimeUserCountFallback: Fallback query successful, count:', fallbackCount);
+    return fallbackCount;
+    
+  } catch (error) {
+    console.error('getLifetimeUserCountFallback: Fallback query failed:', error);
+    
+    // Return 0 as the ultimate fallback
+    console.log('getLifetimeUserCountFallback: Returning 0 as ultimate fallback');
+    return 0;
   }
 };
