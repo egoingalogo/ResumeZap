@@ -465,9 +465,13 @@ const EmailSupport: React.FC = () => {
                   For account security issues or billing emergencies:
                 </p>
                 
-                <div className="text-sm text-red-800 dark:text-red-200">
-                  <div className="font-medium">urgent@resumezap.site</div>
-                  <div className="text-xs mt-1">Response within 4 hours</div>
+                <div className="text-sm text-red-800 dark:text-red-200 space-y-2">
+                  <div>
+                    <strong>Write "URGENT"</strong> in the Subject field above to prioritize your request
+                  </div>
+                  <div className="text-xs">
+                    Urgent requests receive priority handling and faster response times
+                  </div>
                 </div>
               </div>
             </motion.div>
