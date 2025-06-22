@@ -196,7 +196,7 @@ npm run build
 
 ### 🚧 In Development
 - [ ] AI integration for actual resume analysis
-- [ ] Payment processing with Stripe
+- [ ] Payment processing with PayPal Business Account
 - [ ] Email notifications and reminders
 - [ ] Advanced analytics and reporting
 - [ ] Export functionality (PDF, DOCX)
