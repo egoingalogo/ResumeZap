@@ -360,15 +360,23 @@ export const getLifetimeUserCount = async (): Promise<number> => {
       setTimeout(() => reject(new Error('Edge Function timeout')), 5000);
     });
     
-    // Try calling the Edge Function with timeout
-    const edgeFunctionPromise = supabase.functions.invoke('get-lifetime-user-count');
+    // Try calling the Edge Function with timeout and explicit GET method
+    const edgeFunctionPromise = fetch(`${supabaseUrl}/functions/v1/get-lifetime-user-count`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
     
-    const { data, error } = await Promise.race([edgeFunctionPromise, timeoutPromise]) as any;
+    const response = await Promise.race([edgeFunctionPromise, timeoutPromise]) as Response;
     
-    if (error) {
-      console.warn('getLifetimeUserCount: Edge function failed, using fallback:', error.message);
+    if (!response.ok) {
+      console.warn(`getLifetimeUserCount: Edge function returned ${response.status}, using fallback`);
       return await getLifetimeUserCountFallback();
     }
+    
+    const data = await response.json();
     
     if (data?.error) {
       console.warn('getLifetimeUserCount: Edge function returned error, using fallback:', data.error);
