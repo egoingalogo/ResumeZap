@@ -328,7 +328,7 @@ export const useAuthStore = create<AuthState>()(
               return { success: true, needsVerification: true };
             } else {
               // User is immediately signed in (email confirmation disabled)
-              // Create user profile in database
+              // Create user profile in database using upsert to handle duplicates
               const userProfileData = {
                 id: supabaseUser.id,
                 email: supabaseUser.email!,
@@ -341,9 +341,9 @@ export const useAuthStore = create<AuthState>()(
                 },
               };
               
-              const { data: insertedProfile, error: profileError } = await supabase
+              const { data: upsertedProfile, error: profileError } = await supabase
                 .from('users')
-                .insert(userProfileData)
+                .upsert(userProfileData, { onConflict: 'id' })
                 .select()
                 .single();
               
@@ -352,15 +352,15 @@ export const useAuthStore = create<AuthState>()(
                 return { success: false, needsVerification: false };
               }
               
-              // Use the inserted profile data directly to avoid race condition
+              // Use the upserted profile data directly to avoid race condition
               const user: User = {
-                id: insertedProfile.id,
-                email: insertedProfile.email,
-                name: insertedProfile.name,
-                plan: insertedProfile.plan,
-                profilePictureUrl: insertedProfile.profile_picture_url,
-                usageThisMonth: insertedProfile.usage_this_month as any,
-                createdAt: insertedProfile.created_at,
+                id: upsertedProfile.id,
+                email: upsertedProfile.email,
+                name: upsertedProfile.name,
+                plan: upsertedProfile.plan,
+                profilePictureUrl: upsertedProfile.profile_picture_url,
+                usageThisMonth: upsertedProfile.usage_this_month as any,
+                createdAt: upsertedProfile.created_at,
               };
               
               set({ user, isAuthenticated: true });
@@ -582,7 +582,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session?.user) {
     // Handle email verification completion
     if (session.user.email_confirmed_at && !session.user.user_metadata?.profile_created) {
-      // User just verified their email, create profile
+      // User just verified their email, create profile using upsert to handle duplicates
       const userProfileData = {
         id: session.user.id,
         email: session.user.email!,
@@ -598,7 +598,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       try {
         await supabase
           .from('users')
-          .insert(userProfileData);
+          .upsert(userProfileData, { onConflict: 'id' });
         
         // Mark profile as created
         await supabase.auth.updateUser({
