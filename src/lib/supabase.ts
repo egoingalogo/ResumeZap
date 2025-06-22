@@ -349,33 +349,34 @@ export const deleteUserAccount = async (): Promise<void> => {
 
 /**
  * Get the count of users with lifetime plan
- * Uses Edge Function with graceful fallback to direct database query
+ * Uses graceful fallback to direct database query when Edge Function is unavailable
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
     console.log('getLifetimeUserCount: Attempting to call Edge Function');
     
-    // Try calling the Edge Function first
-    const { data, error } = await supabase.functions.invoke('get-lifetime-user-count');
+    // Set a timeout for the Edge Function call to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Edge Function timeout')), 5000);
+    });
+    
+    // Try calling the Edge Function with timeout
+    const edgeFunctionPromise = supabase.functions.invoke('get-lifetime-user-count');
+    
+    const { data, error } = await Promise.race([edgeFunctionPromise, timeoutPromise]) as any;
     
     if (error) {
       console.warn('getLifetimeUserCount: Edge function failed, using fallback:', error.message);
-      
-      // Fallback to direct database query
       return await getLifetimeUserCountFallback();
     }
     
     if (data?.error) {
       console.warn('getLifetimeUserCount: Edge function returned error, using fallback:', data.error);
-      
-      // Fallback to direct database query
       return await getLifetimeUserCountFallback();
     }
     
     if (!data?.success || typeof data.count !== 'number') {
       console.warn('getLifetimeUserCount: Invalid Edge function response, using fallback:', data);
-      
-      // Fallback to direct database query
       return await getLifetimeUserCountFallback();
     }
     
@@ -385,7 +386,15 @@ export const getLifetimeUserCount = async (): Promise<number> => {
   } catch (error) {
     console.warn('getLifetimeUserCount: Edge Function call failed, using fallback:', error);
     
-    // Fallback to direct database query
+    // Check if it's a network error specifically
+    if (error instanceof Error && (
+      error.message.includes('Failed to fetch') || 
+      error.message.includes('timeout') ||
+      error.name === 'TypeError'
+    )) {
+      console.warn('getLifetimeUserCount: Network/timeout error detected, using fallback immediately');
+    }
+    
     return await getLifetimeUserCountFallback();
   }
 };
