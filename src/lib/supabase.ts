@@ -348,24 +348,55 @@ export const deleteUserAccount = async (): Promise<void> => {
 };
 
 /**
- * Get the count of users with lifetime plan
- * Used to determine if lifetime plan upgrades should be available
+ * Get the count of users with lifetime plan using Edge Function
+ * Uses Edge Function to bypass RLS and get accurate global count
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
-    const { count, error } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .eq('plan', 'lifetime');
-
+    console.log('getLifetimeUserCount: Calling Edge Function for accurate count');
+    
+    // Call the get-lifetime-user-count edge function
+    const { data, error } = await supabase.functions.invoke('get-lifetime-user-count');
+    
     if (error) {
-      console.error('Failed to get lifetime user count:', error);
-      throw new Error(handleSupabaseError(error, 'get lifetime user count'));
+      console.error('getLifetimeUserCount: Edge function error:', error);
+      throw new Error(`Failed to get lifetime user count: ${error.message}`);
     }
-
-    return count || 0;
+    
+    if (data?.error) {
+      console.error('getLifetimeUserCount: Edge function returned error:', data.error);
+      throw new Error(data.error);
+    }
+    
+    if (!data?.success || typeof data.count !== 'number') {
+      console.error('getLifetimeUserCount: Invalid response format:', data);
+      throw new Error('Invalid response from lifetime user count service');
+    }
+    
+    console.log('getLifetimeUserCount: Successfully fetched count:', data.count);
+    return data.count;
+    
   } catch (error) {
-    console.error('Get lifetime user count error:', error);
-    throw error;
+    console.error('getLifetimeUserCount: Failed to get lifetime user count:', error);
+    
+    // Fallback: try direct database query (will be limited by RLS but better than nothing)
+    console.log('getLifetimeUserCount: Attempting fallback direct query');
+    try {
+      const { count, error: fallbackError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('plan', 'lifetime');
+
+      if (fallbackError) {
+        console.error('getLifetimeUserCount: Fallback query also failed:', fallbackError);
+        throw new Error(handleSupabaseError(fallbackError, 'get lifetime user count'));
+      }
+
+      console.log('getLifetimeUserCount: Fallback query returned count:', count || 0);
+      return count || 0;
+    } catch (fallbackError) {
+      console.error('getLifetimeUserCount: Both Edge Function and fallback failed');
+      throw error; // Re-throw the original error
+    }
   }
 };
