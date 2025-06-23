@@ -63,7 +63,6 @@ const Settings: React.FC = () => {
     emailUpdates: true,
     securityAlerts: true,
     marketingEmails: false,
-    weeklyDigest: true,
   });
 
   console.log('Settings: Component mounted for user:', user?.email);
@@ -557,13 +556,11 @@ const Settings: React.FC = () => {
                             {key === 'emailUpdates' && 'Email Updates'}
                             {key === 'securityAlerts' && 'Security Alerts'}
                             {key === 'marketingEmails' && 'Marketing Emails'}
-                            {key === 'weeklyDigest' && 'Weekly Digest'}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             {key === 'emailUpdates' && 'Receive updates about your account activity'}
                             {key === 'securityAlerts' && 'Get notified about security-related events'}
                             {key === 'marketingEmails' && 'Receive promotional emails and feature updates'}
-                            {key === 'weeklyDigest' && 'Weekly summary of your activity and tips'}
                           </p>
                         </div>
                         <button
