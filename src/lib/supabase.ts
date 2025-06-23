@@ -165,6 +165,7 @@ export const signUp = async (email: string, password: string, name: string) => {
       options: {
         data: {
           name,
+          full_name: name, // This populates the "Display name" in Supabase dashboard
         },
         emailRedirectTo: `${window.location.origin}/auth?verified=true`,
       },
