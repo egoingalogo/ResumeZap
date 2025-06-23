@@ -21,7 +21,7 @@ import {
 import { Navbar } from '../components/Navbar';
 import { ProfilePictureUpload } from '../components/ProfilePictureUpload';
 import { useAuthStore } from '../store/authStore';
-import { deleteUserAccount } from '../lib/supabase';
+import { deleteUserAccount, updatePassword } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 /**
@@ -158,12 +158,21 @@ const Settings: React.FC = () => {
       return;
     }
 
+    // Validate password strength
+    const hasUppercase = /[A-Z]/.test(securityForm.newPassword);
+    const hasLowercase = /[a-z]/.test(securityForm.newPassword);
+    const hasNumbers = /[0-9]/.test(securityForm.newPassword);
+    
+    if (!hasUppercase || !hasLowercase || !hasNumbers) {
+      toast.error('Password must include uppercase, lowercase, and numbers');
+      return;
+    }
     console.log('Settings: Changing password');
     setIsLoading(true);
 
     try {
-      // Simulate password change - implement actual password change logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use Supabase's updatePassword function
+      await updatePassword(securityForm.newPassword);
       
       setSecurityForm({
         currentPassword: '',
@@ -174,7 +183,8 @@ const Settings: React.FC = () => {
       toast.success('Password changed successfully!');
     } catch (error) {
       console.error('Settings: Failed to change password:', error);
-      toast.error('Failed to change password');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to change password';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
