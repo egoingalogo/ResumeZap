@@ -294,6 +294,54 @@ export const resendVerification = async (email: string) => {
 };
 
 /**
+ * Update user name in the database
+ * Updates the name field in the users table for the current authenticated user
+ */
+export const updateUserName = async (newName: string) => {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // Validate the new name
+    if (!newName?.trim()) {
+      throw new Error('Name cannot be empty');
+    }
+
+    const trimmedName = newName.trim();
+
+    // Validate name format (letters and spaces only, at least 3 characters per name part)
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      throw new Error('Name can only contain letters and spaces');
+    }
+
+    const nameParts = trimmedName.split(/\s+/);
+    if (nameParts.length < 2 || nameParts.some(part => part.length < 3)) {
+      throw new Error('Please enter your full name (at least 3 characters per name)');
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        name: trimmedName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      throw new Error(handleSupabaseError(error, 'update user name'));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update user name error:', error);
+    throw error;
+  }
+};
+
+/**
  * Delete user account completely using Supabase Edge Function
  * This function calls the delete-user edge function which handles complete account deletion
  * including auth.users record and all related data via CASCADE constraints

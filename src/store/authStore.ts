@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount, updateEmail } from '../lib/supabase';
+import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount, updateEmail, updateUserName } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -29,6 +29,7 @@ interface AuthState {
   upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
   updateProfilePicture: (profilePictureUrl: string | null) => Promise<void>;
   updateUserEmail: (newEmail: string) => Promise<void>;
+  updateUserName: (newName: string) => Promise<void>;
   initializeAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
   fetchLifetimeUserCount: () => Promise<void>;
@@ -534,6 +535,35 @@ export const useAuthStore = create<AuthState>()(
           });
         } catch (error) {
           console.error('AuthStore: Failed to update profile picture:', error);
+        }
+      },
+
+      /**
+       * Update user name with validation and state refresh
+       */
+      updateUserName: async (newName: string) => {
+        const { user } = get();
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+        
+        console.log('AuthStore: Updating user name');
+        
+        try {
+          await updateUserName(newName);
+          
+          // Update local state immediately
+          set({
+            user: {
+              ...user,
+              name: newName.trim(),
+            },
+          });
+          
+          console.log('AuthStore: User name updated successfully');
+        } catch (error) {
+          console.error('AuthStore: Failed to update user name:', error);
+          throw error;
         }
       },
 
