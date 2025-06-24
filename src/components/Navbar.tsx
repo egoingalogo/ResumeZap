@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 transition={{ duration: 0.5 }}
                 className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg"
               >
-                <Zap className="h-6 w-6 text-white" />
+                <img src="/app-logo.svg" alt="Logo"></img>
               </motion.div>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 ResumeZap
