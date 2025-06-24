@@ -107,7 +107,6 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
               <motion.div
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.5 }}
-                className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg"
               >
                 <img src="/app-logo.svg" alt="Logo"></img>
               </motion.div>
