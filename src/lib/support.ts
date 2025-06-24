@@ -1,6 +1,6 @@
 import { supabase, handleSupabaseError } from './supabase';
 
-export interface SupportTicket {
+interface SupportTicket {
   id: string;
   subject: string;
   category: string;
@@ -57,7 +57,7 @@ export const createSupportTicket = async (ticketData: {
 /**
  * Fetch user's support tickets
  */
-export const fetchSupportTickets = async (): Promise<SupportTicket[]> => {
+const fetchSupportTickets = async (): Promise<SupportTicket[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('No authenticated user');

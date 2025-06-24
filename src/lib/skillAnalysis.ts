@@ -1,6 +1,6 @@
 import { supabase, handleSupabaseError } from './supabase';
 
-export interface SkillAnalysis {
+interface SkillAnalysis {
   id: string;
   userId: string;
   resumeId?: string | null;
@@ -12,7 +12,7 @@ export interface SkillAnalysis {
   updatedAt: string;
 }
 
-export interface SkillRecommendation {
+interface SkillRecommendation {
   id: string;
   skillAnalysisId: string;
   skillName: string;
@@ -368,7 +368,7 @@ export const deleteSkillAnalysis = async (analysisId: string): Promise<void> => 
  * Get skill analysis statistics for the current user
  * Returns counts and insights about skill gaps
  */
-export const getSkillAnalysisStats = async (): Promise<{
+const getSkillAnalysisStats = async (): Promise<{
   totalAnalyses: number;
   totalSkillsAnalyzed: number;
   skillsToLearn: number;

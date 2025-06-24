@@ -11,7 +11,7 @@ import {
  * Handles upload, update, and deletion of user profile pictures
  */
 
-export interface ProfilePictureUploadResult {
+interface ProfilePictureUploadResult {
   success: boolean;
   profilePictureUrl?: string;
   error?: string;
@@ -210,7 +210,7 @@ export const removeProfilePicture = async (): Promise<{ success: boolean; error?
 /**
  * Get profile picture URL for a user
  */
-export const getProfilePictureUrl = async (userId: string): Promise<string | null> => {
+const getProfilePictureUrl = async (userId: string): Promise<string | null> => {
   try {
     const { data, error } = await supabase
       .from('users')

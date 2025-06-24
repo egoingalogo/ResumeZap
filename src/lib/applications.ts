@@ -311,7 +311,7 @@ export const deleteApplication = async (id: string): Promise<void> => {
  * Get application statistics for the current user
  * Returns counts by status and response rate
  */
-export const getApplicationStats = async (): Promise<{
+const getApplicationStats = async (): Promise<{
   total: number;
   applied: number;
   interview: number;
@@ -352,7 +352,7 @@ export const getApplicationStats = async (): Promise<{
  * Search applications by company, position, or location
  * Returns filtered results based on search term
  */
-export const searchApplications = async (searchTerm: string): Promise<Application[]> => {
+const searchApplications = async (searchTerm: string): Promise<Application[]> => {
   console.log('Applications: Searching applications with term:', searchTerm);
   
   try {

@@ -3,7 +3,7 @@
  * Provides compression, validation, and format conversion for production use
  */
 
-export interface ImageValidationResult {
+interface ImageValidationResult {
   isValid: boolean;
   error?: string;
 }
@@ -47,7 +47,7 @@ export const validateImageFile = (file: File): ImageValidationResult => {
 /**
  * Get image dimensions from file
  */
-export const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
