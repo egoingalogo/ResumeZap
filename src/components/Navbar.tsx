@@ -107,10 +107,15 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
               <motion.div
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.5 }}
+                className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10"
               >
-                <img src="/app-logo.svg" alt="Logo"></img>
+                <img 
+                  src="/app-logo.svg" 
+                  alt="ResumeZap Logo" 
+                  className="w-full h-full object-contain"
+                />
               </motion.div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 ResumeZap
               </span>
             </Link>
