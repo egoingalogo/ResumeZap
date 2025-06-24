@@ -58,6 +58,10 @@ const Settings: React.FC = () => {
     confirm: false,
   });
   
+  // Password validation state
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+  const [passwordTouched, setPasswordTouched] = useState<Record<string, boolean>>({});
+  
   // Notification settings
   const [notifications, setNotifications] = useState({
     emailUpdates: true,
@@ -82,6 +86,85 @@ const Settings: React.FC = () => {
       });
     }
   }, [isAuthenticated, navigate, user]);
+
+  /**
+   * Validates password fields with comprehensive rules
+   */
+  const validatePasswordField = (fieldName: string, value: string) => {
+    const newErrors = { ...passwordErrors };
+
+    switch (fieldName) {
+      case 'currentPassword':
+        if (!value) {
+          newErrors.currentPassword = 'Current password is required to make changes.';
+        } else {
+          delete newErrors.currentPassword;
+        }
+        break;
+
+      case 'newPassword':
+        if (!value) {
+          newErrors.newPassword = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+        } else if (value.length < 8) {
+          newErrors.newPassword = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+        } else {
+          const hasUppercase = /[A-Z]/.test(value);
+          const hasLowercase = /[a-z]/.test(value);
+          const hasNumbers = /[0-9]/.test(value);
+          
+          if (!hasUppercase || !hasLowercase || !hasNumbers) {
+            newErrors.newPassword = 'Password must be at least 8 characters long and include uppercase, lowercase, and numbers.';
+          } else {
+            delete newErrors.newPassword;
+          }
+        }
+        break;
+
+      case 'confirmPassword':
+        if (!value) {
+          newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
+        } else if (securityForm.newPassword !== value) {
+          newErrors.confirmPassword = 'Passwords do not match. Please make sure both entries are identical.';
+        } else {
+          delete newErrors.confirmPassword;
+        }
+        break;
+    }
+
+    setPasswordErrors(newErrors);
+  };
+
+  /**
+   * Handles password input changes with real-time validation
+   */
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSecurityForm(prev => ({ ...prev, [name]: value }));
+    
+    // Mark field as touched
+    setPasswordTouched(prev => ({ ...prev, [name]: true }));
+    
+    // Validate field in real-time if it has been touched
+    if (passwordTouched[name]) {
+      validatePasswordField(name, value);
+    }
+  };
+
+  /**
+   * Handles password input blur events to trigger validation
+   */
+  const handlePasswordInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordTouched(prev => ({ ...prev, [name]: true }));
+    validatePasswordField(name, value);
+  };
+
+  /**
+   * Determines if a password field should show error styling
+   */
+  const hasPasswordError = (fieldName: string): boolean => {
+    return passwordTouched[fieldName] && !!passwordErrors[fieldName];
+  };
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -445,8 +528,14 @@ const Settings: React.FC = () => {
                           <input
                             type={showPasswords.current ? 'text' : 'password'}
                             value={securityForm.currentPassword}
-                            onChange={(e) => setSecurityForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                            className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                            onChange={handlePasswordInputChange}
+                            onBlur={handlePasswordInputBlur}
+                            name="currentPassword"
+                            className={`w-full px-4 py-3 pr-12 border-2 rounded-lg transition-all duration-200 ${
+                              hasPasswordError('currentPassword')
+                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                                : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                            } dark:bg-gray-700 dark:text-white focus:outline-none`}
                             placeholder="Enter current password"
                           />
                           <button
@@ -457,6 +546,12 @@ const Settings: React.FC = () => {
                             {showPasswords.current ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          Enter your current password to authorize changes.
+                        </p>
+                        {hasPasswordError('currentPassword') && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordErrors.currentPassword}</p>
+                        )}
                       </div>
                       
                       <div>
@@ -467,8 +562,14 @@ const Settings: React.FC = () => {
                           <input
                             type={showPasswords.new ? 'text' : 'password'}
                             value={securityForm.newPassword}
-                            onChange={(e) => setSecurityForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                            className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                            onChange={handlePasswordInputChange}
+                            onBlur={handlePasswordInputBlur}
+                            name="newPassword"
+                            className={`w-full px-4 py-3 pr-12 border-2 rounded-lg transition-all duration-200 ${
+                              hasPasswordError('newPassword')
+                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                                : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                            } dark:bg-gray-700 dark:text-white focus:outline-none`}
                             placeholder="Enter new password"
                           />
                           <button
@@ -479,6 +580,12 @@ const Settings: React.FC = () => {
                             {showPasswords.new ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          At least 8 characters, including uppercase A–Z, lowercase a–z, and numbers 0–9.
+                        </p>
+                        {hasPasswordError('newPassword') && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordErrors.newPassword}</p>
+                        )}
                       </div>
                       
                       <div>
@@ -489,8 +596,14 @@ const Settings: React.FC = () => {
                           <input
                             type={showPasswords.confirm ? 'text' : 'password'}
                             value={securityForm.confirmPassword}
-                            onChange={(e) => setSecurityForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                            className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                            onChange={handlePasswordInputChange}
+                            onBlur={handlePasswordInputBlur}
+                            name="confirmPassword"
+                            className={`w-full px-4 py-3 pr-12 border-2 rounded-lg transition-all duration-200 ${
+                              hasPasswordError('confirmPassword')
+                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800' 
+                                : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800'
+                            } dark:bg-gray-700 dark:text-white focus:outline-none`}
                             placeholder="Confirm new password"
                           />
                           <button
@@ -501,6 +614,12 @@ const Settings: React.FC = () => {
                             {showPasswords.confirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          Must exactly match the password you entered above.
+                        </p>
+                        {hasPasswordError('confirmPassword') && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordErrors.confirmPassword}</p>
+                        )}
                       </div>
                     </div>
                     
