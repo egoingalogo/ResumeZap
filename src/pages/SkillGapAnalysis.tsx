@@ -17,7 +17,13 @@ import {
   Eye,
   Plus,
   Calendar,
-  BarChart3
+  BarChart3,
+  Award,
+  DollarSign,
+  Users,
+  Zap,
+  ArrowRight,
+  MapPin
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
@@ -37,6 +43,7 @@ const SkillGapAnalysis: React.FC = () => {
     skillGaps, 
     skillAnalyses,
     currentSkillAnalysis,
+    currentSkillGapAnalysis,
     isAnalyzing,
     isLoading,
     fetchSkillAnalyses,
@@ -49,6 +56,7 @@ const SkillGapAnalysis: React.FC = () => {
   const [jobPosting, setJobPosting] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'roadmap' | 'recommendations'>('overview');
 
   console.log('SkillGapAnalysis: Component mounted');
 
@@ -145,6 +153,24 @@ const SkillGapAnalysis: React.FC = () => {
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'critical': return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
+      case 'important': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'nice-to-have': return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
+      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400';
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner': return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
+      case 'intermediate': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'advanced': return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400';
+    }
+  };
+
   const formatAnalysisTitle = (analysis: any) => {
     const date = new Date(analysis.analysisDate).toLocaleDateString();
     const time = new Date(analysis.analysisDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -191,7 +217,7 @@ const SkillGapAnalysis: React.FC = () => {
                   <span>Analysis History ({skillAnalyses.length})</span>
                 </button>
                 
-                {(skillGaps.length > 0 || currentSkillAnalysis) && (
+                {(skillGaps.length > 0 || currentSkillAnalysis || currentSkillGapAnalysis) && (
                   <button
                     onClick={handleNewAnalysis}
                     className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200"
@@ -294,7 +320,7 @@ const SkillGapAnalysis: React.FC = () => {
             </motion.div>
           )}
 
-          {skillGaps.length === 0 && !currentSkillAnalysis ? (
+          {skillGaps.length === 0 && !currentSkillAnalysis && !currentSkillGapAnalysis ? (
             /* Input Section */
             <div className="grid lg:grid-cols-2 gap-8">
               <motion.div
@@ -399,145 +425,423 @@ const SkillGapAnalysis: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Summary */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
-              >
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Analysis Summary
-                </h2>
-                
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-red-600 mb-2">
-                      {skillGaps.filter(gap => gap.importance === 'high' && !gap.hasSkill).length}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Critical Skills Missing
-                    </div>
+              {/* Enhanced Analysis Results */}
+              {currentSkillGapAnalysis ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  {/* Tabs */}
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    <nav className="flex space-x-8 px-6">
+                      {[
+                        { id: 'overview', label: 'Overview', icon: BarChart3 },
+                        { id: 'roadmap', label: 'Learning Roadmap', icon: MapPin },
+                        { id: 'recommendations', label: 'Detailed Recommendations', icon: BookOpen },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as any)}
+                          className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                            activeTab === tab.id
+                              ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                          }`}
+                        >
+                          <tab.icon className="h-4 w-4" />
+                          <span>{tab.label}</span>
+                        </button>
+                      ))}
+                    </nav>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-600 mb-2">
-                      {skillGaps.filter(gap => gap.importance === 'medium' && !gap.hasSkill).length}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Important Skills Missing
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-600 mb-2">
-                      {skillGaps.filter(gap => gap.hasSkill).length}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Skills You Have
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
 
-              {/* Skill Gaps */}
-              <div className="space-y-6">
-                {skillGaps.map((gap, index) => {
-                  const ImportanceIcon = getImportanceIcon(gap.importance);
-                  
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
-                      className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${gap.hasSkill ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
-                            {gap.hasSkill ? (
-                              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                            ) : (
-                              <ImportanceIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                              {gap.skill}
-                            </h3>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getImportanceColor(gap.importance)}`}>
-                                {gap.importance} priority
-                              </span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                gap.hasSkill 
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                              }`}>
-                                {gap.hasSkill ? 'You have this skill' : 'Skill gap identified'}
-                              </span>
-                            </div>
+                  <div className="p-6">
+                    {activeTab === 'overview' && (
+                      <div className="space-y-6">
+                        {/* Skills Already Strong */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span>Skills You Already Have</span>
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {currentSkillGapAnalysis.skillsAlreadyStrong.map((skill, index) => (
+                              <div key={index} className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                <span className="text-sm text-green-800 dark:text-green-400">{skill}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                          <Clock className="h-4 w-4" />
-                          <span>{gap.recommendations.timeEstimate}</span>
+
+                        {/* Skill Gaps by Priority */}
+                        <div className="grid md:grid-cols-3 gap-6">
+                          <div>
+                            <h4 className="font-medium text-red-700 dark:text-red-400 mb-3 flex items-center space-x-2">
+                              <AlertCircle className="h-4 w-4" />
+                              <span>Critical Skills ({currentSkillGapAnalysis.skillGapAnalysis.critical.length})</span>
+                            </h4>
+                            <div className="space-y-2">
+                              {currentSkillGapAnalysis.skillGapAnalysis.critical.map((skill, index) => (
+                                <div key={index} className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                  <h5 className="font-medium text-red-800 dark:text-red-400">{skill.skill}</h5>
+                                  <p className="text-xs text-red-600 dark:text-red-500 mt-1">{skill.gap}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium text-yellow-700 dark:text-yellow-400 mb-3 flex items-center space-x-2">
+                              <TrendingUp className="h-4 w-4" />
+                              <span>Important Skills ({currentSkillGapAnalysis.skillGapAnalysis.important.length})</span>
+                            </h4>
+                            <div className="space-y-2">
+                              {currentSkillGapAnalysis.skillGapAnalysis.important.map((skill, index) => (
+                                <div key={index} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                  <h5 className="font-medium text-yellow-800 dark:text-yellow-400">{skill.skill}</h5>
+                                  <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">{skill.gap}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium text-green-700 dark:text-green-400 mb-3 flex items-center space-x-2">
+                              <Star className="h-4 w-4" />
+                              <span>Nice-to-Have ({currentSkillGapAnalysis.skillGapAnalysis.niceToHave.length})</span>
+                            </h4>
+                            <div className="space-y-2">
+                              {currentSkillGapAnalysis.skillGapAnalysis.niceToHave.map((skill, index) => (
+                                <div key={index} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                  <h5 className="font-medium text-green-800 dark:text-green-400">{skill.skill}</h5>
+                                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">{skill.gap}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      {!gap.hasSkill && (
-                        <div className="space-y-4">
-                          {/* Courses */}
-                          <div>
-                            <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
-                              <BookOpen className="h-4 w-4" />
-                              <span>Recommended Courses</span>
-                            </h4>
-                            <div className="grid md:grid-cols-2 gap-3">
-                              {gap.recommendations.courses.map((course, courseIndex) => (
-                                <div
-                                  key={courseIndex}
-                                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                                >
-                                  <span className="text-sm text-gray-900 dark:text-white">
-                                    {course}
-                                  </span>
-                                  <button className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
-                                    <ExternalLink className="h-4 w-4" />
-                                  </button>
+                    {activeTab === 'roadmap' && (
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Your Learning Roadmap
+                        </h3>
+                        
+                        <div className="space-y-6">
+                          {Object.entries(currentSkillGapAnalysis.developmentRoadmap).map(([phase, details], index) => (
+                            <div key={phase} className="relative">
+                              {index < Object.keys(currentSkillGapAnalysis.developmentRoadmap).length - 1 && (
+                                <div className="absolute left-6 top-16 w-0.5 h-full bg-gray-200 dark:bg-gray-600"></div>
+                              )}
+                              
+                              <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                                  {index + 1}
                                 </div>
-                              ))}
+                                
+                                <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                                      {phase.replace(/([A-Z])/g, ' $1').trim()}
+                                    </h4>
+                                    <span className="bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400 px-3 py-1 rounded-full text-sm font-medium">
+                                      {details.duration}
+                                    </span>
+                                  </div>
+                                  
+                                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                    <strong>Focus:</strong> {details.focus}
+                                  </p>
+                                  
+                                  <div>
+                                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Milestones:</h5>
+                                    <ul className="space-y-2">
+                                      {details.milestones.map((milestone, milestoneIndex) => (
+                                        <li key={milestoneIndex} className="flex items-start space-x-2">
+                                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                          <span className="text-sm text-gray-600 dark:text-gray-400">{milestone}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'recommendations' && (
+                      <div className="space-y-8">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Detailed Learning Recommendations
+                        </h3>
+                        
+                        {currentSkillGapAnalysis.learningRecommendations.map((recommendation, index) => (
+                          <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                  {recommendation.skill}
+                                </h4>
+                                <div className="flex items-center space-x-3 mt-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(recommendation.priority)}`}>
+                                    {recommendation.priority}
+                                  </span>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center space-x-1">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{recommendation.timeInvestment}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                              {/* Courses */}
+                              <div>
+                                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>Recommended Courses</span>
+                                </h5>
+                                <div className="space-y-3">
+                                  {recommendation.courses.map((course, courseIndex) => (
+                                    <div key={courseIndex} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <h6 className="font-medium text-gray-900 dark:text-white">{course.courseName}</h6>
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(course.difficulty)}`}>
+                                          {course.difficulty}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                                        <span className="flex items-center space-x-1">
+                                          <Users className="h-3 w-3" />
+                                          <span>{course.platform}</span>
+                                        </span>
+                                        <span className="flex items-center space-x-1">
+                                          <Clock className="h-3 w-3" />
+                                          <span>{course.duration}</span>
+                                        </span>
+                                        <span className="flex items-center space-x-1">
+                                          <DollarSign className="h-3 w-3" />
+                                          <span>{course.cost}</span>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Free Resources */}
+                              <div>
+                                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                  <Star className="h-4 w-4" />
+                                  <span>Free Resources</span>
+                                </h5>
+                                <div className="space-y-3">
+                                  {recommendation.freeResources.map((resource, resourceIndex) => (
+                                    <div key={resourceIndex} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <h6 className="font-medium text-gray-900 dark:text-white">{resource.resource}</h6>
+                                        <span className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
+                                          {resource.type}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        {resource.description}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Certifications */}
+                            {recommendation.certifications.length > 0 && (
+                              <div className="mt-6">
+                                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                  <Award className="h-4 w-4" />
+                                  <span>Relevant Certifications</span>
+                                </h5>
+                                <div className="grid md:grid-cols-2 gap-3">
+                                  {recommendation.certifications.map((cert, certIndex) => (
+                                    <div key={certIndex} className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                      <h6 className="font-medium text-blue-900 dark:text-blue-400">{cert.name}</h6>
+                                      <div className="flex items-center space-x-4 mt-2 text-sm text-blue-700 dark:text-blue-500">
+                                        <span>{cert.provider}</span>
+                                        <span>{cert.timeToComplete}</span>
+                                        <span>{cert.cost}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Practical Application */}
+                            <div className="mt-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                              <h5 className="font-medium text-purple-900 dark:text-purple-400 mb-2 flex items-center space-x-2">
+                                <Zap className="h-4 w-4" />
+                                <span>Practical Application</span>
+                              </h5>
+                              <p className="text-sm text-purple-800 dark:text-purple-300">
+                                {recommendation.practicalApplication}
+                              </p>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                /* Legacy Summary for backward compatibility */
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                    Analysis Summary
+                  </h2>
+                  
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-red-600 mb-2">
+                        {skillGaps.filter(gap => gap.importance === 'high' && !gap.hasSkill).length}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Critical Skills Missing
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-yellow-600 mb-2">
+                        {skillGaps.filter(gap => gap.importance === 'medium' && !gap.hasSkill).length}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Important Skills Missing
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-green-600 mb-2">
+                        {skillGaps.filter(gap => gap.hasSkill).length}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Skills You Have
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
-                          {/* Resources */}
-                          <div>
-                            <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
-                              <Star className="h-4 w-4" />
-                              <span>Free Resources</span>
-                            </h4>
-                            <div className="grid md:grid-cols-2 gap-3">
-                              {gap.recommendations.resources.map((resource, resourceIndex) => (
-                                <div
-                                  key={resourceIndex}
-                                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                                >
-                                  <span className="text-sm text-gray-900 dark:text-white">
-                                    {resource}
-                                  </span>
-                                  <button className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
-                                    <Play className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              ))}
+              {/* Legacy Skill Gaps Display for backward compatibility */}
+              {!currentSkillGapAnalysis && skillGaps.length > 0 && (
+                <div className="space-y-6">
+                  {skillGaps.map((gap, index) => {
+                    const ImportanceIcon = getImportanceIcon(gap.importance);
+                    
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                        className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg ${gap.hasSkill ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
+                              {gap.hasSkill ? (
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              ) : (
+                                <ImportanceIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                              )}
                             </div>
+                            <div>
+                              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                {gap.skill}
+                              </h3>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getImportanceColor(gap.importance)}`}>
+                                  {gap.importance} priority
+                                </span>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  gap.hasSkill 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                }`}>
+                                  {gap.hasSkill ? 'You have this skill' : 'Skill gap identified'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                            <Clock className="h-4 w-4" />
+                            <span>{gap.recommendations.timeEstimate}</span>
                           </div>
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+
+                        {!gap.hasSkill && (
+                          <div className="space-y-4">
+                            {/* Courses */}
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                <BookOpen className="h-4 w-4" />
+                                <span>Recommended Courses</span>
+                              </h4>
+                              <div className="grid md:grid-cols-2 gap-3">
+                                {gap.recommendations.courses.map((course, courseIndex) => (
+                                  <div
+                                    key={courseIndex}
+                                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                                  >
+                                    <span className="text-sm text-gray-900 dark:text-white">
+                                      {course}
+                                    </span>
+                                    <button className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
+                                      <ExternalLink className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Resources */}
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                <Star className="h-4 w-4" />
+                                <span>Free Resources</span>
+                              </h4>
+                              <div className="grid md:grid-cols-2 gap-3">
+                                {gap.recommendations.resources.map((resource, resourceIndex) => (
+                                  <div
+                                    key={resourceIndex}
+                                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                                  >
+                                    <span className="text-sm text-gray-900 dark:text-white">
+                                      {resource}
+                                    </span>
+                                    <button className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
+                                      <Play className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Action Buttons */}
               <motion.div
