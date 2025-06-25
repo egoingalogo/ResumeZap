@@ -123,29 +123,29 @@ const Dashboard: React.FC = () => {
       title: 'Resumes Created',
       value: resumes.length,
       icon: FileText,
-      change: '+12%',
-      changeType: 'positive' as const,
+      change: null,
+      changeType: null,
     },
     {
-      title: 'Applications Sent',
-      value: 23,
+      title: 'Applications',
+      value: 0, // Will be updated when applications are implemented
       icon: Target,
-      change: '+8%',
-      changeType: 'positive' as const,
+      change: null,
+      changeType: null,
     },
     {
-      title: 'Interview Rate',
-      value: '34%',
+      title: 'Skill Analyses',
+      value: skillAnalyses?.length || 0,
       icon: TrendingUp,
-      change: '+15%',
-      changeType: 'positive' as const,
+      change: null,
+      changeType: null,
     },
     {
-      title: 'Avg. Match Score',
-      value: '87%',
+      title: 'Cover Letters',
+      value: 0, // Will be updated when cover letters are tracked
       icon: Award,
-      change: '+5%',
-      changeType: 'positive' as const,
+      change: null,
+      changeType: null,
     },
   ];
 
@@ -284,11 +284,13 @@ const Dashboard: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <stat.icon className="h-8 w-8 text-purple-600" />
-                  <span className={`text-sm font-medium ${
-                    stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {stat.change}
-                  </span>
+                  {stat.change && (
+                    <span className={`text-sm font-medium ${
+                      stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {stat.change}
+                    </span>
+                  )}
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {stat.value}

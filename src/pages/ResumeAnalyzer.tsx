@@ -60,7 +60,7 @@ const ResumeAnalyzer: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        setResumeText(text || `[Resume content from ${file.name}]\n\nJohn Doe\nSoftware Engineer\n\nExperience:\n- 3 years of React development\n- Built 5+ web applications\n- Team collaboration and agile methodologies\n\nSkills:\n- JavaScript, React, Node.js\n- HTML, CSS, SQL\n- Git, Docker`);
+        setResumeText(text || '');
         toast.success('Resume uploaded successfully!');
       };
       reader.readAsText(file);
