@@ -180,6 +180,7 @@ export const signUp = async (email: string, password: string, name: string) => {
     console.error('Sign up error:', error);
     throw error;
   }
+        // Don't throw error here - let the app continue
 };
 
 /**
@@ -380,7 +381,12 @@ export const deleteUserAccount = async (): Promise<void> => {
     if (data?.error) {
       console.error('deleteUserAccount: Edge function returned error:', data.error);
       throw new Error(data.error);
-    }
+      try {
+        await useAuthStore.getState().refreshUser();
+      } catch (error) {
+        console.error('AuthStore: Failed to refresh user in auth state change:', error);
+        // Don't crash the app - the user might still be able to use it
+      }
     
     console.log('deleteUserAccount: Account deletion completed successfully');
     

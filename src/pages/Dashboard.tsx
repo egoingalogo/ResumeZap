@@ -42,7 +42,10 @@ const Dashboard: React.FC = () => {
 
     if (isAuthenticated && user) {
       // Fetch user's resumes
-      fetchResumes();
+      fetchResumes().catch(error => {
+        console.error('Dashboard: Failed to fetch resumes:', error);
+        // Don't crash the dashboard if resumes fail to load
+      });
 
       // Handle upgrade parameter from registration
       const upgradeParam = searchParams.get('upgrade');
@@ -135,7 +138,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Skill Analyses',
-      value: skillAnalyses?.length || 0,
+      value: Array.isArray(skillAnalyses) ? skillAnalyses.length : 0,
       icon: TrendingUp,
       change: null,
       changeType: null,

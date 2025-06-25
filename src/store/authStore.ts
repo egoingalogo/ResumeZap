@@ -170,7 +170,7 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
           
-          // Get user profile from database - remove single() to handle missing profiles gracefully
+          // Get user profile from database with better error handling
           const { data: userProfiles, error } = await supabase
             .from('users')
             .select('*')
@@ -178,15 +178,52 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) {
             console.error('AuthStore: Failed to fetch user profile:', error);
-            set({ user: null, isAuthenticated: false });
-            return;
+            // Don't immediately fail - might be a temporary network issue
+            throw error;
           }
           
           // Check if profile exists
           if (!userProfiles || userProfiles.length === 0) {
-            console.warn('AuthStore: User profile not found, this may be a temporary race condition during registration');
-            set({ user: null, isAuthenticated: false });
-            return;
+            console.warn('AuthStore: User profile not found, attempting to create profile');
+            
+            // Try to create the missing profile
+            const userProfileData = {
+              id: supabaseUser.id,
+              email: supabaseUser.email!,
+              name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.full_name || 'User',
+              plan: 'free' as const,
+              profile_picture_url: null,
+              usage_this_month: {
+                resumeTailoring: 0,
+                coverLetters: 0,
+              },
+            };
+            
+            const { data: createdProfile, error: createError } = await supabase
+              .from('users')
+              .upsert(userProfileData, { onConflict: 'id' })
+              .select()
+              .single();
+            
+            if (createError) {
+              console.error('AuthStore: Failed to create user profile:', createError);
+              throw createError;
+            }
+            
+            if (createdProfile) {
+              const user: User = {
+                id: createdProfile.id,
+                email: createdProfile.email,
+                name: createdProfile.name,
+                plan: createdProfile.plan,
+                profilePictureUrl: createdProfile.profile_picture_url,
+                usageThisMonth: createdProfile.usage_this_month as any,
+                createdAt: createdProfile.created_at,
+              };
+              
+              set({ user, isAuthenticated: true });
+              return;
+            }
           }
           
           // Handle multiple profiles (shouldn't happen but be defensive)
@@ -209,7 +246,16 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true });
         } catch (error) {
           console.error('AuthStore: Failed to refresh user:', error);
-          set({ user: null, isAuthenticated: false });
+          
+          // Only clear auth state for certain types of errors
+          const errorMessage = error instanceof Error ? error.message : '';
+          if (errorMessage.includes('JWT') || errorMessage.includes('session') || errorMessage.includes('unauthorized')) {
+            console.log('AuthStore: Auth-related error, clearing session');
+            set({ user: null, isAuthenticated: false });
+          } else {
+            console.log('AuthStore: Non-auth error, keeping current state');
+            // Don't clear the auth state for network/database errors
+          }
         }
       },
       

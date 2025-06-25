@@ -27,6 +27,12 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary: Component stack trace:', errorInfo.componentStack);
     console.error('ErrorBoundary: Error details:', error);
+    
+    // Log additional debugging information
+    console.error('ErrorBoundary: Error name:', error.name);
+    console.error('ErrorBoundary: Error stack:', error.stack);
+    console.error('ErrorBoundary: Current URL:', window.location.href);
+    console.error('ErrorBoundary: User agent:', navigator.userAgent);
   }
 
   public render() {
@@ -43,11 +49,25 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               We've encountered an unexpected error. Please refresh the page or try again later.
             </p>
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 text-left">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Error Details:
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                {this.state.error?.message || 'Unknown error occurred'}
+              </p>
+            </div>
             <button
               onClick={() => window.location.reload()}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
             >
               Refresh Page
+            </button>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="w-full mt-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+            >
+              Go to Home Page
             </button>
           </div>
         </div>

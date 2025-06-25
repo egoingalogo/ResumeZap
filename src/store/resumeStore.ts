@@ -444,8 +444,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch skill analyses';
       console.error('ResumeStore: Failed to fetch skill analyses:', errorMessage);
-      set({ error: errorMessage });
-      throw error;
+      // Don't throw error for skill analyses - just log it and continue
+      set({ error: null, skillAnalyses: [] });
+      console.log('ResumeStore: Continuing with empty skill analyses due to error');
     } finally {
       set({ isLoading: false });
     }
