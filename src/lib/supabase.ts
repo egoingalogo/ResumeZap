@@ -387,6 +387,7 @@ export const deleteUserAccount = async (): Promise<void> => {
         console.error('AuthStore: Failed to refresh user in auth state change:', error);
         // Don't crash the app - the user might still be able to use it
       }
+    }
     
     console.log('deleteUserAccount: Account deletion completed successfully');
     
