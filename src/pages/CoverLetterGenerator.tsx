@@ -10,10 +10,15 @@ import {
   MessageSquare,
   Briefcase,
   Heart,
-  Clock
+  Clock,
+  CheckCircle,
+  Target,
+  Lightbulb,
+  ArrowRight
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
+import { useResumeStore } from '../store/resumeStore';
 import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
@@ -24,6 +29,7 @@ import toast from 'react-hot-toast';
 const CoverLetterGenerator: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
+  const { generateCoverLetter, currentCoverLetter, isAnalyzing } = useResumeStore();
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -31,11 +37,11 @@ const CoverLetterGenerator: React.FC = () => {
     hiringManager: '',
     jobDescription: '',
     personalExperience: '',
+    resumeContent: '',
     tone: 'professional' as 'professional' | 'enthusiastic' | 'concise',
   });
   
-  const [generatedLetter, setGeneratedLetter] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'letter' | 'customizations' | 'strengths'>('letter');
 
   console.log('CoverLetterGenerator: Component mounted');
 
@@ -75,96 +81,42 @@ const CoverLetterGenerator: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const generateCoverLetter = async () => {
-    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription) {
+  const handleGenerateCoverLetter = async () => {
+    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription || !formData.resumeContent) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     console.log('CoverLetterGenerator: Starting generation with tone:', formData.tone);
-    setIsGenerating(true);
     updateUsage('coverLetters');
 
     try {
-      // Simulate AI generation - replace with actual Claude API call
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      const templates = {
-        professional: `Dear ${formData.hiringManager || 'Hiring Manager'},
-
-I am writing to express my strong interest in the ${formData.jobTitle} position at ${formData.companyName}. With my background in software development and proven track record of delivering high-quality solutions, I am confident I would be a valuable addition to your team.
-
-Based on your job posting, I understand you are seeking someone with experience in modern web technologies and collaborative development practices. In my previous roles, I have:
-
-• Developed and maintained multiple React applications serving thousands of users
-• Collaborated effectively with cross-functional teams using agile methodologies
-• Implemented best practices for code quality, testing, and deployment
-
-${formData.personalExperience ? `Additionally, ${formData.personalExperience.toLowerCase()}` : ''}
-
-I am particularly drawn to ${formData.companyName} because of your commitment to innovation and technological excellence. I would welcome the opportunity to discuss how my skills and enthusiasm can contribute to your team's continued success.
-
-Thank you for considering my application. I look forward to hearing from you.
-
-Sincerely,
-[Your Name]`,
-
-        enthusiastic: `Dear ${formData.hiringManager || 'Hiring Manager'},
-
-I am absolutely excited to apply for the ${formData.jobTitle} position at ${formData.companyName}! Your job posting immediately caught my attention, and I can't wait to share why I'd be a perfect fit for your team.
-
-What makes me particularly excited about this opportunity is how perfectly it aligns with my passion for technology and problem-solving. I've spent years honing my skills in:
-
-🚀 Building engaging, user-friendly web applications with React and modern JavaScript
-🤝 Thriving in collaborative environments where innovation happens
-💡 Turning complex requirements into elegant, scalable solutions
-
-${formData.personalExperience ? `I'm especially proud of ${formData.personalExperience.toLowerCase()}` : ''}
-
-${formData.companyName} has always impressed me with its forward-thinking approach and commitment to excellence. I'm genuinely excited about the possibility of contributing my energy, creativity, and technical expertise to help drive your projects forward.
-
-I would love the chance to discuss how my passion and skills can benefit your team. Thank you for considering my application!
-
-Best regards,
-[Your Name]`,
-
-        concise: `Dear ${formData.hiringManager || 'Hiring Manager'},
-
-I am applying for the ${formData.jobTitle} position at ${formData.companyName}.
-
-Key qualifications:
-• 3+ years React/JavaScript development
-• Strong collaboration and agile experience
-• Proven track record of successful project delivery
-
-${formData.personalExperience ? `Recent achievement: ${formData.personalExperience}` : ''}
-
-I am interested in contributing to ${formData.companyName}'s continued success and would welcome the opportunity to discuss my candidacy.
-
-Thank you for your consideration.
-
-Best regards,
-[Your Name]`
-      };
-
-      setGeneratedLetter(templates[formData.tone]);
+      await generateCoverLetter(
+        formData.resumeContent,
+        formData.jobDescription,
+        formData.companyName,
+        formData.jobTitle,
+        formData.tone
+      );
       toast.success('Cover letter generated successfully!');
       
     } catch (error) {
       console.error('CoverLetterGenerator: Generation failed:', error);
       toast.error('Generation failed. Please try again.');
-    } finally {
-      setIsGenerating(false);
     }
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedLetter);
+    if (currentCoverLetter) {
+      navigator.clipboard.writeText(currentCoverLetter.coverLetter);
+    }
     toast.success('Cover letter copied to clipboard!');
   };
 
   const downloadLetter = () => {
-    const blob = new Blob([generatedLetter], { type: 'text/plain' });
+    if (!currentCoverLetter) return;
+    
+    const blob = new Blob([currentCoverLetter.coverLetter], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -264,6 +216,21 @@ Best regards,
                 </div>
               </div>
 
+              {/* Resume Content */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Your Resume Content *
+                </h2>
+                
+                <textarea
+                  name="resumeContent"
+                  value={formData.resumeContent}
+                  onChange={handleInputChange}
+                  placeholder="Paste your resume content here to personalize the cover letter..."
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                />
+              </div>
               {/* Job Description */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -333,11 +300,11 @@ Best regards,
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={generateCoverLetter}
-                disabled={isGenerating || !formData.companyName || !formData.jobTitle || !formData.jobDescription}
+                onClick={handleGenerateCoverLetter}
+                disabled={isAnalyzing || !formData.companyName || !formData.jobTitle || !formData.jobDescription || !formData.resumeContent}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {isGenerating ? (
+                {isAnalyzing ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Generating...</span>
@@ -358,36 +325,110 @@ Best regards,
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-6"
             >
-              {generatedLetter ? (
+              {currentCoverLetter ? (
                 <>
-                  {/* Generated Letter */}
+                  {/* Cover Letter Tabs */}
                   <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        Generated Cover Letter
-                      </h2>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={copyToClipboard}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                          title="Copy to clipboard"
-                        >
-                          <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                        <button
-                          onClick={generateCoverLetter}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                          title="Regenerate"
-                        >
-                          <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                      </div>
+                    <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+                      <nav className="flex space-x-8">
+                        {[
+                          { id: 'letter', label: 'Cover Letter', icon: Mail },
+                          { id: 'customizations', label: 'Customizations', icon: Target },
+                          { id: 'strengths', label: 'Key Strengths', icon: CheckCircle },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                              activeTab === tab.id
+                                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                            }`}
+                          >
+                            <tab.icon className="h-4 w-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        ))}
+                      </nav>
                     </div>
                     
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 max-h-96 overflow-y-auto">
-                      <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
-                        {generatedLetter}
-                      </pre>
+                    <div>
+                      {activeTab === 'letter' && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Generated Cover Letter
+                            </h3>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={copyToClipboard}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                title="Copy to clipboard"
+                              >
+                                <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                              </button>
+                              <button
+                                onClick={handleGenerateCoverLetter}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                title="Regenerate"
+                              >
+                                <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 max-h-96 overflow-y-auto">
+                            <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
+                              {currentCoverLetter.coverLetter}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'customizations' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            AI Customizations Applied
+                          </h3>
+                          <div className="space-y-3">
+                            {currentCoverLetter.customizations.map((customization, index) => (
+                              <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <ArrowRight className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-blue-800 dark:text-blue-400">
+                                  {customization}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <h4 className="font-medium text-green-800 dark:text-green-400 mb-2 flex items-center space-x-2">
+                              <Lightbulb className="h-4 w-4" />
+                              <span>Call to Action</span>
+                            </h4>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              {currentCoverLetter.callToAction}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'strengths' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Key Strengths Highlighted
+                          </h3>
+                          <div className="space-y-3">
+                            {currentCoverLetter.keyStrengths.map((strength, index) => (
+                              <div key={index} className="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-purple-800 dark:text-purple-400">
+                                  {strength}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

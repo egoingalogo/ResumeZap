@@ -10,6 +10,101 @@ import {
   type SkillAnalysisWithRecommendations
 } from '../lib/skillAnalysis';
 
+// New interfaces to match Anthropic JSON outputs
+interface ResumeAnalysisResult {
+  tailoredResume: string;
+  matchScore: number;
+  matchBreakdown: {
+    keywords: number;
+    skills: number;
+    experience: number;
+    formatting: number;
+  };
+  changes: Array<{
+    section: string;
+    original: string;
+    improved: string;
+    reason: string;
+  }>;
+  keywordMatches: {
+    found: string[];
+    missing: string[];
+    suggestions: string[];
+  };
+  atsOptimizations: string[];
+}
+
+interface CoverLetterResult {
+  coverLetter: string;
+  customizations: string[];
+  keyStrengths: string[];
+  callToAction: string;
+}
+
+interface SkillGapResult {
+  skillGapAnalysis: {
+    critical: Array<{
+      skill: string;
+      currentLevel: string;
+      requiredLevel: string;
+      gap: string;
+    }>;
+    important: Array<{
+      skill: string;
+      currentLevel: string;
+      requiredLevel: string;
+      gap: string;
+    }>;
+    niceToHave: Array<{
+      skill: string;
+      currentLevel: string;
+      requiredLevel: string;
+      gap: string;
+    }>;
+  };
+  learningRecommendations: Array<{
+    skill: string;
+    priority: string;
+    timeInvestment: string;
+    courses: Array<{
+      platform: string;
+      courseName: string;
+      cost: string;
+      duration: string;
+      difficulty: string;
+    }>;
+    freeResources: Array<{
+      type: string;
+      resource: string;
+      description: string;
+    }>;
+    certifications: Array<{
+      name: string;
+      provider: string;
+      timeToComplete: string;
+      cost: string;
+    }>;
+    practicalApplication: string;
+  }>;
+  developmentRoadmap: {
+    phase1: {
+      duration: string;
+      focus: string;
+      milestones: string[];
+    };
+    phase2: {
+      duration: string;
+      focus: string;
+      milestones: string[];
+    };
+    phase3: {
+      duration: string;
+      focus: string;
+      milestones: string[];
+    };
+  };
+  skillsAlreadyStrong: string[];
+}
 interface Resume {
   id: string;
   title: string;
@@ -24,6 +119,9 @@ interface Resume {
 interface ResumeState {
   resumes: Resume[];
   currentResume: Resume | null;
+  currentResumeAnalysis: ResumeAnalysisResult | null;
+  currentCoverLetter: CoverLetterResult | null;
+  currentSkillGapAnalysis: SkillGapResult | null;
   skillGaps: SkillGap[];
   skillAnalyses: SkillAnalysisWithRecommendations[];
   currentSkillAnalysis: SkillAnalysisWithRecommendations | null;
@@ -33,6 +131,7 @@ interface ResumeState {
   
   fetchResumes: () => Promise<void>;
   analyzeResume: (resumeContent: string, jobPosting: string) => Promise<void>;
+  generateCoverLetter: (resumeContent: string, jobPosting: string, companyName: string, jobTitle: string, tone: string) => Promise<void>;
   saveResume: (resume: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => Promise<void>;
   updateResume: (id: string, updates: Partial<Resume>) => Promise<void>;
   deleteResume: (id: string) => Promise<void>;
@@ -52,6 +151,9 @@ interface ResumeState {
 export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
+  currentResumeAnalysis: null,
+  currentCoverLetter: null,
+  currentSkillGapAnalysis: null,
   skillGaps: [],
   skillAnalyses: [],
   currentSkillAnalysis: null,
@@ -126,44 +228,152 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze resume with AI (simulated for now)
+   * Analyze resume with AI using new JSON structure
    */
   analyzeResume: async (resumeContent: string, jobPosting: string) => {
     console.log('ResumeStore: Starting resume analysis');
     set({ isAnalyzing: true, error: null });
     
     try {
-      // Simulate AI analysis - replace with actual AI service
+      // Simulate AI analysis with new structure - replace with actual Claude API call
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Generate AI-tailored content (simulated)
-      const tailoredContent = `${resumeContent}
+      // Mock response matching Anthropic JSON structure
+      const mockAnalysisResult: ResumeAnalysisResult = {
+        tailoredResume: `${resumeContent}
 
-[AI-ENHANCED SECTIONS]
-• Optimized keywords for ATS compatibility
-• Highlighted relevant experience matching job requirements
-• Improved formatting for better readability
-• Added quantifiable achievements where applicable`;
+EXPERIENCE
+• Senior Software Engineer at TechCorp (2021-Present)
+  - Led development of React-based web applications serving 50,000+ users
+  - Implemented TypeScript for improved code quality and reduced bugs by 30%
+  - Collaborated with cross-functional teams using Agile methodologies
+  - Optimized application performance resulting in 25% faster load times
+
+• Full Stack Developer at StartupXYZ (2019-2021)
+  - Built responsive web applications using React, Node.js, and PostgreSQL
+  - Developed RESTful APIs handling 10,000+ daily requests
+  - Implemented automated testing reducing deployment issues by 40%
+
+TECHNICAL SKILLS
+• Frontend: React, TypeScript, JavaScript, HTML5, CSS3, Tailwind CSS
+• Backend: Node.js, Express.js, Python, RESTful APIs
+• Databases: PostgreSQL, MongoDB, Redis
+• Tools: Git, Docker, AWS, CI/CD, Jest, Webpack`,
+        matchScore: 87,
+        matchBreakdown: {
+          keywords: 85,
+          skills: 90,
+          experience: 88,
+          formatting: 85
+        },
+        changes: [
+          {
+            section: "Experience",
+            original: "Worked on web applications",
+            improved: "Led development of React-based web applications serving 50,000+ users",
+            reason: "Added specific technology (React) and quantifiable impact (50,000+ users) for better ATS matching"
+          },
+          {
+            section: "Technical Skills",
+            original: "JavaScript, HTML, CSS",
+            improved: "React, TypeScript, JavaScript, HTML5, CSS3, Tailwind CSS",
+            reason: "Added React and TypeScript which are key requirements in the job posting"
+          }
+        ],
+        keywordMatches: {
+          found: ["React", "TypeScript", "Node.js", "PostgreSQL", "Agile", "APIs"],
+          missing: ["AWS Lambda", "GraphQL", "Microservices"],
+          suggestions: ["AWS Lambda for serverless functions", "GraphQL for API development", "Microservices architecture"]
+        },
+        atsOptimizations: [
+          "Used standard section headers (EXPERIENCE, TECHNICAL SKILLS)",
+          "Added quantifiable achievements with specific numbers",
+          "Included relevant keywords naturally in context",
+          "Used bullet points for better readability",
+          "Avoided graphics and complex formatting"
+        ]
+      };
       
-      const matchScore = Math.floor(Math.random() * 20) + 80; // 80-100%
-      
+      // Create resume object for backward compatibility
       const analyzedResume: Resume = {
         id: Date.now().toString(),
         title: `Tailored Resume - ${new Date().toLocaleDateString()}`,
-        content: tailoredContent,
+        content: mockAnalysisResult.tailoredResume,
         originalContent: resumeContent,
         jobPosting,
-        matchScore,
+        matchScore: mockAnalysisResult.matchScore,
         createdAt: new Date().toISOString(),
         lastModified: new Date().toISOString(),
       };
       
-      set({ currentResume: analyzedResume, error: null });
-      console.log('ResumeStore: Resume analysis completed with score:', matchScore);
+      set({ 
+        currentResume: analyzedResume, 
+        currentResumeAnalysis: mockAnalysisResult,
+        error: null 
+      });
+      console.log('ResumeStore: Resume analysis completed with score:', mockAnalysisResult.matchScore);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Resume analysis failed';
       console.error('ResumeStore: Resume analysis failed:', errorMessage);
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isAnalyzing: false });
+    }
+  },
+  
+  /**
+   * Generate cover letter with AI using new JSON structure
+   */
+  generateCoverLetter: async (resumeContent: string, jobPosting: string, companyName: string, jobTitle: string, tone: string) => {
+    console.log('ResumeStore: Generating cover letter');
+    set({ isAnalyzing: true, error: null });
+    
+    try {
+      // Simulate AI generation - replace with actual Claude API call
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      // Mock response matching Anthropic JSON structure
+      const mockCoverLetterResult: CoverLetterResult = {
+        coverLetter: `Dear Hiring Manager,
+
+I am writing to express my strong interest in the ${jobTitle} position at ${companyName}. With my extensive experience in React development and full-stack engineering, I am confident I would be a valuable addition to your team.
+
+In my current role as Senior Software Engineer, I have led the development of React-based applications serving over 50,000 users, directly aligning with your need for scalable frontend solutions. My expertise in TypeScript and modern JavaScript frameworks, combined with my experience in Agile development environments, positions me well to contribute to your team's success from day one.
+
+What particularly excites me about ${companyName} is your commitment to innovation and technical excellence. I am eager to bring my passion for creating efficient, user-focused applications to help drive your company's continued growth and success.
+
+Thank you for considering my application. I would welcome the opportunity to discuss how my technical skills and collaborative approach can contribute to your team's objectives.
+
+Best regards,
+[Your Name]`,
+        customizations: [
+          `Addressed specific ${jobTitle} role requirements`,
+          `Mentioned ${companyName}'s focus on innovation`,
+          "Highlighted React and TypeScript experience from resume",
+          "Referenced 50,000+ users metric from experience",
+          `Adapted tone to be ${tone} and professional`
+        ],
+        keyStrengths: [
+          "React development expertise with proven scale",
+          "TypeScript and modern JavaScript proficiency",
+          "Agile development experience",
+          "Leadership in technical projects",
+          "User-focused application development"
+        ],
+        callToAction: "I would welcome the opportunity to discuss how my technical skills and collaborative approach can contribute to your team's objectives."
+      };
+      
+      set({ 
+        currentCoverLetter: mockCoverLetterResult,
+        error: null 
+      });
+      console.log('ResumeStore: Cover letter generation completed');
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Cover letter generation failed';
+      console.error('ResumeStore: Cover letter generation failed:', errorMessage);
       set({ error: errorMessage });
       throw error;
     } finally {
@@ -309,90 +519,247 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze skill gaps and save to database with enhanced error handling
-   * Performs AI analysis and persists results for future reference
+   * Analyze skill gaps using new JSON structure and save to database
    */
   analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
     set({ isAnalyzing: true, error: null });
     
     try {
-      // Simulate AI skill gap analysis
+      // Simulate AI skill gap analysis with new structure
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const mockSkillGaps: SkillGap[] = [
-        {
-          skill: 'React.js',
-          importance: 'high',
-          hasSkill: resumeContent.toLowerCase().includes('react'),
-          recommendations: {
-            courses: ['Advanced React Patterns', 'React Performance Optimization'],
-            resources: ['React Official Docs', 'React DevTools'],
-            timeEstimate: '2-3 weeks',
-          },
+      // Mock response matching new Anthropic JSON structure
+      const mockSkillGapResult: SkillGapResult = {
+        skillGapAnalysis: {
+          critical: [
+            {
+              skill: "AWS Lambda",
+              currentLevel: "No experience",
+              requiredLevel: "Intermediate - able to build and deploy serverless functions",
+              gap: "Need to learn serverless architecture, Lambda functions, and event-driven programming"
+            },
+            {
+              skill: "GraphQL",
+              currentLevel: "Basic understanding",
+              requiredLevel: "Advanced - able to design schemas and optimize queries",
+              gap: "Need hands-on experience with schema design, resolvers, and performance optimization"
+            }
+          ],
+          important: [
+            {
+              skill: "Docker",
+              currentLevel: "Basic containerization knowledge",
+              requiredLevel: "Intermediate - able to create multi-stage builds and orchestration",
+              gap: "Need experience with Docker Compose, multi-stage builds, and container optimization"
+            },
+            {
+              skill: "Microservices Architecture",
+              currentLevel: "Theoretical knowledge",
+              requiredLevel: "Practical experience with service communication and deployment",
+              gap: "Need hands-on experience building and deploying microservices"
+            }
+          ],
+          niceToHave: [
+            {
+              skill: "Kubernetes",
+              currentLevel: "No experience",
+              requiredLevel: "Basic understanding of container orchestration",
+              gap: "Foundational knowledge of K8s concepts and basic deployment"
+            }
+          ]
         },
-        {
-          skill: 'TypeScript',
-          importance: 'high',
-          hasSkill: resumeContent.toLowerCase().includes('typescript'),
-          recommendations: {
-            courses: ['TypeScript Fundamentals', 'TypeScript with React'],
-            resources: ['TypeScript Handbook', 'TypeScript Playground'],
-            timeEstimate: '3-4 weeks',
+        learningRecommendations: [
+          {
+            skill: "AWS Lambda",
+            priority: "Critical",
+            timeInvestment: "40-60 hours over 6-8 weeks",
+            courses: [
+              {
+                platform: "AWS Training",
+                courseName: "AWS Lambda Foundations",
+                cost: "Free",
+                duration: "4 hours",
+                difficulty: "Beginner"
+              },
+              {
+                platform: "Udemy",
+                courseName: "AWS Lambda & Serverless Architecture Bootcamp",
+                cost: "$89.99",
+                duration: "12 hours",
+                difficulty: "Intermediate"
+              }
+            ],
+            freeResources: [
+              {
+                type: "Documentation",
+                resource: "AWS Lambda Developer Guide",
+                description: "Official documentation with examples and best practices"
+              },
+              {
+                type: "YouTube",
+                resource: "AWS Lambda Tutorial Series by AWS",
+                description: "Step-by-step tutorials for building serverless applications"
+              }
+            ],
+            certifications: [
+              {
+                name: "AWS Certified Developer - Associate",
+                provider: "Amazon Web Services",
+                timeToComplete: "2-3 months",
+                cost: "$150"
+              }
+            ],
+            practicalApplication: "Build a serverless API using Lambda, API Gateway, and DynamoDB for a personal project"
           },
-        },
-        {
-          skill: 'AWS',
-          importance: 'medium',
-          hasSkill: resumeContent.toLowerCase().includes('aws'),
-          recommendations: {
-            courses: ['AWS Solutions Architect', 'AWS Developer Associate'],
-            resources: ['AWS Free Tier', 'AWS Documentation'],
-            timeEstimate: '6-8 weeks',
+          {
+            skill: "GraphQL",
+            priority: "Critical",
+            timeInvestment: "30-40 hours over 4-6 weeks",
+            courses: [
+              {
+                platform: "Apollo GraphQL",
+                courseName: "Odyssey - Apollo's GraphQL Tutorial",
+                cost: "Free",
+                duration: "8 hours",
+                difficulty: "Beginner"
+              },
+              {
+                platform: "Pluralsight",
+                courseName: "Building Scalable APIs with GraphQL",
+                cost: "$29/month",
+                duration: "6 hours",
+                difficulty: "Intermediate"
+              }
+            ],
+            freeResources: [
+              {
+                type: "Documentation",
+                resource: "GraphQL.org Learning Resources",
+                description: "Official GraphQL documentation and tutorials"
+              },
+              {
+                type: "Tutorial",
+                resource: "How to GraphQL",
+                description: "Comprehensive tutorial covering GraphQL fundamentals"
+              }
+            ],
+            certifications: [
+              {
+                name: "Apollo Graph Developer - Associate",
+                provider: "Apollo GraphQL",
+                timeToComplete: "1-2 months",
+                cost: "Free"
+              }
+            ],
+            practicalApplication: "Refactor an existing REST API to GraphQL or build a new GraphQL API with subscriptions"
+          }
+        ],
+        developmentRoadmap: {
+          phase1: {
+            duration: "Months 1-2",
+            focus: "Critical serverless and API skills",
+            milestones: [
+              "Complete AWS Lambda fundamentals course",
+              "Build first serverless application",
+              "Complete GraphQL tutorial and build basic API",
+              "Deploy Lambda function to production"
+            ]
           },
-        },
-        {
-          skill: 'Docker',
-          importance: 'medium',
-          hasSkill: resumeContent.toLowerCase().includes('docker'),
-          recommendations: {
-            courses: ['Docker Fundamentals', 'Docker for Developers'],
-            resources: ['Docker Official Docs', 'Docker Hub'],
-            timeEstimate: '2-3 weeks',
+          phase2: {
+            duration: "Months 3-4",
+            focus: "Containerization and architecture patterns",
+            milestones: [
+              "Master Docker multi-stage builds",
+              "Build microservices with Docker Compose",
+              "Implement GraphQL subscriptions",
+              "Optimize Lambda cold starts"
+            ]
           },
+          phase3: {
+            duration: "Months 5-6",
+            focus: "Advanced orchestration and optimization",
+            milestones: [
+              "Learn Kubernetes basics",
+              "Deploy microservices to K8s cluster",
+              "Implement advanced GraphQL patterns",
+              "Achieve AWS certification"
+            ]
+          }
         },
-        {
-          skill: 'GraphQL',
-          importance: 'low',
-          hasSkill: resumeContent.toLowerCase().includes('graphql'),
+        skillsAlreadyStrong: [
+          "React.js - Advanced proficiency with hooks and context",
+          "TypeScript - Strong typing and interface design",
+          "Node.js - Backend API development experience",
+          "PostgreSQL - Database design and optimization",
+          "Git - Version control and collaboration workflows"
+        ]
+      };
+      
+      // Convert to legacy format for backward compatibility
+      const legacySkillGaps: SkillGap[] = [
+        ...mockSkillGapResult.skillGapAnalysis.critical.map(skill => ({
+          skill: skill.skill,
+          importance: 'high' as const,
+          hasSkill: false,
           recommendations: {
-            courses: ['GraphQL Fundamentals', 'Apollo Client'],
-            resources: ['GraphQL.org', 'Apollo Documentation'],
-            timeEstimate: '3-4 weeks',
+            courses: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.courses.map(c => c.courseName) || [],
+            resources: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.freeResources.map(r => r.resource) || [],
+            timeEstimate: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.timeInvestment || 'Not specified',
           },
-        },
+        })),
+        ...mockSkillGapResult.skillGapAnalysis.important.map(skill => ({
+          skill: skill.skill,
+          importance: 'medium' as const,
+          hasSkill: false,
+          recommendations: {
+            courses: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.courses.map(c => c.courseName) || [],
+            resources: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.freeResources.map(r => r.resource) || [],
+            timeEstimate: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.timeInvestment || 'Not specified',
+          },
+        })),
+        ...mockSkillGapResult.skillGapAnalysis.niceToHave.map(skill => ({
+          skill: skill.skill,
+          importance: 'low' as const,
+          hasSkill: false,
+          recommendations: {
+            courses: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.courses.map(c => c.courseName) || [],
+            resources: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.freeResources.map(r => r.resource) || [],
+            timeEstimate: mockSkillGapResult.learningRecommendations
+              .find(rec => rec.skill === skill.skill)?.timeInvestment || 'Not specified',
+          },
+        })),
       ];
       
-      // Generate overall summary
-      const totalSkills = mockSkillGaps.length;
-      const skillsHave = mockSkillGaps.filter(gap => gap.hasSkill).length;
-      const skillsNeed = totalSkills - skillsHave;
-      const highPriorityGaps = mockSkillGaps.filter(gap => gap.importance === 'high' && !gap.hasSkill).length;
+      const totalGaps = mockSkillGapResult.skillGapAnalysis.critical.length + 
+                       mockSkillGapResult.skillGapAnalysis.important.length + 
+                       mockSkillGapResult.skillGapAnalysis.niceToHave.length;
+      const criticalGaps = mockSkillGapResult.skillGapAnalysis.critical.length;
+      const strongSkills = mockSkillGapResult.skillsAlreadyStrong.length;
       
-      const overallSummary = `Analysis of ${totalSkills} key skills: You have ${skillsHave} skills and need to develop ${skillsNeed} skills. ${highPriorityGaps} high-priority skills require immediate attention.`;
+      const overallSummary = `Analysis of ${totalGaps + strongSkills} key skills: You have ${strongSkills} strong skills and need to develop ${totalGaps} skills. ${criticalGaps} critical skills require immediate attention.`;
       
       // Save to database
       const savedAnalysis = await createSkillAnalysis(
         resumeContent,
         jobPosting,
-        mockSkillGaps,
+        legacySkillGaps,
         resumeId || null,
         overallSummary
       );
       
       // Update local state
       set({ 
-        skillGaps: mockSkillGaps,
+        skillGaps: legacySkillGaps,
+        currentSkillGapAnalysis: mockSkillGapResult,
         currentSkillAnalysis: savedAnalysis,
         error: null,
       });
@@ -503,6 +870,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   clearCurrentSkillAnalysis: () => {
     set({ 
       currentSkillAnalysis: null,
+      currentSkillGapAnalysis: null,
       skillGaps: [],
     });
   },

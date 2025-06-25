@@ -12,7 +12,13 @@ import {
   AlertCircle,
   CheckCircle,
   TrendingUp,
-  Target
+  Target,
+  BarChart3,
+  Search,
+  Lightbulb,
+  ArrowRight,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
@@ -27,11 +33,12 @@ import toast from 'react-hot-toast';
 const ResumeAnalyzer: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
-  const { analyzeResume, currentResume, isAnalyzing, saveResume } = useResumeStore();
+  const { analyzeResume, currentResume, currentResumeAnalysis, isAnalyzing, saveResume } = useResumeStore();
   
   const [resumeText, setResumeText] = useState('');
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
 
   console.log('ResumeAnalyzer: Component mounted');
 
@@ -114,6 +121,11 @@ const ResumeAnalyzer: React.FC = () => {
     toast.success('Copied to clipboard!');
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
+    return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
+  };
   if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -239,9 +251,9 @@ const ResumeAnalyzer: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-6"
             >
-              {currentResume ? (
+              {currentResume && currentResumeAnalysis ? (
                 <>
-                  {/* Match Score */}
+                  {/* Match Score Overview */}
                   <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -250,7 +262,7 @@ const ResumeAnalyzer: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <Target className="h-5 w-5 text-purple-600" />
                         <span className="text-2xl font-bold text-purple-600">
-                          {currentResume.matchScore}%
+                          {currentResumeAnalysis.matchScore}%
                         </span>
                       </div>
                     </div>
@@ -258,17 +270,45 @@ const ResumeAnalyzer: React.FC = () => {
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4">
                       <div 
                         className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-1000"
-                        style={{ width: `${currentResume.matchScore}%` }}
+                        style={{ width: `${currentResumeAnalysis.matchScore}%` }}
                       />
                     </div>
                     
+                    {/* Match Breakdown */}
+                    <div className="grid grid-cols-2 gap-4 mt-6">
+                      <div className="text-center">
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.keywords)}`}>
+                          {currentResumeAnalysis.matchBreakdown.keywords}%
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Keywords</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.skills)}`}>
+                          {currentResumeAnalysis.matchBreakdown.skills}%
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Skills</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.experience)}`}>
+                          {currentResumeAnalysis.matchBreakdown.experience}%
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Experience</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.formatting)}`}>
+                          {currentResumeAnalysis.matchBreakdown.formatting}%
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">ATS Format</div>
+                      </div>
+                    </div>
+                    
                     <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      {currentResume.matchScore >= 80 ? (
+                      {currentResumeAnalysis.matchScore >= 80 ? (
                         <>
                           <CheckCircle className="h-4 w-4 text-green-500" />
                           <span>Excellent match! Your resume aligns well with the job requirements.</span>
                         </>
-                      ) : currentResume.matchScore >= 60 ? (
+                      ) : currentResumeAnalysis.matchScore >= 60 ? (
                         <>
                           <TrendingUp className="h-4 w-4 text-yellow-500" />
                           <span>Good match with room for improvement.</span>
@@ -282,42 +322,172 @@ const ResumeAnalyzer: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Optimized Resume */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        AI-Optimized Resume
-                      </h2>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => copyToClipboard(currentResume.content)}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                          title="Copy to clipboard"
-                        >
-                          <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            // Toggle preview - simplified for this example
-                            toast.info('Preview functionality would open in a modal');
-                          }}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                          title="Preview"
-                        >
-                          <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                      </div>
+                  {/* Analysis Tabs */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div className="border-b border-gray-200 dark:border-gray-700">
+                      <nav className="flex space-x-8 px-6">
+                        {[
+                          { id: 'overview', label: 'Overview', icon: BarChart3 },
+                          { id: 'changes', label: 'Changes', icon: ArrowRight },
+                          { id: 'keywords', label: 'Keywords', icon: Search },
+                          { id: 'ats', label: 'ATS Tips', icon: Lightbulb },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                              activeTab === tab.id
+                                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                            }`}
+                          >
+                            <tab.icon className="h-4 w-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        ))}
+                      </nav>
                     </div>
-                    
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
-                      <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-mono">
-                        {currentResume.content}
-                      </pre>
+
+                    <div className="p-6">
+                      {activeTab === 'overview' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Optimized Resume
+                          </h3>
+                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
+                            <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-mono">
+                              {currentResumeAnalysis.tailoredResume}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'changes' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            AI Improvements Made
+                          </h3>
+                          <div className="space-y-4">
+                            {currentResumeAnalysis.changes.map((change, index) => (
+                              <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <span className="bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400 px-2 py-1 rounded text-sm font-medium">
+                                    {change.section}
+                                  </span>
+                                </div>
+                                <div className="space-y-3">
+                                  <div>
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <Minus className="h-4 w-4 text-red-500" />
+                                      <span className="text-sm font-medium text-red-700 dark:text-red-400">Original</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                                      {change.original}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <Plus className="h-4 w-4 text-green-500" />
+                                      <span className="text-sm font-medium text-green-700 dark:text-green-400">Improved</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                                      {change.improved}
+                                    </p>
+                                  </div>
+                                  <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                    <p className="text-sm text-blue-800 dark:text-blue-400">
+                                      <strong>Why:</strong> {change.reason}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'keywords' && (
+                        <div className="space-y-6">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Keyword Analysis
+                          </h3>
+                          
+                          <div className="grid md:grid-cols-3 gap-6">
+                            <div>
+                              <h4 className="font-medium text-green-700 dark:text-green-400 mb-3 flex items-center space-x-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Found Keywords</span>
+                              </h4>
+                              <div className="space-y-2">
+                                {currentResumeAnalysis.keywordMatches.found.map((keyword, index) => (
+                                  <span key={index} className="inline-block bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 px-2 py-1 rounded text-sm mr-2 mb-2">
+                                    {keyword}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-red-700 dark:text-red-400 mb-3 flex items-center space-x-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Missing Keywords</span>
+                              </h4>
+                              <div className="space-y-2">
+                                {currentResumeAnalysis.keywordMatches.missing.map((keyword, index) => (
+                                  <span key={index} className="inline-block bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 px-2 py-1 rounded text-sm mr-2 mb-2">
+                                    {keyword}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-3 flex items-center space-x-2">
+                                <Lightbulb className="h-4 w-4" />
+                                <span>Suggestions</span>
+                              </h4>
+                              <div className="space-y-2">
+                                {currentResumeAnalysis.keywordMatches.suggestions.map((suggestion, index) => (
+                                  <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-sm text-blue-800 dark:text-blue-400">
+                                    {suggestion}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'ats' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            ATS Optimization Tips
+                          </h3>
+                          <div className="space-y-3">
+                            {currentResumeAnalysis.atsOptimizations.map((tip, index) => (
+                              <div key={index} className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-green-800 dark:text-green-400">
+                                  {tip}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="space-y-4">
+                    <button
+                      onClick={() => copyToClipboard(currentResumeAnalysis.tailoredResume)}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <Copy className="h-5 w-5" />
+                      <span>Copy Optimized Resume</span>
+                    </button>
+                    
                     <button
                       onClick={handleSaveResume}
                       className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
