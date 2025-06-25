@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, upgradePlan, isLoading, lifetimeUserCount } = useAuthStore();
-  const { resumes, fetchResumes } = useResumeStore();
+  const { resumes, skillAnalyses, fetchResumes, fetchSkillAnalyses } = useResumeStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   console.log('Dashboard: Component mounted for user:', user?.email);
@@ -45,6 +45,12 @@ const Dashboard: React.FC = () => {
       fetchResumes().catch(error => {
         console.error('Dashboard: Failed to fetch resumes:', error);
         // Don't crash the dashboard if resumes fail to load
+      });
+      
+      // Fetch skill analyses
+      fetchSkillAnalyses().catch(error => {
+        console.error('Dashboard: Failed to fetch skill analyses:', error);
+        // Don't crash the dashboard if skill analyses fail to load
       });
 
       // Handle upgrade parameter from registration
