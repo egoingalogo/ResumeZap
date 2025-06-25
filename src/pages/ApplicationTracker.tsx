@@ -20,20 +20,16 @@ import {
   XCircle
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { ApplicationFormModal } from '../components/ApplicationFormModal';
 import { useAuthStore } from '../store/authStore';
+import { 
+  fetchApplications, 
+  createApplication, 
+  updateApplication, 
+  deleteApplication,
+  type Application 
+} from '../lib/applications';
 import toast from 'react-hot-toast';
-
-interface Application {
-  id: string;
-  company: string;
-  position: string;
-  location: string;
-  status: 'applied' | 'interview' | 'offer' | 'rejected';
-  appliedDate: string;
-  lastUpdate: string;
-  salary?: string;
-  notes?: string;
-}
 
 /**
  * Application tracker component for managing job applications
@@ -48,7 +44,7 @@ const ApplicationTracker: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState<Application | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   console.log('ApplicationTracker: Component mounted');
 
@@ -59,10 +55,87 @@ const ApplicationTracker: React.FC = () => {
       return;
     }
 
-    // Load applications would go here
-    // For now, start with empty state
-    setApplications([]);
+    // Load applications on component mount
+    loadApplications();
   }, [isAuthenticated, navigate]);
+
+  const loadApplications = async () => {
+    console.log('ApplicationTracker: Loading applications');
+    setIsLoading(true);
+    
+    try {
+      const data = await fetchApplications();
+      setApplications(data);
+      console.log('ApplicationTracker: Loaded', data.length, 'applications');
+    } catch (error) {
+      console.error('ApplicationTracker: Failed to load applications:', error);
+      toast.error('Failed to load applications. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddApplication = () => {
+    console.log('ApplicationTracker: Opening add application modal');
+    setEditingApplication(null);
+    setShowAddModal(true);
+  };
+
+  const handleEditApplication = (application: Application) => {
+    console.log('ApplicationTracker: Opening edit modal for application:', application.id);
+    setEditingApplication(application);
+    setShowAddModal(true);
+  };
+
+  const handleSaveApplication = async (applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('ApplicationTracker: Saving application data');
+    
+    try {
+      if (editingApplication) {
+        // Update existing application
+        await updateApplication(editingApplication.id, applicationData);
+        toast.success('Application updated successfully!');
+      } else {
+        // Create new application
+        await createApplication(applicationData);
+        toast.success('Application added successfully!');
+      }
+      
+      // Reload applications to get updated data
+      await loadApplications();
+      
+      // Close modal
+      setShowAddModal(false);
+      setEditingApplication(null);
+      
+    } catch (error) {
+      console.error('ApplicationTracker: Failed to save application:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save application';
+      toast.error(errorMessage);
+      throw error; // Re-throw to prevent modal from closing
+    }
+  };
+
+  const handleDeleteApplication = async (application: Application) => {
+    if (!confirm(`Are you sure you want to delete the application for ${application.position} at ${application.company}? This action cannot be undone.`)) {
+      return;
+    }
+
+    console.log('ApplicationTracker: Deleting application:', application.id);
+    
+    try {
+      await deleteApplication(application.id);
+      toast.success('Application deleted successfully!');
+      
+      // Reload applications
+      await loadApplications();
+      
+    } catch (error) {
+      console.error('ApplicationTracker: Failed to delete application:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete application';
+      toast.error(errorMessage);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -123,7 +196,7 @@ const ApplicationTracker: React.FC = () => {
               </div>
               
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={handleAddApplication}
                 className="mt-4 md:mt-0 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
               >
                 <Plus className="h-5 w-5" />
@@ -174,7 +247,11 @@ const ApplicationTracker: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {filteredApplications.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              </div>
+            ) : filteredApplications.length > 0 ? (
               <div className="space-y-4">
                 {filteredApplications.map((application, index) => {
                   const StatusIcon = getStatusIcon(application.status);
@@ -239,17 +316,14 @@ const ApplicationTracker: React.FC = () => {
                         
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => setEditingApplication(application)}
+                            onClick={() => handleEditApplication(application)}
                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                             title="Edit application"
                           >
                             <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                           </button>
                           <button
-                            onClick={() => {
-                              // Handle delete
-                              toast.success('Application deleted successfully!');
-                            }}
+                            onClick={() => handleDeleteApplication(application)}
                             className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
                             title="Delete application"
                           >
@@ -274,7 +348,7 @@ const ApplicationTracker: React.FC = () => {
                   Start tracking your job applications to stay organized and increase your success rate
                 </p>
                 <button
-                  onClick={() => setShowAddModal(true)}
+                  onClick={handleAddApplication}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 mx-auto"
                 >
                   <Plus className="h-4 w-4" />
@@ -285,6 +359,17 @@ const ApplicationTracker: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Application Form Modal */}
+      <ApplicationFormModal
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingApplication(null);
+        }}
+        onSave={handleSaveApplication}
+        application={editingApplication}
+      />
     </div>
   );
 };
