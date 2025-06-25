@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { supabase, handleSupabaseError, getCurrentUser, testSupabaseConnection } from '../lib/supabase';
 import { 
+  analyzeResume as analyzeResumeAI,
+  generateCoverLetter as generateCoverLetterAI,
+  analyzeSkillGaps as analyzeSkillGapsAI,
+  type ResumeAnalysisResult,
+  type CoverLetterResult,
+  type SkillGapResult
+} from '../lib/aiService';
+import { 
   createSkillAnalysis, 
   fetchSkillAnalyses, 
   fetchSkillAnalysisById,
@@ -10,101 +18,6 @@ import {
   type SkillAnalysisWithRecommendations
 } from '../lib/skillAnalysis';
 
-// New interfaces to match Anthropic JSON outputs
-interface ResumeAnalysisResult {
-  tailoredResume: string;
-  matchScore: number;
-  matchBreakdown: {
-    keywords: number;
-    skills: number;
-    experience: number;
-    formatting: number;
-  };
-  changes: Array<{
-    section: string;
-    original: string;
-    improved: string;
-    reason: string;
-  }>;
-  keywordMatches: {
-    found: string[];
-    missing: string[];
-    suggestions: string[];
-  };
-  atsOptimizations: string[];
-}
-
-interface CoverLetterResult {
-  coverLetter: string;
-  customizations: string[];
-  keyStrengths: string[];
-  callToAction: string;
-}
-
-interface SkillGapResult {
-  skillGapAnalysis: {
-    critical: Array<{
-      skill: string;
-      currentLevel: string;
-      requiredLevel: string;
-      gap: string;
-    }>;
-    important: Array<{
-      skill: string;
-      currentLevel: string;
-      requiredLevel: string;
-      gap: string;
-    }>;
-    niceToHave: Array<{
-      skill: string;
-      currentLevel: string;
-      requiredLevel: string;
-      gap: string;
-    }>;
-  };
-  learningRecommendations: Array<{
-    skill: string;
-    priority: string;
-    timeInvestment: string;
-    courses: Array<{
-      platform: string;
-      courseName: string;
-      cost: string;
-      duration: string;
-      difficulty: string;
-    }>;
-    freeResources: Array<{
-      type: string;
-      resource: string;
-      description: string;
-    }>;
-    certifications: Array<{
-      name: string;
-      provider: string;
-      timeToComplete: string;
-      cost: string;
-    }>;
-    practicalApplication: string;
-  }>;
-  developmentRoadmap: {
-    phase1: {
-      duration: string;
-      focus: string;
-      milestones: string[];
-    };
-    phase2: {
-      duration: string;
-      focus: string;
-      milestones: string[];
-    };
-    phase3: {
-      duration: string;
-      focus: string;
-      milestones: string[];
-    };
-  };
-  skillsAlreadyStrong: string[];
-}
 interface Resume {
   id: string;
   title: string;
@@ -228,16 +141,35 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze resume with AI using new JSON structure
+   * Analyze resume with Claude AI through Edge Function
    */
   analyzeResume: async (resumeContent: string, jobPosting: string) => {
     console.log('ResumeStore: Starting resume analysis');
     set({ isAnalyzing: true, error: null });
     
     try {
-      // TODO: Replace with actual Claude API call
-      // This is a placeholder - actual AI integration needed
-      throw new Error('AI integration not yet implemented. Please connect Claude API for resume analysis.');
+      // Call Claude AI through Edge Function
+      const analysisResult = await analyzeResumeAI(resumeContent, jobPosting);
+      
+      // Create a resume object from the analysis
+      const analyzedResume: Resume = {
+        id: Date.now().toString(),
+        title: `AI-Optimized Resume - ${new Date().toLocaleDateString()}`,
+        content: analysisResult.tailoredResume,
+        originalContent: resumeContent,
+        jobPosting,
+        matchScore: analysisResult.matchScore,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+      };
+      
+      set({ 
+        currentResume: analyzedResume,
+        currentResumeAnalysis: analysisResult,
+        error: null 
+      });
+      
+      console.log('ResumeStore: Resume analysis completed with score:', analysisResult.matchScore);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Resume analysis failed';
@@ -250,16 +182,28 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Generate cover letter with AI using new JSON structure
+   * Generate cover letter with Claude AI through Edge Function
    */
   generateCoverLetter: async (resumeContent: string, jobPosting: string, companyName: string, jobTitle: string, tone: string) => {
     console.log('ResumeStore: Generating cover letter');
     set({ isAnalyzing: true, error: null });
     
     try {
-      // TODO: Replace with actual Claude API call
-      // This is a placeholder - actual AI integration needed
-      throw new Error('AI integration not yet implemented. Please connect Claude API for cover letter generation.');
+      // Call Claude AI through Edge Function
+      const coverLetterResult = await generateCoverLetterAI(
+        resumeContent,
+        jobPosting,
+        companyName,
+        jobTitle,
+        tone as 'professional' | 'enthusiastic' | 'concise'
+      );
+      
+      set({ 
+        currentCoverLetter: coverLetterResult,
+        error: null 
+      });
+      
+      console.log('ResumeStore: Cover letter generated successfully');
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Cover letter generation failed';
@@ -409,16 +353,107 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
   
   /**
-   * Analyze skill gaps using new JSON structure and save to database
+   * Analyze skill gaps using Claude AI and save to database
    */
   analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
     set({ isAnalyzing: true, error: null });
     
     try {
-      // TODO: Replace with actual Claude API call
-      // This is a placeholder - actual AI integration needed
-      throw new Error('AI integration not yet implemented. Please connect Claude API for skill gap analysis.');
+      // Call Claude AI through Edge Function
+      const skillGapResult = await analyzeSkillGapsAI(resumeContent, jobPosting);
+      
+      // Convert the new format to legacy format for backward compatibility
+      const legacySkillGaps: SkillGap[] = [];
+      
+      // Process critical skills
+      skillGapResult.skillGapAnalysis.critical.forEach(skill => {
+        const recommendation = skillGapResult.learningRecommendations.find(r => r.skill === skill.skill);
+        legacySkillGaps.push({
+          skill: skill.skill,
+          importance: 'high',
+          hasSkill: false, // Critical means they don't have it
+          recommendations: {
+            courses: recommendation?.courses.map(c => c.courseName) || [],
+            resources: recommendation?.freeResources.map(r => r.resource) || [],
+            timeEstimate: recommendation?.timeInvestment || 'Not specified',
+          },
+        });
+      });
+      
+      // Process important skills
+      skillGapResult.skillGapAnalysis.important.forEach(skill => {
+        const recommendation = skillGapResult.learningRecommendations.find(r => r.skill === skill.skill);
+        legacySkillGaps.push({
+          skill: skill.skill,
+          importance: 'medium',
+          hasSkill: false, // Important means they don't have it
+          recommendations: {
+            courses: recommendation?.courses.map(c => c.courseName) || [],
+            resources: recommendation?.freeResources.map(r => r.resource) || [],
+            timeEstimate: recommendation?.timeInvestment || 'Not specified',
+          },
+        });
+      });
+      
+      // Process nice-to-have skills
+      skillGapResult.skillGapAnalysis.niceToHave.forEach(skill => {
+        const recommendation = skillGapResult.learningRecommendations.find(r => r.skill === skill.skill);
+        legacySkillGaps.push({
+          skill: skill.skill,
+          importance: 'low',
+          hasSkill: false, // Nice-to-have means they don't have it
+          recommendations: {
+            courses: recommendation?.courses.map(c => c.courseName) || [],
+            resources: recommendation?.freeResources.map(r => r.resource) || [],
+            timeEstimate: recommendation?.timeInvestment || 'Not specified',
+          },
+        });
+      });
+      
+      // Add skills they already have
+      skillGapResult.skillsAlreadyStrong.forEach(skill => {
+        legacySkillGaps.push({
+          skill,
+          importance: 'medium', // Default importance for existing skills
+          hasSkill: true,
+          recommendations: {
+            courses: [],
+            resources: [],
+            timeEstimate: 'Already proficient',
+          },
+        });
+      });
+      
+      // Generate overall summary
+      const totalSkills = legacySkillGaps.length;
+      const skillsHave = legacySkillGaps.filter(gap => gap.hasSkill).length;
+      const skillsNeed = totalSkills - skillsHave;
+      const criticalGaps = skillGapResult.skillGapAnalysis.critical.length;
+      
+      const overallSummary = `Analysis of ${totalSkills} key skills: You have ${skillsHave} skills and need to develop ${skillsNeed} skills. ${criticalGaps} critical skills require immediate attention.`;
+      
+      // Save to database
+      const savedAnalysis = await createSkillAnalysis(
+        resumeContent,
+        jobPosting,
+        legacySkillGaps,
+        resumeId || null,
+        overallSummary
+      );
+      
+      // Update local state with both new and legacy formats
+      set({ 
+        skillGaps: legacySkillGaps,
+        currentSkillAnalysis: savedAnalysis,
+        currentSkillGapAnalysis: skillGapResult,
+        error: null,
+      });
+      
+      // Refresh the analyses list
+      await get().fetchSkillAnalyses();
+      
+      console.log('ResumeStore: Skill gap analysis completed and saved');
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Skill gap analysis failed';
@@ -522,6 +557,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   clearCurrentSkillAnalysis: () => {
     set({ 
       currentSkillAnalysis: null,
+      currentSkillGapAnalysis: null,
       currentSkillGapAnalysis: null,
       skillGaps: [],
     });

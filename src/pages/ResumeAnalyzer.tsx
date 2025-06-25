@@ -23,7 +23,6 @@ import {
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
-import { LiveChatButton } from '../components/LiveChatButton';
 import toast from 'react-hot-toast';
 
 /**
