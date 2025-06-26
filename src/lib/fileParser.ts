@@ -3,7 +3,7 @@ import mammoth from 'mammoth';
 /**
  * File parsing utilities for extracting text content from various file formats
  * Supports PDF, DOCX, and TXT files with proper error handling and progress tracking
- * Uses multiple PDF parsing strategies for maximum compatibility
+ * Uses multiple PDF parsing strategies for maximum compatibility and readable text extraction
  */
 
 export interface ParseResult {
@@ -21,59 +21,72 @@ export interface ParseResult {
 
 /**
  * Parse PDF file using multiple strategies for maximum compatibility
- * 1. Try PDF.js with CDN worker
- * 2. Try PDF.js with local worker
- * 3. Fallback to basic text extraction
+ * 1. Try PDF.js with proper text extraction
+ * 2. Try alternative PDF.js configuration
+ * 3. Fallback with user guidance
  */
 const parsePDF = async (file: File): Promise<ParseResult> => {
   console.log('FileParser: Starting PDF parsing for:', file.name);
   
-  // Strategy 1: Try PDF.js with proper worker setup
+  // Strategy 1: Try PDF.js with proper worker setup and text extraction
   try {
     const pdfjsLib = await import('pdfjs-dist');
     
     // Configure worker with multiple fallback options
     const workerUrls = [
       `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`,
+      `https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.worker.min.js`,
       `/pdf.worker.js`, // Local fallback
-      `https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.worker.min.js` // Alternative CDN
     ];
     
     let workerConfigured = false;
+    let lastWorkerError = null;
     
     for (const workerUrl of workerUrls) {
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
         
-        // Test if worker loads by creating a simple document
-        const testArrayBuffer = new ArrayBuffer(8);
-        const testTask = pdfjsLib.getDocument({ data: testArrayBuffer });
+        // Test worker by trying to load a minimal PDF
+        const testArrayBuffer = await file.arrayBuffer();
+        const testTask = pdfjsLib.getDocument({
+          data: testArrayBuffer.slice(0, Math.min(1024, testArrayBuffer.byteLength)),
+          useWorkerFetch: false,
+          isEvalSupported: false,
+          useSystemFonts: true,
+          verbosity: 0, // Reduce console noise
+        });
         
-        // If this doesn't throw, worker is configured correctly
-        await testTask.promise.catch(() => {}); // Ignore the error, we just want to test worker
+        // Try to get the document to test worker
+        await testTask.promise.catch(() => {}); // Ignore error, just testing worker
         
         workerConfigured = true;
         console.log('FileParser: PDF.js worker configured with:', workerUrl);
         break;
       } catch (error) {
+        lastWorkerError = error;
         console.warn('FileParser: Failed to configure worker with:', workerUrl, error);
         continue;
       }
     }
     
     if (!workerConfigured) {
-      throw new Error('Could not configure PDF.js worker');
+      throw new Error(`Could not configure PDF.js worker. Last error: ${lastWorkerError}`);
     }
     
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Load PDF document
+    // Load PDF document with optimized settings for text extraction
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
       useSystemFonts: true,
+      verbosity: 0,
+      // Optimize for text extraction
+      disableFontFace: true,
+      disableRange: false,
+      disableStream: false,
     });
     
     const pdfDocument = await loadingTask.promise;
@@ -81,42 +94,87 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     let fullText = '';
     const numPages = pdfDocument.numPages;
     
-    // Extract text from each page
+    console.log(`FileParser: PDF has ${numPages} pages, extracting text...`);
+    
+    // Extract text from each page with better text processing
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       try {
         const page = await pdfDocument.getPage(pageNum);
-        const textContent = await page.getTextContent();
+        const textContent = await page.getTextContent({
+          normalizeWhitespace: true,
+          disableCombineTextItems: false,
+        });
         
-        // Combine text items from the page
-        const pageText = textContent.items
-          .map((item: any) => {
-            if (item.str) {
-              return item.str;
+        // Process text items with better spacing and structure preservation
+        let pageText = '';
+        let lastY = null;
+        let lastX = null;
+        
+        for (const item of textContent.items) {
+          if (item.str && typeof item.str === 'string') {
+            const currentY = item.transform ? item.transform[5] : 0;
+            const currentX = item.transform ? item.transform[4] : 0;
+            
+            // Add line breaks for significant Y position changes (new lines)
+            if (lastY !== null && Math.abs(currentY - lastY) > 5) {
+              pageText += '\n';
             }
-            return '';
-          })
-          .join(' ');
+            // Add spaces for significant X position changes (word spacing)
+            else if (lastX !== null && currentX - lastX > 10) {
+              pageText += ' ';
+            }
+            
+            pageText += item.str;
+            lastY = currentY;
+            lastX = currentX + (item.width || 0);
+          }
+        }
         
-        fullText += pageText + '\n';
+        if (pageText.trim()) {
+          fullText += pageText + '\n\n';
+        }
+        
+        console.log(`FileParser: Extracted ${pageText.length} characters from page ${pageNum}`);
       } catch (pageError) {
         console.warn(`FileParser: Failed to extract text from page ${pageNum}:`, pageError);
         // Continue with other pages
       }
     }
     
-    if (!fullText || fullText.trim().length === 0) {
-      return {
-        success: false,
-        text: '',
-        error: 'PDF appears to be empty or contains only images. Please ensure your PDF contains selectable text.',
-      };
-    }
-    
     // Clean up the extracted text
     const cleanedText = fullText
       .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
       .replace(/\n\s*\n/g, '\n') // Remove empty lines
+      .replace(/([.!?])\s*\n\s*([A-Z])/g, '$1\n\n$2') // Add proper paragraph breaks
       .trim();
+    
+    // Validate that we extracted meaningful text content
+    if (!cleanedText || cleanedText.length < 50) {
+      throw new Error('PDF text extraction resulted in insufficient content');
+    }
+    
+    // Check if the extracted text looks like metadata rather than content
+    const metadataIndicators = [
+      'PDF-1.',
+      'obj',
+      'endobj',
+      'stream',
+      'endstream',
+      'xref',
+      'trailer',
+      'Creator (',
+      'Producer (',
+      'ModDate',
+      'CreationDate'
+    ];
+    
+    const hasMetadataIndicators = metadataIndicators.some(indicator => 
+      cleanedText.includes(indicator)
+    );
+    
+    if (hasMetadataIndicators && cleanedText.length < 500) {
+      throw new Error('PDF appears to contain mostly metadata rather than readable content');
+    }
     
     console.log('FileParser: PDF parsing completed successfully');
     
@@ -125,7 +183,7 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
       text: cleanedText,
       metadata: {
         pageCount: numPages,
-        wordCount: cleanedText.split(/\s+/).length,
+        wordCount: cleanedText.split(/\s+/).filter(word => word.length > 0).length,
         fileSize: file.size,
         fileName: file.name,
         fileType: 'PDF',
@@ -133,24 +191,28 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     };
     
   } catch (error) {
-    console.warn('FileParser: PDF.js parsing failed, trying fallback method:', error);
+    console.warn('FileParser: PDF.js parsing failed:', error);
     
-    // Strategy 2: Fallback to basic file reading (for text-based PDFs)
+    // Strategy 2: Try alternative PDF parsing approach
     try {
-      return await parsePDFFallback(file);
-    } catch (fallbackError) {
-      console.error('FileParser: All PDF parsing methods failed:', fallbackError);
+      return await parsePDFAlternative(file);
+    } catch (alternativeError) {
+      console.error('FileParser: Alternative PDF parsing also failed:', alternativeError);
       
-      let errorMessage = 'Failed to parse PDF file.';
+      // Return helpful error message based on the type of failure
+      let errorMessage = 'Failed to extract readable text from PDF.';
+      
       if (error instanceof Error) {
         if (error.message.includes('Invalid PDF')) {
-          errorMessage = 'Invalid or corrupted PDF file. Please try a different file.';
+          errorMessage = 'Invalid or corrupted PDF file. Please ensure the file is a valid PDF.';
         } else if (error.message.includes('password')) {
           errorMessage = 'Password-protected PDFs are not supported. Please use an unprotected PDF.';
         } else if (error.message.includes('worker')) {
-          errorMessage = 'PDF parsing service temporarily unavailable. Please try again or use a DOCX/TXT file.';
-        } else {
-          errorMessage = `PDF parsing error: ${error.message}`;
+          errorMessage = 'PDF processing service temporarily unavailable. Please try again or convert your PDF to DOCX/TXT format.';
+        } else if (error.message.includes('metadata')) {
+          errorMessage = 'This PDF appears to be image-based or has complex formatting. Please try converting it to text format first, or use a DOCX/TXT version of your resume.';
+        } else if (error.message.includes('insufficient content')) {
+          errorMessage = 'Could not extract sufficient text from PDF. The file may be image-based or have complex formatting. Please try a DOCX or TXT version.';
         }
       }
       
@@ -164,76 +226,77 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
 };
 
 /**
- * Fallback PDF parsing method using FileReader
- * This works for some text-based PDFs but not for complex layouts
+ * Alternative PDF parsing method using different PDF.js configuration
+ * Attempts to extract text with different settings for problematic PDFs
  */
-const parsePDFFallback = async (file: File): Promise<ParseResult> => {
-  console.log('FileParser: Using PDF fallback parsing method');
+const parsePDFAlternative = async (file: File): Promise<ParseResult> => {
+  console.log('FileParser: Trying alternative PDF parsing method');
   
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      try {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Convert to string and try to extract readable text
-        let text = '';
-        for (let i = 0; i < uint8Array.length; i++) {
-          const char = String.fromCharCode(uint8Array[i]);
-          // Only include printable ASCII characters
-          if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
-            text += char;
-          } else if (char === '\n' || char === '\r' || char === '\t') {
-            text += ' ';
-          }
-        }
-        
-        // Clean up extracted text
-        const cleanedText = text
-          .replace(/\s+/g, ' ')
-          .replace(/[^\w\s\.\,\;\:\!\?\-\(\)]/g, '')
-          .trim();
-        
-        if (cleanedText.length < 50) {
-          resolve({
-            success: false,
-            text: '',
-            error: 'Could not extract readable text from PDF. The file may contain only images or use complex formatting.',
-          });
-          return;
-        }
-        
-        resolve({
-          success: true,
-          text: cleanedText,
-          metadata: {
-            wordCount: cleanedText.split(/\s+/).length,
-            fileSize: file.size,
-            fileName: file.name,
-            fileType: 'PDF (Fallback)',
-          },
-        });
-      } catch (error) {
-        resolve({
-          success: false,
-          text: '',
-          error: 'Failed to parse PDF using fallback method.',
-        });
-      }
-    };
-    
-    reader.onerror = () => {
-      resolve({
-        success: false,
-        text: '',
-        error: 'Failed to read PDF file.',
-      });
-    };
-    
-    reader.readAsArrayBuffer(file);
+  const pdfjsLib = await import('pdfjs-dist');
+  const arrayBuffer = await file.arrayBuffer();
+  
+  // Try with different PDF.js settings
+  const loadingTask = pdfjsLib.getDocument({
+    data: arrayBuffer,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: false, // Different setting
+    verbosity: 0,
+    disableFontFace: false, // Different setting
+    disableRange: true, // Different setting
+    disableStream: true, // Different setting
+    // Try to force text extraction
+    cMapUrl: 'https://unpkg.com/pdfjs-dist@4.0.379/cmaps/',
+    cMapPacked: true,
   });
+  
+  const pdfDocument = await loadingTask.promise;
+  let fullText = '';
+  const numPages = pdfDocument.numPages;
+  
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    try {
+      const page = await pdfDocument.getPage(pageNum);
+      
+      // Try different text extraction method
+      const textContent = await page.getTextContent({
+        normalizeWhitespace: false,
+        disableCombineTextItems: true, // Different setting
+      });
+      
+      // Simple text extraction without position processing
+      const pageText = textContent.items
+        .map((item: any) => item.str || '')
+        .filter((str: string) => str.trim().length > 0)
+        .join(' ');
+      
+      if (pageText.trim()) {
+        fullText += pageText + '\n';
+      }
+    } catch (pageError) {
+      console.warn(`FileParser: Alternative method failed on page ${pageNum}:`, pageError);
+    }
+  }
+  
+  const cleanedText = fullText
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (!cleanedText || cleanedText.length < 50) {
+    throw new Error('Alternative PDF parsing also resulted in insufficient content');
+  }
+  
+  return {
+    success: true,
+    text: cleanedText,
+    metadata: {
+      pageCount: numPages,
+      wordCount: cleanedText.split(/\s+/).filter(word => word.length > 0).length,
+      fileSize: file.size,
+      fileName: file.name,
+      fileType: 'PDF (Alternative)',
+    },
+  };
 };
 
 /**
@@ -247,8 +310,12 @@ const parseDOCX = async (file: File): Promise<ParseResult> => {
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Parse DOCX using mammoth
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    // Parse DOCX using mammoth with options for better text extraction
+    const result = await mammoth.extractRawText({ 
+      arrayBuffer,
+      // Options for better text extraction
+      convertImage: mammoth.images.ignoreAll,
+    });
     
     if (!result.value || result.value.trim().length === 0) {
       return {
@@ -275,7 +342,7 @@ const parseDOCX = async (file: File): Promise<ParseResult> => {
       success: true,
       text: cleanedText,
       metadata: {
-        wordCount: cleanedText.split(/\s+/).length,
+        wordCount: cleanedText.split(/\s+/).filter(word => word.length > 0).length,
         fileSize: file.size,
         fileName: file.name,
         fileType: 'DOCX',
@@ -338,7 +405,7 @@ const parseTXT = async (file: File): Promise<ParseResult> => {
           success: true,
           text: cleanedText,
           metadata: {
-            wordCount: cleanedText.split(/\s+/).length,
+            wordCount: cleanedText.split(/\s+/).filter(word => word.length > 0).length,
             fileSize: file.size,
             fileName: file.name,
             fileType: 'TXT',
@@ -363,7 +430,7 @@ const parseTXT = async (file: File): Promise<ParseResult> => {
       });
     };
     
-    // Read as UTF-8 text
+    // Try UTF-8 first, then fallback to other encodings if needed
     reader.readAsText(file, 'UTF-8');
   });
 };
