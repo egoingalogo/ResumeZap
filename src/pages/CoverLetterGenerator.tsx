@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -221,13 +222,12 @@ const CoverLetterGenerator: React.FC = () => {
                   Your Resume Content *
                 </h2>
                 
-                <textarea
-                  name="resumeContent"
+                <RichTextEditor
                   value={formData.resumeContent}
-                  onChange={handleInputChange}
-                  placeholder="Paste your resume content here to personalize the cover letter..."
+                  onChange={(value) => setFormData(prev => ({ ...prev, resumeContent: value }))}
+                  placeholder="Paste your resume content here to personalize the cover letter. Formatting will be preserved to maintain structure..."
                   rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                  showWordCount={true}
                 />
               </div>
               {/* Job Description */}
@@ -236,13 +236,12 @@ const CoverLetterGenerator: React.FC = () => {
                   Job Description *
                 </h2>
                 
-                <textarea
-                  name="jobDescription"
+                <RichTextEditor
                   value={formData.jobDescription}
-                  onChange={handleInputChange}
-                  placeholder="Paste the job description or key requirements here..."
+                  onChange={(value) => setFormData(prev => ({ ...prev, jobDescription: value }))}
+                  placeholder="Paste the job description or key requirements here. Copy directly from the job posting to preserve all details..."
                   rows={8}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                  showWordCount={true}
                 />
               </div>
 
@@ -252,13 +251,12 @@ const CoverLetterGenerator: React.FC = () => {
                   Personal Highlights (Optional)
                 </h2>
                 
-                <textarea
-                  name="personalExperience"
+                <RichTextEditor
                   value={formData.personalExperience}
-                  onChange={handleInputChange}
-                  placeholder="Share a specific achievement or experience that makes you stand out for this role..."
+                  onChange={(value) => setFormData(prev => ({ ...prev, personalExperience: value }))}
+                  placeholder="Share a specific achievement or experience that makes you stand out for this role. Use bullet points or formatting to highlight key accomplishments..."
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                  showWordCount={true}
                 />
               </div>
 

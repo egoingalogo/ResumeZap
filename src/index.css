@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Rich Text Editor Styles */
+[contenteditable="true"] {
+  outline: none;
+}
+
+[contenteditable="true"]:empty:before {
+  content: attr(data-placeholder);
+  color: #9CA3AF;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* Dark mode placeholder */
+.dark [contenteditable="true"]:empty:before {
+  color: #6B7280;
+}
+
+/* Rich text formatting styles */
+[contenteditable="true"] div {
+  margin-bottom: 0.25rem;
+}
+
+[contenteditable="true"] ul {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+[contenteditable="true"] ol {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+[contenteditable="true"] li {
+  margin-bottom: 0.125rem;
+}
+
+[contenteditable="true"] strong,
+[contenteditable="true"] b {
+  font-weight: 600;
+}
+
+[contenteditable="true"] em,
+[contenteditable="true"] i {
+  font-style: italic;
+}
+
+[contenteditable="true"] u {
+  text-decoration: underline;
+}
+
+/* Preserve spacing and indentation */
+[contenteditable="true"] [style*="margin-left"] {
+  display: block;
+}
+
+/* Keyboard shortcut styling */
+kbd {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 0.25rem;
+  border: 1px solid #D1D5DB;
+}
+
+.dark kbd {
+  border-color: #4B5563;
+}
