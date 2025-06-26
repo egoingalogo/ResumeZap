@@ -1,5 +1,8 @@
 import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
 
 /**
  * File parsing utilities for extracting text content from various file formats
@@ -20,7 +23,7 @@ export interface ParseResult {
 }
 
 /**
- * Parse PDF file using pdf-parse library
+ * Parse PDF file using PDF.js library (browser-compatible)
  * Extracts text content from all pages and provides metadata
  */
 const parsePDF = async (file: File): Promise<ParseResult> => {
@@ -29,12 +32,28 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
   try {
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
     
-    // Parse PDF using pdf-parse
-    const data = await pdfParse(buffer);
+    // Load PDF document using PDF.js
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDocument = await loadingTask.promise;
     
-    if (!data.text || data.text.trim().length === 0) {
+    let fullText = '';
+    const numPages = pdfDocument.numPages;
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Combine text items from the page
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += pageText + '\n';
+    }
+    
+    if (!fullText || fullText.trim().length === 0) {
       return {
         success: false,
         text: '',
@@ -43,7 +62,7 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     }
     
     // Clean up the extracted text
-    const cleanedText = data.text
+    const cleanedText = fullText
       .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
       .replace(/\n\s*\n/g, '\n') // Remove empty lines
       .trim();
@@ -54,7 +73,7 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
       success: true,
       text: cleanedText,
       metadata: {
-        pageCount: data.numpages,
+        pageCount: numPages,
         wordCount: cleanedText.split(/\s+/).length,
         fileSize: file.size,
         fileName: file.name,
