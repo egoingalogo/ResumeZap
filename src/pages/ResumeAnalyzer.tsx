@@ -18,16 +18,21 @@ import {
   Lightbulb,
   ArrowRight,
   Plus,
-  Minus
+  Minus,
+  Loader2,
+  FileCheck,
+  Info
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
+import { parseFile, validateFileType, getFileTypeDisplayName, type ParseResult } from '../lib/fileParser';
 import toast from 'react-hot-toast';
 
 /**
  * Resume analyzer component with file upload, job posting input, and AI analysis
- * Provides side-by-side comparison and match scoring functionality
+ * Provides production-ready file parsing for PDF, DOCX, and TXT files
+ * Includes comprehensive error handling and user feedback
  */
 const ResumeAnalyzer: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +42,8 @@ const ResumeAnalyzer: React.FC = () => {
   const [resumeText, setResumeText] = useState('');
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
 
   console.log('ResumeAnalyzer: Component mounted');
@@ -48,21 +55,64 @@ const ResumeAnalyzer: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  /**
+   * Handle file drop with production-ready parsing for PDF, DOCX, and TXT files
+   * Provides comprehensive error handling and user feedback
+   */
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    console.log('ResumeAnalyzer: File uploaded:', file.name);
+    console.log('ResumeAnalyzer: File dropped:', file.name, 'Type:', file.type);
     
     if (file) {
-      setUploadedFile(file);
+      // Validate file type first
+      const validation = validateFileType(file);
+      if (!validation.isValid) {
+        toast.error(validation.error || 'Invalid file type');
+        return;
+      }
       
-      // Simulate file reading - in production, use proper PDF/DOCX parsing
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setResumeText(text || '');
-        toast.success('Resume uploaded successfully!');
-      };
-      reader.readAsText(file);
+      setUploadedFile(file);
+      setIsParsingFile(true);
+      setParseResult(null);
+      
+      try {
+        // Parse the file using the appropriate parser
+        const result = await parseFile(file);
+        setParseResult(result);
+        
+        if (result.success) {
+          setResumeText(result.text);
+          
+          // Show success message with file details
+          const fileType = getFileTypeDisplayName(file);
+          const wordCount = result.metadata?.wordCount || 0;
+          toast.success(
+            `${fileType} file parsed successfully! Extracted ${wordCount} words.`,
+            { duration: 4000 }
+          );
+          
+          console.log('ResumeAnalyzer: File parsing completed:', {
+            fileName: file.name,
+            fileType,
+            wordCount,
+            fileSize: result.metadata?.fileSize,
+          });
+        } else {
+          // Show error message
+          toast.error(result.error || 'Failed to parse file');
+          console.error('ResumeAnalyzer: File parsing failed:', result.error);
+          
+          // Clear the uploaded file on error
+          setUploadedFile(null);
+        }
+      } catch (error) {
+        console.error('ResumeAnalyzer: Unexpected parsing error:', error);
+        toast.error('An unexpected error occurred while parsing the file');
+        setUploadedFile(null);
+        setParseResult(null);
+      } finally {
+        setIsParsingFile(false);
+      }
     }
   }, []);
 
@@ -74,6 +124,7 @@ const ResumeAnalyzer: React.FC = () => {
       'text/plain': ['.txt'],
     },
     multiple: false,
+    disabled: isParsingFile, // Disable during parsing
   });
 
   const handleAnalyze = async () => {
@@ -171,26 +222,97 @@ const ResumeAnalyzer: React.FC = () => {
                 <div
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
-                    isDragActive
+                    isParsingFile
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 cursor-not-allowed'
+                      : isDragActive
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                       : 'border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500'
                   }`}
                 >
-                  <input {...getInputProps()} />
+                  <input {...getInputProps()} disabled={isParsingFile} />
                   <div className="space-y-4">
-                    <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto">
-                      <Upload className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+                      isParsingFile 
+                        ? 'bg-purple-100 dark:bg-purple-900' 
+                        : uploadedFile && parseResult?.success
+                        ? 'bg-green-100 dark:bg-green-900'
+                        : 'bg-purple-100 dark:bg-purple-900'
+                    }`}>
+                      {isParsingFile ? (
+                        <Loader2 className="h-8 w-8 text-purple-600 dark:text-purple-400 animate-spin" />
+                      ) : uploadedFile && parseResult?.success ? (
+                        <FileCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                      )}
                     </div>
                     <div>
                       <p className="text-lg font-medium text-gray-900 dark:text-white">
-                        {uploadedFile ? uploadedFile.name : 'Drop your resume here'}
+                        {isParsingFile 
+                          ? `Parsing ${uploadedFile?.name}...`
+                          : uploadedFile && parseResult?.success
+                          ? `✓ ${uploadedFile.name}`
+                          : uploadedFile && !parseResult?.success
+                          ? `✗ ${uploadedFile.name}`
+                          : 'Drop your resume here'
+                        }
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Supports PDF, DOCX, and TXT files
+                        {isParsingFile 
+                          ? 'Extracting text content...'
+                          : 'Supports PDF, DOCX, and TXT files (max 10MB)'
+                        }
                       </p>
                     </div>
                   </div>
                 </div>
+                
+                {/* File parsing result info */}
+                {parseResult && uploadedFile && (
+                  <div className={`mt-4 p-4 rounded-lg ${
+                    parseResult.success 
+                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                  }`}>
+                    <div className="flex items-start space-x-3">
+                      {parseResult.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        {parseResult.success ? (
+                          <div>
+                            <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                              File parsed successfully
+                            </p>
+                            {parseResult.metadata && (
+                              <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
+                                <div className="flex items-center space-x-4">
+                                  <span>Type: {parseResult.metadata.fileType}</span>
+                                  <span>Words: {parseResult.metadata.wordCount?.toLocaleString()}</span>
+                                  <span>Size: {(parseResult.metadata.fileSize / 1024).toFixed(1)}KB</span>
+                                  {parseResult.metadata.pageCount && (
+                                    <span>Pages: {parseResult.metadata.pageCount}</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium text-red-800 dark:text-red-400">
+                              Parsing failed
+                            </p>
+                            <p className="text-xs text-red-700 dark:text-red-500 mt-1">
+                              {parseResult.error}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -203,6 +325,12 @@ const ResumeAnalyzer: React.FC = () => {
                     rows={8}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                   />
+                  {resumeText && (
+                    <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Info className="h-3 w-3" />
+                      <span>{resumeText.split(/\s+/).length} words</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -226,13 +354,13 @@ const ResumeAnalyzer: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !resumeText.trim() || !jobPosting.trim()}
+                disabled={isAnalyzing || isParsingFile || !resumeText.trim() || !jobPosting.trim()}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {isAnalyzing ? (
+                {isAnalyzing || isParsingFile ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Analyzing with AI...</span>
+                    <span>{isParsingFile ? 'Parsing File...' : 'Analyzing with AI...'}</span>
                   </>
                 ) : (
                   <>
