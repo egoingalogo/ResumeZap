@@ -100,160 +100,201 @@ serve(async (req) => {
 
     switch (requestData.type) {
       case 'resume_analysis':
-        systemPrompt = `You are an expert resume optimization specialist and ATS (Applicant Tracking System) consultant. Your task is to analyze resumes against job postings and provide detailed optimization recommendations.
+        systemPrompt = `You are ResumeZap AI, an expert ATS optimization and resume tailoring specialist. Your role is to analyze resumes against job postings and provide detailed tailoring recommendations with quantifiable improvements.
 
-You must respond with a valid JSON object containing the following structure:
+EXPERTISE:
+- ATS keyword optimization and parsing algorithms
+- Bullet point impact optimization with quantifiable results
+- Job-resume alignment scoring methodologies
+- Industry-specific formatting standards
+- Applicant Tracking System compatibility
+
+TONE: Analytical, precise, and improvement-focused. Provide specific data and measurable improvements.
+
+OUTPUT REQUIREMENTS:
+- Always provide numerical match scores and percentages
+- Highlight specific changes with before/after examples
+- Focus on ATS-friendly formatting improvements
+- Ensure all recommendations maintain authenticity`
+
+        userPrompt = `Analyze this resume against the job posting and provide comprehensive tailoring:
+
+**ORIGINAL RESUME:**
+${requestData.resumeContent}
+
+**TARGET JOB POSTING:**
+${requestData.jobPosting}
+
+Please provide a JSON response with these exact keys:
 {
-  "tailoredResume": "string - the optimized resume content",
-  "matchScore": number - overall match percentage (0-100),
+  "tailoredResume": "Complete optimized resume text with improved bullet points",
+  "matchScore": "Percentage score (0-100)",
   "matchBreakdown": {
-    "keywords": number - keyword match percentage (0-100),
-    "skills": number - skills match percentage (0-100), 
-    "experience": number - experience match percentage (0-100),
-    "formatting": number - ATS formatting score (0-100)
+    "keywords": "Percentage of job keywords found in resume",
+    "skills": "Skills alignment percentage", 
+    "experience": "Experience relevance percentage",
+    "formatting": "ATS compatibility score"
   },
   "changes": [
     {
-      "section": "string - section name",
-      "original": "string - original text",
-      "improved": "string - improved text", 
-      "reason": "string - explanation for change"
+      "section": "Section name",
+      "original": "Original text",
+      "improved": "Improved text",
+      "reason": "Why this change improves ATS/relevance"
     }
   ],
   "keywordMatches": {
-    "found": ["array of keywords found in resume"],
-    "missing": ["array of important keywords missing"],
-    "suggestions": ["array of keyword optimization suggestions"]
+    "found": ["list of matched keywords"],
+    "missing": ["list of missing important keywords"],
+    "suggestions": ["keywords to naturally incorporate"]
   },
-  "atsOptimizations": ["array of ATS optimization tips"]
+  "atsOptimizations": [
+    "Specific formatting improvements made for ATS compatibility"
+  ]
 }`
-
-        userPrompt = `Please analyze this resume against the job posting and provide optimization recommendations.
-
-RESUME:
-${requestData.resumeContent}
-
-JOB POSTING:
-${requestData.jobPosting}
-
-Provide a comprehensive analysis with specific, actionable improvements to increase ATS compatibility and match score.`
         break
 
       case 'cover_letter':
         const coverLetterReq = requestData as CoverLetterRequest
-        systemPrompt = `You are an expert cover letter writer specializing in creating compelling, personalized cover letters that get results. Your task is to generate cover letters that are tailored to specific job postings and company cultures.
+        systemPrompt = `You are ResumeZap AI's cover letter specialist. Create compelling, personalized cover letters that demonstrate clear value alignment between candidate experience and job requirements.
 
-You must respond with a valid JSON object containing the following structure:
-{
-  "coverLetter": "string - the complete cover letter text",
-  "customizations": ["array of specific customizations made for this role"],
-  "keyStrengths": ["array of key strengths highlighted"],
-  "callToAction": "string - the specific call to action used"
-}`
+EXPERTISE:
+- Storytelling techniques that connect experience to job requirements
+- Company-specific customization using job posting insights
+- Industry-appropriate formatting and structure
+- Value proposition articulation
 
-        const toneInstructions = {
-          professional: 'Use a formal, business-appropriate tone that demonstrates professionalism and competence.',
-          enthusiastic: 'Use an energetic, passionate tone that shows genuine excitement for the role and company.',
-          concise: 'Use a brief, direct tone that gets straight to the point while maintaining professionalism.'
-        }
+TONE INSTRUCTION: Maintain a professional, business-appropriate tone with confident language
 
-        userPrompt = `Generate a ${coverLetterReq.tone} cover letter for this job application.
+STRUCTURE REQUIREMENTS:
+- Opening: Compelling hook with specific job/company reference
+- Body 1: Relevant experience connection to job requirements
+- Body 2: Key achievements that demonstrate value
+- Closing: Strong call to action and next steps
 
-COMPANY: ${coverLetterReq.companyName}
-POSITION: ${coverLetterReq.jobTitle}
-${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : ''}
+OUTPUT: Provide both the cover letter and customization details used.`
 
-JOB POSTING:
-${coverLetterReq.jobPosting}
+        userPrompt = `Create a professional cover letter based on:
 
-APPLICANT'S RESUME:
+**RESUME:**
 ${coverLetterReq.resumeContent}
 
-${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : ''}
+**JOB POSTING:**
+${coverLetterReq.jobPosting}
 
-TONE: ${toneInstructions[coverLetterReq.tone as keyof typeof toneInstructions]}
+**COMPANY NAME:** ${coverLetterReq.companyName}
 
-Create a compelling cover letter that demonstrates clear value proposition and genuine interest in the role.`
+**TONE:** Professional
+
+Provide JSON response:
+{
+  "coverLetter": "Complete cover letter text",
+  "customizations": [
+    "List of company/job-specific elements incorporated"
+  ],
+  "keyStrengths": [
+    "Main value propositions highlighted"
+  ],
+  "callToAction": "Specific closing statement used"
+}`
         break
 
       case 'skill_gap':
-        systemPrompt = `You are an expert career development consultant and skills assessment specialist. Your task is to analyze skill gaps between a candidate's current abilities and job requirements, then provide comprehensive learning recommendations.
+        systemPrompt = `You are ResumeZap AI's career development analyst specializing in skill gap identification and learning pathway creation. 
 
-You must respond with a valid JSON object containing the following structure:
+EXPERTISE:
+- Technical and soft skill gap analysis with priority ranking
+- Online learning platform course recommendations (Coursera, Udemy, LinkedIn Learning)
+- Free resource curation (YouTube, documentation, tutorials)
+- Certification pathway mapping
+- Time investment estimation for skill development
+- Industry-specific learning resource prioritization
+
+APPROACH:
+- Categorize skills by priority (Critical, Important, Nice-to-have)
+- Provide specific course names and platforms
+- Include both paid and free learning options
+- Estimate realistic timeframes for skill acquisition
+- Create step-by-step development roadmaps
+- Focus on practical, applicable learning
+
+OUTPUT: Detailed analysis with specific, actionable learning recommendations.`
+
+        userPrompt = `Analyze skill gaps between this resume and job posting, then provide comprehensive learning recommendations:
+
+**CURRENT RESUME:**
+${requestData.resumeContent}
+
+**TARGET JOB POSTING:**
+${requestData.jobPosting}
+
+Provide detailed JSON response:
 {
   "skillGapAnalysis": {
     "critical": [
       {
-        "skill": "string - skill name",
-        "currentLevel": "string - current proficiency level",
-        "requiredLevel": "string - required proficiency level",
-        "gap": "string - description of the gap"
+        "skill": "Skill name",
+        "currentLevel": "Assessment of current proficiency",
+        "requiredLevel": "Level needed for job",
+        "gap": "Specific gap description"
       }
     ],
-    "important": [/* same structure as critical */],
-    "niceToHave": [/* same structure as critical */]
+    "important": [Similar structure],
+    "niceToHave": [Similar structure]
   },
   "learningRecommendations": [
     {
-      "skill": "string - skill name",
-      "priority": "string - Critical/Important/Nice-to-Have",
-      "timeInvestment": "string - estimated time to learn",
+      "skill": "Skill name",
+      "priority": "Critical/Important/Nice-to-have",
+      "timeInvestment": "Estimated hours/weeks",
       "courses": [
         {
-          "platform": "string - learning platform",
-          "courseName": "string - course title",
-          "cost": "string - course cost",
-          "duration": "string - course duration",
-          "difficulty": "string - Beginner/Intermediate/Advanced"
+          "platform": "Coursera/Udemy/LinkedIn Learning",
+          "courseName": "Specific course title",
+          "cost": "Free/Paid price",
+          "duration": "Course length",
+          "difficulty": "Beginner/Intermediate/Advanced"
         }
       ],
       "freeResources": [
         {
-          "type": "string - resource type",
-          "resource": "string - resource name",
-          "description": "string - resource description"
+          "type": "YouTube/Documentation/Tutorial",
+          "resource": "Specific resource name/channel",
+          "description": "What this resource covers"
         }
       ],
       "certifications": [
         {
-          "name": "string - certification name",
-          "provider": "string - certification provider",
-          "timeToComplete": "string - time estimate",
-          "cost": "string - certification cost"
+          "name": "Certification name",
+          "provider": "Certification provider",
+          "timeToComplete": "Estimated time",
+          "cost": "Certification cost"
         }
       ],
-      "practicalApplication": "string - how to apply this skill practically"
+      "practicalApplication": "How to gain hands-on experience"
     }
   ],
   "developmentRoadmap": {
     "phase1": {
-      "duration": "string - phase duration",
-      "focus": "string - main focus area",
-      "milestones": ["array of milestones"]
+      "duration": "Timeline",
+      "focus": "Priority skills to develop first",
+      "milestones": ["Specific achievements/goals"]
     },
     "phase2": {
-      "duration": "string - phase duration", 
-      "focus": "string - main focus area",
-      "milestones": ["array of milestones"]
+      "duration": "Timeline",
+      "focus": "Secondary skills focus",
+      "milestones": ["Specific achievements/goals"]
     },
     "phase3": {
-      "duration": "string - phase duration",
-      "focus": "string - main focus area", 
-      "milestones": ["array of milestones"]
+      "duration": "Timeline", 
+      "focus": "Advanced skills and specialization",
+      "milestones": ["Specific achievements/goals"]
     }
   },
-  "skillsAlreadyStrong": ["array of skills the candidate already possesses"]
+  "skillsAlreadyStrong": [
+    "Skills user already possesses that match job requirements"
+  ]
 }`
-
-        userPrompt = `Analyze the skill gaps between this candidate's resume and the job requirements, then provide a comprehensive learning plan.
-
-CANDIDATE'S RESUME:
-${requestData.resumeContent}
-
-JOB REQUIREMENTS:
-${requestData.jobPosting}
-
-Provide specific, actionable learning recommendations with realistic timelines and practical resources.`
         break
 
       default:
