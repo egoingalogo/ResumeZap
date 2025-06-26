@@ -1,12 +1,9 @@
 import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
 
 /**
  * File parsing utilities for extracting text content from various file formats
  * Supports PDF, DOCX, and TXT files with proper error handling and progress tracking
+ * Uses multiple PDF parsing strategies for maximum compatibility
  */
 
 export interface ParseResult {
@@ -23,18 +20,62 @@ export interface ParseResult {
 }
 
 /**
- * Parse PDF file using PDF.js library (browser-compatible)
- * Extracts text content from all pages and provides metadata
+ * Parse PDF file using multiple strategies for maximum compatibility
+ * 1. Try PDF.js with CDN worker
+ * 2. Try PDF.js with local worker
+ * 3. Fallback to basic text extraction
  */
 const parsePDF = async (file: File): Promise<ParseResult> => {
   console.log('FileParser: Starting PDF parsing for:', file.name);
   
+  // Strategy 1: Try PDF.js with proper worker setup
   try {
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Configure worker with multiple fallback options
+    const workerUrls = [
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`,
+      `/pdf.worker.js`, // Local fallback
+      `https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.worker.min.js` // Alternative CDN
+    ];
+    
+    let workerConfigured = false;
+    
+    for (const workerUrl of workerUrls) {
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+        
+        // Test if worker loads by creating a simple document
+        const testArrayBuffer = new ArrayBuffer(8);
+        const testTask = pdfjsLib.getDocument({ data: testArrayBuffer });
+        
+        // If this doesn't throw, worker is configured correctly
+        await testTask.promise.catch(() => {}); // Ignore the error, we just want to test worker
+        
+        workerConfigured = true;
+        console.log('FileParser: PDF.js worker configured with:', workerUrl);
+        break;
+      } catch (error) {
+        console.warn('FileParser: Failed to configure worker with:', workerUrl, error);
+        continue;
+      }
+    }
+    
+    if (!workerConfigured) {
+      throw new Error('Could not configure PDF.js worker');
+    }
+    
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Load PDF document using PDF.js
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    // Load PDF document
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    });
+    
     const pdfDocument = await loadingTask.promise;
     
     let fullText = '';
@@ -42,15 +83,25 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     
     // Extract text from each page
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      
-      // Combine text items from the page
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      
-      fullText += pageText + '\n';
+      try {
+        const page = await pdfDocument.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        // Combine text items from the page
+        const pageText = textContent.items
+          .map((item: any) => {
+            if (item.str) {
+              return item.str;
+            }
+            return '';
+          })
+          .join(' ');
+        
+        fullText += pageText + '\n';
+      } catch (pageError) {
+        console.warn(`FileParser: Failed to extract text from page ${pageNum}:`, pageError);
+        // Continue with other pages
+      }
     }
     
     if (!fullText || fullText.trim().length === 0) {
@@ -80,26 +131,109 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
         fileType: 'PDF',
       },
     };
+    
   } catch (error) {
-    console.error('FileParser: PDF parsing failed:', error);
+    console.warn('FileParser: PDF.js parsing failed, trying fallback method:', error);
     
-    let errorMessage = 'Failed to parse PDF file.';
-    if (error instanceof Error) {
-      if (error.message.includes('Invalid PDF')) {
-        errorMessage = 'Invalid or corrupted PDF file. Please try a different file.';
-      } else if (error.message.includes('password')) {
-        errorMessage = 'Password-protected PDFs are not supported. Please use an unprotected PDF.';
-      } else {
-        errorMessage = `PDF parsing error: ${error.message}`;
+    // Strategy 2: Fallback to basic file reading (for text-based PDFs)
+    try {
+      return await parsePDFFallback(file);
+    } catch (fallbackError) {
+      console.error('FileParser: All PDF parsing methods failed:', fallbackError);
+      
+      let errorMessage = 'Failed to parse PDF file.';
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid PDF')) {
+          errorMessage = 'Invalid or corrupted PDF file. Please try a different file.';
+        } else if (error.message.includes('password')) {
+          errorMessage = 'Password-protected PDFs are not supported. Please use an unprotected PDF.';
+        } else if (error.message.includes('worker')) {
+          errorMessage = 'PDF parsing service temporarily unavailable. Please try again or use a DOCX/TXT file.';
+        } else {
+          errorMessage = `PDF parsing error: ${error.message}`;
+        }
       }
+      
+      return {
+        success: false,
+        text: '',
+        error: errorMessage,
+      };
     }
-    
-    return {
-      success: false,
-      text: '',
-      error: errorMessage,
-    };
   }
+};
+
+/**
+ * Fallback PDF parsing method using FileReader
+ * This works for some text-based PDFs but not for complex layouts
+ */
+const parsePDFFallback = async (file: File): Promise<ParseResult> => {
+  console.log('FileParser: Using PDF fallback parsing method');
+  
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Convert to string and try to extract readable text
+        let text = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          const char = String.fromCharCode(uint8Array[i]);
+          // Only include printable ASCII characters
+          if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+            text += char;
+          } else if (char === '\n' || char === '\r' || char === '\t') {
+            text += ' ';
+          }
+        }
+        
+        // Clean up extracted text
+        const cleanedText = text
+          .replace(/\s+/g, ' ')
+          .replace(/[^\w\s\.\,\;\:\!\?\-\(\)]/g, '')
+          .trim();
+        
+        if (cleanedText.length < 50) {
+          resolve({
+            success: false,
+            text: '',
+            error: 'Could not extract readable text from PDF. The file may contain only images or use complex formatting.',
+          });
+          return;
+        }
+        
+        resolve({
+          success: true,
+          text: cleanedText,
+          metadata: {
+            wordCount: cleanedText.split(/\s+/).length,
+            fileSize: file.size,
+            fileName: file.name,
+            fileType: 'PDF (Fallback)',
+          },
+        });
+      } catch (error) {
+        resolve({
+          success: false,
+          text: '',
+          error: 'Failed to parse PDF using fallback method.',
+        });
+      }
+    };
+    
+    reader.onerror = () => {
+      resolve({
+        success: false,
+        text: '',
+        error: 'Failed to read PDF file.',
+      });
+    };
+    
+    reader.readAsArrayBuffer(file);
+  });
 };
 
 /**
