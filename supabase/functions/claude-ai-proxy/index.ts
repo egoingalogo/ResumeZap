@@ -156,6 +156,17 @@ Please provide a JSON response with these exact keys:
 
       case 'cover_letter':
         const coverLetterReq = requestData as CoverLetterRequest
+        
+        // Dynamic tone instructions based on user selection
+        const toneInstructions = {
+          professional: 'Use a formal, business-appropriate tone that demonstrates professionalism and competence.',
+          enthusiastic: 'Use an energetic, passionate tone that shows genuine excitement for the role and company.',
+          concise: 'Use a brief, direct tone that gets straight to the point while maintaining professionalism.'
+        }
+        
+        const selectedTone = coverLetterReq.tone as keyof typeof toneInstructions
+        const toneInstruction = toneInstructions[selectedTone] || toneInstructions.professional
+        
         systemPrompt = `You are ResumeZap AI's cover letter specialist. Create compelling, personalized cover letters that demonstrate clear value alignment between candidate experience and job requirements.
 
 EXPERTISE:
@@ -164,7 +175,7 @@ EXPERTISE:
 - Industry-appropriate formatting and structure
 - Value proposition articulation
 
-TONE INSTRUCTION: Maintain a professional, business-appropriate tone with confident language
+TONE INSTRUCTION: ${toneInstruction}
 
 STRUCTURE REQUIREMENTS:
 - Opening: Compelling hook with specific job/company reference
@@ -174,7 +185,7 @@ STRUCTURE REQUIREMENTS:
 
 OUTPUT: Provide both the cover letter and customization details used.`
 
-        userPrompt = `Create a professional cover letter based on:
+        userPrompt = `Create a ${coverLetterReq.tone} cover letter based on:
 
 **RESUME:**
 ${coverLetterReq.resumeContent}
@@ -184,7 +195,11 @@ ${coverLetterReq.jobPosting}
 
 **COMPANY NAME:** ${coverLetterReq.companyName}
 
-**TONE:** Professional
+**JOB TITLE:** ${coverLetterReq.jobTitle}
+
+**TONE:** ${coverLetterReq.tone}
+${coverLetterReq.hiringManager ? `**HIRING MANAGER:** ${coverLetterReq.hiringManager}` : ''}
+${coverLetterReq.personalExperience ? `**PERSONAL HIGHLIGHTS:** ${coverLetterReq.personalExperience}` : ''}
 
 Provide JSON response:
 {
@@ -307,6 +322,20 @@ Provide detailed JSON response:
         )
     }
 
+    // Set max_tokens based on request type
+    let maxTokens = 4000 // default
+    switch (requestData.type) {
+      case 'resume_analysis':
+        maxTokens = 6000
+        break
+      case 'cover_letter':
+        maxTokens = 2500
+        break
+      case 'skill_gap':
+        maxTokens = 8000
+        break
+    }
+
     // Make request to Claude API
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -317,7 +346,7 @@ Provide detailed JSON response:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: [
           {
