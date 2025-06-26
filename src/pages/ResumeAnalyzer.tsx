@@ -27,6 +27,7 @@ import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { parseFile, validateFileType, getFileTypeDisplayName, type ParseResult } from '../lib/fileParser';
+import { exportResume } from '../lib/exportUtils';
 import toast from 'react-hot-toast';
 
 /**
@@ -44,6 +45,7 @@ const ResumeAnalyzer: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
+  const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
   const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
 
   console.log('ResumeAnalyzer: Component mounted');
@@ -158,12 +160,41 @@ const ResumeAnalyzer: React.FC = () => {
     }
   };
 
-  const handleExport = (format: 'pdf' | 'docx' | 'txt') => {
-    if (!currentResume) return;
+  /**
+   * Handle resume export with production-ready functionality
+   * Supports PDF, DOCX, and TXT formats with proper error handling
+   */
+  const handleExport = async (format: 'pdf' | 'docx' | 'txt') => {
+    if (!currentResumeAnalysis?.tailoredResume) {
+      toast.error('No resume content to export');
+      return;
+    }
     
-    console.log('ResumeAnalyzer: Exporting as:', format);
-    // Simulate export - in production, implement actual export functionality
-    toast.success(`Resume exported as ${format.toUpperCase()}!`);
+    console.log('ResumeAnalyzer: Starting export as:', format.toUpperCase());
+    setIsExporting(format);
+    
+    try {
+      const result = await exportResume(
+        currentResumeAnalysis.tailoredResume,
+        format,
+        'optimized_resume'
+      );
+      
+      if (result.success) {
+        toast.success(`Resume exported as ${format.toUpperCase()}! File: ${result.fileName}`, {
+          duration: 5000,
+        });
+        console.log('ResumeAnalyzer: Export completed successfully:', result.fileName);
+      } else {
+        toast.error(result.error || `Failed to export ${format.toUpperCase()}`);
+        console.error('ResumeAnalyzer: Export failed:', result.error);
+      }
+    } catch (error) {
+      console.error('ResumeAnalyzer: Unexpected export error:', error);
+      toast.error(`An unexpected error occurred during ${format.toUpperCase()} export`);
+    } finally {
+      setIsExporting(null);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -626,24 +657,39 @@ const ResumeAnalyzer: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => handleExport('pdf')}
-                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1"
+                        disabled={isExporting !== null}
+                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Download className="h-4 w-4" />
-                        <span>PDF</span>
+                        {isExporting === 'pdf' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span>{isExporting === 'pdf' ? 'Exporting...' : 'PDF'}</span>
                       </button>
                       <button
                         onClick={() => handleExport('docx')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1"
+                        disabled={isExporting !== null}
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Download className="h-4 w-4" />
-                        <span>DOCX</span>
+                        {isExporting === 'docx' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span>{isExporting === 'docx' ? 'Exporting...' : 'DOCX'}</span>
                       </button>
                       <button
                         onClick={() => handleExport('txt')}
-                        className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1"
+                        disabled={isExporting !== null}
+                        className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Download className="h-4 w-4" />
-                        <span>TXT</span>
+                        {isExporting === 'txt' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span>{isExporting === 'txt' ? 'Exporting...' : 'TXT'}</span>
                       </button>
                     </div>
                   </div>
