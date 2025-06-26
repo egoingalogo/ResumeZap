@@ -316,7 +316,7 @@ Provide detailed JSON response:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [
