@@ -8,13 +8,23 @@ const corsHeaders = {
 
 interface ResumeAnalysisRequest {
   type: 'resume_analysis';
-  resumeContent: string;
+  resumeContent?: string;
+  resumeFile?: {
+    data: string;
+    media_type: string;
+    filename: string;
+  };
   jobPosting: string;
 }
 
 interface CoverLetterRequest {
   type: 'cover_letter';
-  resumeContent: string;
+  resumeContent?: string;
+  resumeFile?: {
+    data: string;
+    media_type: string;
+    filename: string;
+  };
   jobPosting: string;
   companyName: string;
   jobTitle: string;
@@ -25,15 +35,38 @@ interface CoverLetterRequest {
 
 interface SkillGapRequest {
   type: 'skill_gap';
-  resumeContent: string;
+  resumeContent?: string;
+  resumeFile?: {
+    data: string;
+    media_type: string;
+    filename: string;
+  };
   jobPosting: string;
 }
 
 type AIRequest = ResumeAnalysisRequest | CoverLetterRequest | SkillGapRequest;
 
 /**
+ * Clean Claude response by removing markdown code blocks
+ */
+function cleanClaudeResponse(responseText: string): string {
+  // Remove markdown code blocks if present
+  let cleaned = responseText.trim();
+  
+  // Check if response starts with ```json and ends with ```
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+  
+  return cleaned.trim();
+}
+
+/**
  * Supabase Edge Function for secure Claude AI API proxy
  * Handles resume analysis, cover letter generation, and skill gap analysis
+ * Now supports file attachments for direct document processing
  */
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -82,9 +115,20 @@ serve(async (req) => {
     }
 
     // Validate request data
-    if (!requestData.type || !requestData.resumeContent || !requestData.jobPosting) {
+    if (!requestData.type || !requestData.jobPosting) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate that either resumeContent or resumeFile is provided
+    if (!requestData.resumeContent && !requestData.resumeFile) {
+      return new Response(
+        JSON.stringify({ error: 'Either resume content or resume file is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -97,6 +141,7 @@ serve(async (req) => {
     // Generate appropriate prompt based on request type
     let systemPrompt = ''
     let userPrompt = ''
+    let messageContent: any[] = []
 
     switch (requestData.type) {
       case 'resume_analysis':
@@ -115,9 +160,60 @@ OUTPUT REQUIREMENTS:
 - Always provide numerical match scores and percentages
 - Highlight specific changes with before/after examples
 - Focus on ATS-friendly formatting improvements
-- Ensure all recommendations maintain authenticity`
+- Ensure all recommendations maintain authenticity
+- CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`
 
-        userPrompt = `Analyze this resume against the job posting and provide comprehensive tailoring:
+        if (requestData.resumeFile) {
+          userPrompt = `Analyze this resume file against the job posting and provide comprehensive tailoring:`
+          messageContent = [
+            {
+              type: "text",
+              text: userPrompt
+            },
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: requestData.resumeFile.media_type,
+                data: requestData.resumeFile.data
+              }
+            },
+            {
+              type: "text",
+              text: `**TARGET JOB POSTING:**
+${requestData.jobPosting}
+
+Please provide a JSON response with these exact keys:
+{
+  "tailoredResume": "Complete optimized resume text with improved bullet points",
+  "matchScore": "Percentage score (0-100)",
+  "matchBreakdown": {
+    "keywords": "Percentage of job keywords found in resume",
+    "skills": "Skills alignment percentage", 
+    "experience": "Experience relevance percentage",
+    "formatting": "ATS compatibility score"
+  },
+  "changes": [
+    {
+      "section": "Section name",
+      "original": "Original text",
+      "improved": "Improved text",
+      "reason": "Why this change improves ATS/relevance"
+    }
+  ],
+  "keywordMatches": {
+    "found": ["list of matched keywords"],
+    "missing": ["list of missing important keywords"],
+    "suggestions": ["keywords to naturally incorporate"]
+  },
+  "atsOptimizations": [
+    "Specific formatting improvements made for ATS compatibility"
+  ]
+}`
+            }
+          ]
+        } else {
+          userPrompt = `Analyze this resume against the job posting and provide comprehensive tailoring:
 
 **ORIGINAL RESUME:**
 ${requestData.resumeContent}
@@ -152,6 +248,8 @@ Please provide a JSON response with these exact keys:
     "Specific formatting improvements made for ATS compatibility"
   ]
 }`
+          messageContent = [{ type: "text", text: userPrompt }]
+        }
         break
 
       case 'cover_letter':
@@ -183,20 +281,31 @@ STRUCTURE REQUIREMENTS:
 - Body 2: Key achievements that demonstrate value
 - Closing: Strong call to action and next steps
 
-OUTPUT: Provide both the cover letter and customization details used.`
+OUTPUT: Provide both the cover letter and customization details used.
+CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`
 
-        userPrompt = `Create a ${coverLetterReq.tone} cover letter based on:
-
-**RESUME:**
-${coverLetterReq.resumeContent}
-
-**JOB POSTING:**
+        if (coverLetterReq.resumeFile) {
+          userPrompt = `Create a ${coverLetterReq.tone} cover letter based on this resume file:`
+          messageContent = [
+            {
+              type: "text",
+              text: userPrompt
+            },
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: coverLetterReq.resumeFile.media_type,
+                data: coverLetterReq.resumeFile.data
+              }
+            },
+            {
+              type: "text",
+              text: `**JOB POSTING:**
 ${coverLetterReq.jobPosting}
 
 **COMPANY NAME:** ${coverLetterReq.companyName}
-
 **JOB TITLE:** ${coverLetterReq.jobTitle}
-
 **TONE:** ${coverLetterReq.tone}
 ${coverLetterReq.hiringManager ? `**HIRING MANAGER:** ${coverLetterReq.hiringManager}` : ''}
 ${coverLetterReq.personalExperience ? `**PERSONAL HIGHLIGHTS:** ${coverLetterReq.personalExperience}` : ''}
@@ -212,6 +321,36 @@ Provide JSON response:
   ],
   "callToAction": "Specific closing statement used"
 }`
+            }
+          ]
+        } else {
+          userPrompt = `Create a ${coverLetterReq.tone} cover letter based on:
+
+**RESUME:**
+${coverLetterReq.resumeContent}
+
+**JOB POSTING:**
+${coverLetterReq.jobPosting}
+
+**COMPANY NAME:** ${coverLetterReq.companyName}
+**JOB TITLE:** ${coverLetterReq.jobTitle}
+**TONE:** ${coverLetterReq.tone}
+${coverLetterReq.hiringManager ? `**HIRING MANAGER:** ${coverLetterReq.hiringManager}` : ''}
+${coverLetterReq.personalExperience ? `**PERSONAL HIGHLIGHTS:** ${coverLetterReq.personalExperience}` : ''}
+
+Provide JSON response:
+{
+  "coverLetter": "Complete cover letter text",
+  "customizations": [
+    "List of company/job-specific elements incorporated"
+  ],
+  "keyStrengths": [
+    "Main value propositions highlighted"
+  ],
+  "callToAction": "Specific closing statement used"
+}`
+          messageContent = [{ type: "text", text: userPrompt }]
+        }
         break
 
       case 'skill_gap':
@@ -233,9 +372,100 @@ APPROACH:
 - Create step-by-step development roadmaps
 - Focus on practical, applicable learning
 
-OUTPUT: Detailed analysis with specific, actionable learning recommendations.`
+OUTPUT: Detailed analysis with specific, actionable learning recommendations.
+CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`
 
-        userPrompt = `Analyze skill gaps between this resume and job posting, then provide comprehensive learning recommendations:
+        if (requestData.resumeFile) {
+          userPrompt = `Analyze skill gaps between this resume file and job posting, then provide comprehensive learning recommendations:`
+          messageContent = [
+            {
+              type: "text",
+              text: userPrompt
+            },
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: requestData.resumeFile.media_type,
+                data: requestData.resumeFile.data
+              }
+            },
+            {
+              type: "text",
+              text: `**TARGET JOB POSTING:**
+${requestData.jobPosting}
+
+Provide detailed JSON response:
+{
+  "skillGapAnalysis": {
+    "critical": [
+      {
+        "skill": "Skill name",
+        "currentLevel": "Assessment of current proficiency",
+        "requiredLevel": "Level needed for job",
+        "gap": "Specific gap description"
+      }
+    ],
+    "important": [Similar structure],
+    "niceToHave": [Similar structure]
+  },
+  "learningRecommendations": [
+    {
+      "skill": "Skill name",
+      "priority": "Critical/Important/Nice-to-have",
+      "timeInvestment": "Estimated hours/weeks",
+      "courses": [
+        {
+          "platform": "Coursera/Udemy/LinkedIn Learning",
+          "courseName": "Specific course title",
+          "cost": "Free/Paid price",
+          "duration": "Course length",
+          "difficulty": "Beginner/Intermediate/Advanced"
+        }
+      ],
+      "freeResources": [
+        {
+          "type": "YouTube/Documentation/Tutorial",
+          "resource": "Specific resource name/channel",
+          "description": "What this resource covers"
+        }
+      ],
+      "certifications": [
+        {
+          "name": "Certification name",
+          "provider": "Certification provider",
+          "timeToComplete": "Estimated time",
+          "cost": "Certification cost"
+        }
+      ],
+      "practicalApplication": "How to gain hands-on experience"
+    }
+  ],
+  "developmentRoadmap": {
+    "phase1": {
+      "duration": "Timeline",
+      "focus": "Priority skills to develop first",
+      "milestones": ["Specific achievements/goals"]
+    },
+    "phase2": {
+      "duration": "Timeline",
+      "focus": "Secondary skills focus",
+      "milestones": ["Specific achievements/goals"]
+    },
+    "phase3": {
+      "duration": "Timeline", 
+      "focus": "Advanced skills and specialization",
+      "milestones": ["Specific achievements/goals"]
+    }
+  },
+  "skillsAlreadyStrong": [
+    "Skills user already possesses that match job requirements"
+  ]
+}`
+            }
+          ]
+        } else {
+          userPrompt = `Analyze skill gaps between this resume and job posting, then provide comprehensive learning recommendations:
 
 **CURRENT RESUME:**
 ${requestData.resumeContent}
@@ -310,6 +540,8 @@ Provide detailed JSON response:
     "Skills user already possesses that match job requirements"
   ]
 }`
+          messageContent = [{ type: "text", text: userPrompt }]
+        }
         break
 
       default:
@@ -345,13 +577,13 @@ Provide detailed JSON response:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: [
           {
             role: 'user',
-            content: userPrompt
+            content: messageContent
           }
         ]
       })
@@ -394,13 +626,18 @@ Provide detailed JSON response:
 
     const responseText = claudeData.content[0].text
 
+    // Clean the response to remove markdown code blocks
+    const cleanedResponse = cleanClaudeResponse(responseText)
+    console.log('Cleaned response length:', cleanedResponse.length)
+
     // Parse the JSON response from Claude
     let parsedResponse
     try {
-      parsedResponse = JSON.parse(responseText)
+      parsedResponse = JSON.parse(cleanedResponse)
     } catch (error) {
       console.error('Failed to parse Claude JSON response:', error)
       console.error('Raw response:', responseText)
+      console.error('Cleaned response:', cleanedResponse)
       return new Response(
         JSON.stringify({ error: 'AI response parsing error' }),
         { 

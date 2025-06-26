@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 /**
  * AI Service for interacting with Claude API through Supabase Edge Functions
  * Provides secure, server-side AI processing for resume analysis, cover letter generation, and skill gap analysis
+ * Now supports file attachments for direct document processing by Claude
  */
 
 // Type definitions for AI responses
@@ -102,6 +103,42 @@ export interface SkillGapResult {
 }
 
 /**
+ * Convert file to base64 for Claude API
+ */
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Get media type for Claude API based on file type
+ */
+const getMediaType = (file: File): string => {
+  const mimeType = file.type;
+  if (mimeType === 'application/pdf') return 'application/pdf';
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (mimeType === 'text/plain') return 'text/plain';
+  
+  // Fallback based on file extension
+  const extension = file.name.toLowerCase().split('.').pop();
+  switch (extension) {
+    case 'pdf': return 'application/pdf';
+    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'txt': return 'text/plain';
+    default: return 'application/octet-stream';
+  }
+};
+
+/**
  * Base function for making requests to the Claude AI proxy Edge Function
  */
 async function callClaudeAPI<T>(requestData: any): Promise<T> {
@@ -151,28 +188,50 @@ async function callClaudeAPI<T>(requestData: any): Promise<T> {
 }
 
 /**
- * Analyze resume against job posting using Claude AI
- * Returns detailed optimization recommendations and match scoring
+ * Analyze resume with Claude AI through Edge Function
+ * Now supports both text content and file attachments
  */
 export async function analyzeResume(
   resumeContent: string,
-  jobPosting: string
+  jobPosting: string,
+  resumeFile?: File
 ): Promise<ResumeAnalysisResult> {
   console.log('AIService: Starting resume analysis');
   
-  if (!resumeContent?.trim()) {
-    throw new Error('Resume content is required for analysis');
+  if (!resumeContent?.trim() && !resumeFile) {
+    throw new Error('Resume content or file is required for analysis');
   }
   
   if (!jobPosting?.trim()) {
     throw new Error('Job posting is required for analysis');
   }
 
-  const requestData = {
+  const requestData: any = {
     type: 'resume_analysis',
-    resumeContent: resumeContent.trim(),
     jobPosting: jobPosting.trim(),
   };
+
+  // If file is provided, use file attachment; otherwise use text content
+  if (resumeFile) {
+    try {
+      const base64Content = await fileToBase64(resumeFile);
+      const mediaType = getMediaType(resumeFile);
+      
+      requestData.resumeFile = {
+        data: base64Content,
+        media_type: mediaType,
+        filename: resumeFile.name
+      };
+      
+      console.log('AIService: Using file attachment for resume analysis');
+    } catch (error) {
+      console.error('AIService: Failed to process file:', error);
+      throw new Error('Failed to process the uploaded file. Please try again.');
+    }
+  } else {
+    requestData.resumeContent = resumeContent.trim();
+    console.log('AIService: Using text content for resume analysis');
+  }
 
   try {
     const result = await callClaudeAPI<ResumeAnalysisResult>(requestData);
@@ -192,7 +251,7 @@ export async function analyzeResume(
 }
 
 /**
- * Generate personalized cover letter using Claude AI
+ * Generate personalized cover letter using Claude AI through Edge Function
  * Creates compelling cover letters tailored to specific job postings
  */
 export async function generateCoverLetter(
@@ -202,12 +261,13 @@ export async function generateCoverLetter(
   jobTitle: string,
   tone: 'professional' | 'enthusiastic' | 'concise',
   hiringManager?: string,
-  personalExperience?: string
+  personalExperience?: string,
+  resumeFile?: File
 ): Promise<CoverLetterResult> {
   console.log('AIService: Starting cover letter generation');
   
-  if (!resumeContent?.trim()) {
-    throw new Error('Resume content is required for cover letter generation');
+  if (!resumeContent?.trim() && !resumeFile) {
+    throw new Error('Resume content or file is required for cover letter generation');
   }
   
   if (!jobPosting?.trim()) {
@@ -222,9 +282,8 @@ export async function generateCoverLetter(
     throw new Error('Job title is required for cover letter generation');
   }
 
-  const requestData = {
+  const requestData: any = {
     type: 'cover_letter',
-    resumeContent: resumeContent.trim(),
     jobPosting: jobPosting.trim(),
     companyName: companyName.trim(),
     jobTitle: jobTitle.trim(),
@@ -232,6 +291,28 @@ export async function generateCoverLetter(
     hiringManager: hiringManager?.trim(),
     personalExperience: personalExperience?.trim(),
   };
+
+  // If file is provided, use file attachment; otherwise use text content
+  if (resumeFile) {
+    try {
+      const base64Content = await fileToBase64(resumeFile);
+      const mediaType = getMediaType(resumeFile);
+      
+      requestData.resumeFile = {
+        data: base64Content,
+        media_type: mediaType,
+        filename: resumeFile.name
+      };
+      
+      console.log('AIService: Using file attachment for cover letter generation');
+    } catch (error) {
+      console.error('AIService: Failed to process file:', error);
+      throw new Error('Failed to process the uploaded file. Please try again.');
+    }
+  } else {
+    requestData.resumeContent = resumeContent.trim();
+    console.log('AIService: Using text content for cover letter generation');
+  }
 
   try {
     const result = await callClaudeAPI<CoverLetterResult>(requestData);
@@ -256,23 +337,45 @@ export async function generateCoverLetter(
  */
 export async function analyzeSkillGaps(
   resumeContent: string,
-  jobPosting: string
+  jobPosting: string,
+  resumeFile?: File
 ): Promise<SkillGapResult> {
   console.log('AIService: Starting skill gap analysis');
   
-  if (!resumeContent?.trim()) {
-    throw new Error('Resume content is required for skill gap analysis');
+  if (!resumeContent?.trim() && !resumeFile) {
+    throw new Error('Resume content or file is required for skill gap analysis');
   }
   
   if (!jobPosting?.trim()) {
     throw new Error('Job posting is required for skill gap analysis');
   }
 
-  const requestData = {
+  const requestData: any = {
     type: 'skill_gap',
-    resumeContent: resumeContent.trim(),
     jobPosting: jobPosting.trim(),
   };
+
+  // If file is provided, use file attachment; otherwise use text content
+  if (resumeFile) {
+    try {
+      const base64Content = await fileToBase64(resumeFile);
+      const mediaType = getMediaType(resumeFile);
+      
+      requestData.resumeFile = {
+        data: base64Content,
+        media_type: mediaType,
+        filename: resumeFile.name
+      };
+      
+      console.log('AIService: Using file attachment for skill gap analysis');
+    } catch (error) {
+      console.error('AIService: Failed to process file:', error);
+      throw new Error('Failed to process the uploaded file. Please try again.');
+    }
+  } else {
+    requestData.resumeContent = resumeContent.trim();
+    console.log('AIService: Using text content for skill gap analysis');
+  }
 
   try {
     const result = await callClaudeAPI<SkillGapResult>(requestData);

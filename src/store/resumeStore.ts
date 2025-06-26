@@ -143,13 +143,13 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   /**
    * Analyze resume with Claude AI through Edge Function
    */
-  analyzeResume: async (resumeContent: string, jobPosting: string) => {
+  analyzeResume: async (resumeContent: string, jobPosting: string, resumeFile?: File) => {
     console.log('ResumeStore: Starting resume analysis');
     set({ isAnalyzing: true, error: null });
     
     try {
       // Call Claude AI through Edge Function
-      const analysisResult = await analyzeResumeAI(resumeContent, jobPosting);
+      const analysisResult = await analyzeResumeAI(resumeContent, jobPosting, resumeFile);
       
       // Create a resume object from the analysis
       const analyzedResume: Resume = {
