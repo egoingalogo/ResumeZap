@@ -2,8 +2,8 @@ import mammoth from 'mammoth';
 
 /**
  * File parsing utilities for extracting text content from various file formats
- * Supports PDF, DOCX, and TXT files with proper error handling and progress tracking
- * Uses multiple PDF parsing strategies for maximum compatibility and readable text extraction
+ * Supports PDF, DOCX, and TXT files with robust error handling and fallback strategies
+ * Uses a simplified PDF parsing approach that doesn't rely on external workers
  */
 
 export interface ParseResult {
@@ -20,73 +20,32 @@ export interface ParseResult {
 }
 
 /**
- * Parse PDF file using multiple strategies for maximum compatibility
- * 1. Try PDF.js with proper text extraction
- * 2. Try alternative PDF.js configuration
- * 3. Fallback with user guidance
+ * Parse PDF file using a simplified approach without external workers
+ * This method focuses on extracting readable text content reliably
  */
 const parsePDF = async (file: File): Promise<ParseResult> => {
-  console.log('FileParser: Starting PDF parsing for:', file.name);
+  console.log('FileParser: Starting simplified PDF parsing for:', file.name);
   
-  // Strategy 1: Try PDF.js with proper worker setup and text extraction
   try {
+    // Dynamic import of PDF.js
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Configure worker with multiple fallback options
-    const workerUrls = [
-      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`,
-      `https://unpkg.com/pdfjs-dist@4.0.379/build/pdf.worker.min.js`,
-      `/pdf.worker.js`, // Local fallback
-    ];
-    
-    let workerConfigured = false;
-    let lastWorkerError = null;
-    
-    for (const workerUrl of workerUrls) {
-      try {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-        
-        // Test worker by trying to load a minimal PDF
-        const testArrayBuffer = await file.arrayBuffer();
-        const testTask = pdfjsLib.getDocument({
-          data: testArrayBuffer.slice(0, Math.min(1024, testArrayBuffer.byteLength)),
-          useWorkerFetch: false,
-          isEvalSupported: false,
-          useSystemFonts: true,
-          verbosity: 0, // Reduce console noise
-        });
-        
-        // Try to get the document to test worker
-        await testTask.promise.catch(() => {}); // Ignore error, just testing worker
-        
-        workerConfigured = true;
-        console.log('FileParser: PDF.js worker configured with:', workerUrl);
-        break;
-      } catch (error) {
-        lastWorkerError = error;
-        console.warn('FileParser: Failed to configure worker with:', workerUrl, error);
-        continue;
-      }
-    }
-    
-    if (!workerConfigured) {
-      throw new Error(`Could not configure PDF.js worker. Last error: ${lastWorkerError}`);
-    }
+    // Configure worker to use a local implementation
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.js',
+      import.meta.url
+    ).toString();
     
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Load PDF document with optimized settings for text extraction
+    // Load PDF document with simplified settings
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
       useSystemFonts: true,
       verbosity: 0,
-      // Optimize for text extraction
-      disableFontFace: true,
-      disableRange: false,
-      disableStream: false,
     });
     
     const pdfDocument = await loadingTask.promise;
@@ -96,39 +55,22 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     
     console.log(`FileParser: PDF has ${numPages} pages, extracting text...`);
     
-    // Extract text from each page with better text processing
+    // Extract text from each page
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       try {
         const page = await pdfDocument.getPage(pageNum);
-        const textContent = await page.getTextContent({
-          normalizeWhitespace: true,
-          disableCombineTextItems: false,
-        });
+        const textContent = await page.getTextContent();
         
-        // Process text items with better spacing and structure preservation
-        let pageText = '';
-        let lastY = null;
-        let lastX = null;
-        
-        for (const item of textContent.items) {
-          if (item.str && typeof item.str === 'string') {
-            const currentY = item.transform ? item.transform[5] : 0;
-            const currentX = item.transform ? item.transform[4] : 0;
-            
-            // Add line breaks for significant Y position changes (new lines)
-            if (lastY !== null && Math.abs(currentY - lastY) > 5) {
-              pageText += '\n';
+        // Extract text items and join them
+        const pageText = textContent.items
+          .map((item: any) => {
+            if (item.str && typeof item.str === 'string') {
+              return item.str;
             }
-            // Add spaces for significant X position changes (word spacing)
-            else if (lastX !== null && currentX - lastX > 10) {
-              pageText += ' ';
-            }
-            
-            pageText += item.str;
-            lastY = currentY;
-            lastX = currentX + (item.width || 0);
-          }
-        }
+            return '';
+          })
+          .filter((str: string) => str.trim().length > 0)
+          .join(' ');
         
         if (pageText.trim()) {
           fullText += pageText + '\n\n';
@@ -145,7 +87,6 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     const cleanedText = fullText
       .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
       .replace(/\n\s*\n/g, '\n') // Remove empty lines
-      .replace(/([.!?])\s*\n\s*([A-Z])/g, '$1\n\n$2') // Add proper paragraph breaks
       .trim();
     
     // Validate that we extracted meaningful text content
@@ -160,8 +101,6 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
       'endobj',
       'stream',
       'endstream',
-      'xref',
-      'trailer',
       'Creator (',
       'Producer (',
       'ModDate',
@@ -191,16 +130,16 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
     };
     
   } catch (error) {
-    console.warn('FileParser: PDF.js parsing failed:', error);
+    console.warn('FileParser: PDF parsing failed:', error);
     
-    // Strategy 2: Try alternative PDF parsing approach
+    // Try fallback method for problematic PDFs
     try {
-      return await parsePDFAlternative(file);
-    } catch (alternativeError) {
-      console.error('FileParser: Alternative PDF parsing also failed:', alternativeError);
+      return await parsePDFWithFallback(file);
+    } catch (fallbackError) {
+      console.error('FileParser: Fallback PDF parsing also failed:', fallbackError);
       
-      // Return helpful error message based on the type of failure
-      let errorMessage = 'Failed to extract readable text from PDF.';
+      // Return helpful error message
+      let errorMessage = 'Unable to extract text from this PDF file.';
       
       if (error instanceof Error) {
         if (error.message.includes('Invalid PDF')) {
@@ -226,77 +165,83 @@ const parsePDF = async (file: File): Promise<ParseResult> => {
 };
 
 /**
- * Alternative PDF parsing method using different PDF.js configuration
- * Attempts to extract text with different settings for problematic PDFs
+ * Fallback PDF parsing method using FileReader for simple text extraction
+ * This is a last resort method for when PDF.js fails completely
  */
-const parsePDFAlternative = async (file: File): Promise<ParseResult> => {
-  console.log('FileParser: Trying alternative PDF parsing method');
+const parsePDFWithFallback = async (file: File): Promise<ParseResult> => {
+  console.log('FileParser: Trying fallback PDF parsing method');
   
-  const pdfjsLib = await import('pdfjs-dist');
-  const arrayBuffer = await file.arrayBuffer();
-  
-  // Try with different PDF.js settings
-  const loadingTask = pdfjsLib.getDocument({
-    data: arrayBuffer,
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    useSystemFonts: false, // Different setting
-    verbosity: 0,
-    disableFontFace: false, // Different setting
-    disableRange: true, // Different setting
-    disableStream: true, // Different setting
-    // Try to force text extraction
-    cMapUrl: 'https://unpkg.com/pdfjs-dist@4.0.379/cmaps/',
-    cMapPacked: true,
-  });
-  
-  const pdfDocument = await loadingTask.promise;
-  let fullText = '';
-  const numPages = pdfDocument.numPages;
-  
-  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    try {
-      const page = await pdfDocument.getPage(pageNum);
-      
-      // Try different text extraction method
-      const textContent = await page.getTextContent({
-        normalizeWhitespace: false,
-        disableCombineTextItems: true, // Different setting
-      });
-      
-      // Simple text extraction without position processing
-      const pageText = textContent.items
-        .map((item: any) => item.str || '')
-        .filter((str: string) => str.trim().length > 0)
-        .join(' ');
-      
-      if (pageText.trim()) {
-        fullText += pageText + '\n';
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Convert to string and try to extract readable text
+        let text = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          const char = String.fromCharCode(uint8Array[i]);
+          // Only include printable ASCII characters
+          if (char.charCodeAt(0) >= 32 && char.charCodeAt(0) <= 126) {
+            text += char;
+          } else if (char === '\n' || char === '\r' || char === '\t') {
+            text += ' ';
+          }
+        }
+        
+        // Clean up the extracted text
+        const cleanedText = text
+          .replace(/\s+/g, ' ')
+          .replace(/[^\w\s.,!?;:()\-]/g, '')
+          .trim();
+        
+        // Filter out PDF metadata and structure
+        const lines = cleanedText.split(/\s+/).filter(word => {
+          return word.length > 2 && 
+                 !word.includes('PDF') && 
+                 !word.includes('obj') && 
+                 !word.includes('endobj') &&
+                 !/^\d+$/.test(word);
+        });
+        
+        const finalText = lines.join(' ');
+        
+        if (finalText.length < 100) {
+          throw new Error('Fallback method could not extract sufficient readable text');
+        }
+        
+        resolve({
+          success: true,
+          text: finalText,
+          metadata: {
+            wordCount: finalText.split(/\s+/).filter(word => word.length > 0).length,
+            fileSize: file.size,
+            fileName: file.name,
+            fileType: 'PDF (Fallback)',
+          },
+        });
+      } catch (error) {
+        console.error('FileParser: Fallback parsing failed:', error);
+        resolve({
+          success: false,
+          text: '',
+          error: 'Could not extract readable text from PDF. Please try converting to DOCX or TXT format.',
+        });
       }
-    } catch (pageError) {
-      console.warn(`FileParser: Alternative method failed on page ${pageNum}:`, pageError);
-    }
-  }
-  
-  const cleanedText = fullText
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  if (!cleanedText || cleanedText.length < 50) {
-    throw new Error('Alternative PDF parsing also resulted in insufficient content');
-  }
-  
-  return {
-    success: true,
-    text: cleanedText,
-    metadata: {
-      pageCount: numPages,
-      wordCount: cleanedText.split(/\s+/).filter(word => word.length > 0).length,
-      fileSize: file.size,
-      fileName: file.name,
-      fileType: 'PDF (Alternative)',
-    },
-  };
+    };
+    
+    reader.onerror = () => {
+      resolve({
+        success: false,
+        text: '',
+        error: 'Failed to read PDF file. Please try a different file format.',
+      });
+    };
+    
+    reader.readAsArrayBuffer(file);
+  });
 };
 
 /**
