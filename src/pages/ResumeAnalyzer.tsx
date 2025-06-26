@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { parseFile, validateFileType, getFileTypeDisplayName, type ParseResult } from '../lib/fileParser';
@@ -347,36 +348,32 @@ const ResumeAnalyzer: React.FC = () => {
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Or paste your resume text
+                    Resume Text Content
                   </label>
-                  <textarea
+                  <RichTextEditor
                     value={resumeText}
                     onChange={(e) => setResumeText(e.target.value)}
-                    placeholder="Paste your resume content here..."
+                    placeholder="Paste your resume content here. Formatting from Word documents, PDFs, and web pages will be preserved..."
                     rows={8}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                    label=""
+                    showWordCount={true}
                   />
-                  {resumeText && (
-                    <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-                      <Info className="h-3 w-3" />
-                      <span>{resumeText.split(/\s+/).length} words</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Job Posting */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Job Posting
+                  Target Job Posting
                 </h2>
                 
-                <textarea
+                <RichTextEditor
                   value={jobPosting}
                   onChange={(e) => setJobPosting(e.target.value)}
-                  placeholder="Paste the complete job posting here, including requirements, responsibilities, and qualifications..."
+                  placeholder="Paste the complete job posting here. Copy directly from job boards, company websites, or emails to preserve all formatting and structure..."
                   rows={12}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                  label=""
+                  showWordCount={true}
                 />
               </div>
 
