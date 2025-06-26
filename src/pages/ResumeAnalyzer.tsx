@@ -301,7 +301,7 @@ const ResumeAnalyzer: React.FC = () => {
                             <span>Type: {uploadedFile.type.includes('pdf') ? 'PDF' : 
                                            uploadedFile.type.includes('wordprocessingml') ? 'DOCX' : 'TXT'}</span>
                           </div>
-                          <p className="text-xs">Claude AI will process this file directly for optimal accuracy.</p>
+                          <p className="text-xs">AI will process this file directly for optimal accuracy.</p>
                         </div>
                       </div>
                     </div>
