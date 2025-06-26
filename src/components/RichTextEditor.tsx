@@ -1,18 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { 
-  Bold, 
-  Italic, 
-  List, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight,
-  Type,
-  MoreHorizontal,
-  Copy,
-  Paste,
-  RotateCcw,
-  Info
-} from 'lucide-react';
+import { Bold, Italic, List, AlignLeft, AlignCenter, AlignRight, Type, MoreHorizontal, Copy, Cast as Paste, RotateCcw, Info } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
