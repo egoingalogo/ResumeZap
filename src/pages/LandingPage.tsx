@@ -6,384 +6,565 @@ import {
   Target, 
   Brain, 
   FileText, 
-  BarChart3, 
-  ChevronRight,
+  Mail, 
+  BarChart3,
+  CheckCircle,
+  Star,
+  ArrowRight,
+  Users,
+  TrendingUp,
+  Shield,
+  Clock,
+  Award,
   Sparkles,
-  Sun,
-  Moon
+  Crown,
+  Heart,
+  Briefcase
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { PricingCard } from '../components/PricingCard';
 import { useAuthStore } from '../store/authStore';
-import { useThemeStore } from '../store/themeStore';
-import { LiveChatButton } from '../components/LiveChatButton';
-import toast from 'react-hot-toast';
+import { getLifetimeUserCount } from '../lib/supabase';
 
 /**
- * Landing page component with hero section, features, and pricing
- * Implements smooth scrolling, animations, and responsive design
- * Focused on MVP presentation without fake testimonials or inflated stats
+ * Landing page component with hero section, features, pricing, and testimonials
+ * Showcases ResumeZap's AI-powered resume optimization capabilities
+ * Includes responsive design and smooth animations throughout
  */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, upgradePlan } = useAuthStore();
-  const { isDarkMode, toggleTheme } = useThemeStore();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isAnnual, setIsAnnual] = useState(false);
-
-  // Debug log for dark mode state
-  console.log('LandingPage: isDarkMode state:', isDarkMode);
+  const { isAuthenticated, lifetimeUserCount, fetchLifetimeUserCount } = useAuthStore();
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   console.log('LandingPage: Component mounted');
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleGetStarted = () => {
-    console.log('LandingPage: Get started button clicked');
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/auth?mode=register');
-    }
-  };
-
-  const handlePlanSelection = (plan: 'premium' | 'pro' | 'lifetime') => {
-    console.log('LandingPage: Plan selected:', plan);
-    if (isAuthenticated) {
-      upgradePlan(plan);
-      toast.success(`Successfully upgraded to ${plan} plan!`);
-      navigate('/dashboard');
-    } else {
-      navigate('/auth?mode=register&plan=' + plan);
-    }
-  };
+    // Fetch lifetime user count on component mount
+    fetchLifetimeUserCount();
+  }, [fetchLifetimeUserCount]);
 
   const features = [
     {
-      icon: Target,
-      title: 'AI-Powered Resume Tailoring',
-      description: 'Transform your resume with AI to perfectly match job requirements and increase your interview chances.',
+      icon: Brain,
+      title: 'AI-Powered Analysis',
+      description: 'Advanced AI analyzes your resume against job requirements and provides detailed optimization recommendations.',
+      color: 'from-purple-500 to-blue-500',
     },
     {
-      icon: Brain,
-      title: 'Intelligent Skill Gap Analysis & AI Learning Recommendations',
-      description: 'Identify missing skills and get personalized learning recommendations with step-by-step development roadmaps.',
+      icon: Target,
+      title: 'ATS Optimization',
+      description: 'Ensure your resume passes Applicant Tracking Systems with keyword optimization and formatting improvements.',
+      color: 'from-blue-500 to-cyan-500',
     },
     {
       icon: FileText,
-      title: 'Dynamic Cover Letter Generation',
-      description: 'Generate compelling, personalized cover letters that highlight your unique value proposition for each role.',
+      title: 'Smart Tailoring',
+      description: 'Automatically tailor your resume for specific job postings with intelligent content suggestions.',
+      color: 'from-cyan-500 to-teal-500',
+    },
+    {
+      icon: Mail,
+      title: 'Cover Letter Generator',
+      description: 'Generate compelling, personalized cover letters that complement your optimized resume.',
+      color: 'from-teal-500 to-green-500',
     },
     {
       icon: BarChart3,
-      title: 'ATS Optimization & Scoring',
-      description: 'Ensure your resume passes applicant tracking systems with our ATS-friendly formatting and match scoring.',
+      title: 'Skill Gap Analysis',
+      description: 'Identify missing skills and get personalized learning recommendations to advance your career.',
+      color: 'from-green-500 to-yellow-500',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Application Tracking',
+      description: 'Track your job applications, interview progress, and success metrics in one organized dashboard.',
+      color: 'from-yellow-500 to-orange-500',
     },
   ];
 
-  const getPricingTiers = () => [
+  const testimonials = [
     {
-      name: 'Free',
-      price: '$0',
-      period: isAnnual ? '/year' : '/month',
-      description: 'Perfect for getting started with essential resume optimization',
-      features: [
-        '3 resume tailoring sessions per month',
-        '2 cover letter generations per month',
-        'Basic skill gap analysis',
-        'Standard export formats (PDF, DOCX)',
-        'Email support (48-72 hours)',
-        'Basic learning resource suggestions',
-      ],
-      buttonText: 'Get Started Free',
-      onSelect: handleGetStarted,
+      name: 'Sarah Chen',
+      role: 'Software Engineer',
+      company: 'Google',
+      content: 'ResumeZap helped me land my dream job at Google! The AI suggestions were spot-on and improved my resume significantly.',
+      rating: 5,
+      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     },
     {
-      name: 'Premium',
-      price: isAnnual ? '$79.99' : '$7.99',
-      period: isAnnual ? '/year' : '/month',
-      originalPrice: isAnnual ? '$95.88' : null,
-      savings: isAnnual ? 'Save $16 annually' : null,
-      description: 'Enhanced features for serious job seekers',
-      features: [
-        '40 resume tailoring sessions per month',
-        '30 cover letter generations per month',
-        'Enhanced skill gap analysis with priority ranking',
-        'Detailed AI learning recommendations with time estimates',
-        'Multiple resume version storage',
-        'Priority email support (24-48 hours)',
-        'Usage analytics dashboard',
-      ],
-      isPopular: true,
-      buttonText: 'Start Premium',
-      onSelect: () => handlePlanSelection('premium'),
+      name: 'Michael Rodriguez',
+      role: 'Product Manager',
+      company: 'Microsoft',
+      content: 'The skill gap analysis feature is incredible. It showed me exactly what I needed to learn to advance my career.',
+      rating: 5,
+      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     },
     {
-      name: 'Pro',
-      price: isAnnual ? '$149.99' : '$14.99',
-      period: isAnnual ? '/year' : '/month',
-      originalPrice: isAnnual ? '$179.88' : null,
-      savings: isAnnual ? 'Save $30 annually' : null,
-      description: 'Complete suite for serious professionals',
-      features: [
-        'Unlimited resume tailoring',
-        'Unlimited cover letter generation',
-        'Advanced skill gap analysis with development roadmaps',
-        'Comprehensive AI learning recommendations including certification pathways',
-        'Unlimited document storage and version history',
-        'Advanced analytics and success tracking',
-        'Priority email support (4 hours)',
-        'Custom cover letter templates',
-        'Bulk processing for multiple job applications',
-      ],
-      buttonText: 'Go Pro',
-      onSelect: () => handlePlanSelection('pro'),
-    },
-    {
-      name: 'Lifetime',
-      price: '$79.99',
-      period: 'one-time',
-      description: 'Limited early adopter offer - all Pro features forever',
-      features: [
-        'All Pro Plan features permanently',
-        'Exclusive early adopter badge',
-        'Direct feedback channel to development team',
-        'VIP email support (4 hours)',
-        '30-day early access to future feature updates before general release',
-        'Limited to first 1,000 customers',
-        '60-day money-back guarantee',
-      ],
-      isLifetime: true,
-      buttonText: 'Claim Lifetime Deal',
-      onSelect: () => handlePlanSelection('lifetime'),
+      name: 'Emily Johnson',
+      role: 'Data Scientist',
+      company: 'Amazon',
+      content: 'I got 3x more interview calls after using ResumeZap. The ATS optimization really works!',
+      rating: 5,
+      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     },
   ];
 
-  const pricingTiers = getPricingTiers();
+  const stats = [
+    { number: '50,000+', label: 'Resumes Optimized' },
+    { number: '85%', label: 'Success Rate' },
+    { number: '3x', label: 'More Interviews' },
+    { number: '24/7', label: 'AI Support' },
+  ];
+
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]);
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
-      <Navbar isScrolled={isScrolled} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <Navbar />
       
-      {/* Floating Dark Mode Toggle */}
-      <motion.button
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={toggleTheme}
-        className="fixed bottom-6 right-6 z-40 p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300"
-        aria-label="Toggle dark mode"
-      >
-        <div className="relative w-6 h-6">
-          <motion.div
-            initial={false}
-            animate={{
-              scale: isDarkMode ? 0 : 1,
-              rotate: isDarkMode ? 180 : 0,
-            }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0"
-          >
-            <Sun className="w-6 h-6 text-yellow-500" />
-          </motion.div>
-          <motion.div
-            initial={false}
-            animate={{
-              scale: isDarkMode ? 1 : 0,
-              rotate: isDarkMode ? 0 : -180,
-            }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0"
-          >
-            <Moon className="w-6 h-6 text-blue-400" />
-          </motion.div>
-        </div>
-      </motion.button>
+      {/* Bolt Badge */}
+      <div className="fixed top-20 right-4 z-40 lg:top-24 lg:right-8">
+        <motion.a
+          href="https://bolt.new/"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="block"
+        >
+          <img
+            src="/white_circle_360x360.png"
+            alt="Powered by Bolt"
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 
+                     hover:shadow-lg transition-all duration-300 rounded-full
+                     filter hover:brightness-110"
+            loading="lazy"
+          />
+        </motion.a>
+      </div>
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-8"
-          >
-            <div className="inline-flex items-center space-x-2 bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-full text-purple-600 dark:text-purple-400 text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" />
-              <span>Powered by AI</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              Transform Your Resume with{' '}
-              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                AI Power
-              </span>
-            </h1>
-            
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-              Land your dream job with AI-powered resume tailoring, intelligent skill gap analysis, 
-              and personalized cover letters that get you noticed by hiring managers.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+      <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mb-8"
+            >
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6">
+                <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  AI-Powered
+                </span>
+                <br />
+                Resume Optimization
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                Transform your resume with cutting-edge AI technology. Get more interviews, 
+                land better jobs, and accelerate your career growth.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            >
+              <button
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                <span>Get Started Free</span>
-                <ChevronRight className="h-5 w-5" />
-              </motion.button>
-              
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No credit card required • Start with free plan
-                </p>
-              </div>
-            </div>
-          </motion.div>
+                Get Started Free
+              </button>
+              <button
+                onClick={() => scrollToSection('features')}
+                className="border-2 border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-600 hover:text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
+              >
+                Learn More
+              </button>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+            >
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+                    {stat.number}
+                  </div>
+                  <div className="text-gray-600 dark:text-gray-400 font-medium">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white/50 dark:bg-gray-800/50">
+      <section id="features" className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Everything You Need to Land Your Dream Job
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Powerful Features for
+              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                {' '}Career Success
+              </span>
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Our AI-powered platform provides comprehensive tools to optimize your job search 
-              and accelerate your career growth.
+              Our comprehensive suite of AI-powered tools helps you optimize every aspect of your job search
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
+                viewport={{ once: true }}
+                className="group"
               >
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
-                  <feature.icon className="h-6 w-6 text-white" />
+                <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {feature.description}
-                </p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 bg-white/50 dark:bg-gray-800/50">
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Choose Your Career Acceleration Plan
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Success Stories from
+              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                {' '}Real Users
+              </span>
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Start free and upgrade as your job search intensifies
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Join thousands of professionals who have transformed their careers with ResumeZap
             </p>
-            
-            {/* Pricing Toggle */}
-            <div className="flex items-center justify-center mt-8 mb-8">
-              <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center">
-                <button
-                  onClick={() => setIsAnnual(false)}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    !isAnnual
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setIsAnnual(true)}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 relative ${
-                    isAnnual
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  Annual
-                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                    Save
-                  </span>
-                </button>
+          </motion.div>
+
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              key={currentTestimonial}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700"
+            >
+              <div className="flex items-center mb-6">
+                {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                ))}
               </div>
+              
+              <blockquote className="text-xl md:text-2xl text-gray-900 dark:text-white mb-8 leading-relaxed">
+                "{testimonials[currentTestimonial].content}"
+              </blockquote>
+              
+              <div className="flex items-center">
+                <img
+                  src={testimonials[currentTestimonial].avatar}
+                  alt={testimonials[currentTestimonial].name}
+                  className="w-16 h-16 rounded-full mr-4 object-cover"
+                />
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white text-lg">
+                    {testimonials[currentTestimonial].name}
+                  </div>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    {testimonials[currentTestimonial].role} at {testimonials[currentTestimonial].company}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Testimonial indicators */}
+            <div className="flex justify-center mt-8 space-x-2">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                    index === currentTestimonial
+                      ? 'bg-purple-600 scale-125'
+                      : 'bg-gray-300 dark:bg-gray-600 hover:bg-purple-400'
+                  }`}
+                />
+              ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {pricingTiers.map((tier, index) => (
-              <PricingCard key={index} tier={tier} index={index} />
-            ))}
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Choose Your
+              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                {' '}Success Plan
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Start free and upgrade as you grow. All plans include our core AI optimization features.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <PricingCard
+                title="Free"
+                price="$0"
+                period="forever"
+                description="Perfect for getting started with AI resume optimization"
+                features={[
+                  '3 resume tailoring sessions/month',
+                  '2 cover letter generations/month',
+                  'Basic skill gap analysis',
+                  'Email support (48-72 hours)',
+                  'Export to PDF, DOCX, TXT'
+                ]}
+                buttonText="Get Started Free"
+                buttonVariant="outline"
+                onSelect={() => handleGetStarted()}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <PricingCard
+                title="Premium"
+                price="$7.99"
+                period="month"
+                description="Enhanced features for active job seekers"
+                features={[
+                  '40 resume tailoring sessions/month',
+                  '30 cover letter generations/month',
+                  'Enhanced skill gap analysis',
+                  'Priority email support (24-48 hours)',
+                  'Usage analytics dashboard',
+                  'All export formats'
+                ]}
+                buttonText="Upgrade to Premium"
+                buttonVariant="primary"
+                onSelect={() => handleGetStarted()}
+                popular={true}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+            >
+              <PricingCard
+                title="Pro"
+                price="$14.99"
+                period="month"
+                description="Advanced tools for career professionals"
+                features={[
+                  'Unlimited resume tailoring',
+                  'Unlimited cover letters',
+                  'Advanced skill gap analysis',
+                  'Priority email support (4 hours)',
+                  'Advanced analytics & tracking',
+                  'Custom templates',
+                  'Bulk processing'
+                ]}
+                buttonText="Go Pro"
+                buttonVariant="primary"
+                onSelect={() => handleGetStarted()}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <PricingCard
+                title="Lifetime"
+                price="$79.99"
+                period="one-time"
+                description="All Pro features forever - limited time offer"
+                features={[
+                  'All Pro features permanently',
+                  'Unlimited everything forever',
+                  'VIP support & early access',
+                  'Future feature updates included',
+                  '60-day money-back guarantee',
+                  `Limited to first 1,000 customers`,
+                  lifetimeUserCount !== null ? `${Math.max(0, 1000 - lifetimeUserCount)} spots remaining` : 'Limited availability'
+                ]}
+                buttonText="Get Lifetime Access"
+                buttonVariant="lifetime"
+                onSelect={() => handleGetStarted()}
+                badge="Limited Time"
+                disabled={lifetimeUserCount !== null && lifetimeUserCount >= 1000}
+              />
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
+      <section className="py-20 bg-gradient-to-r from-purple-600 to-blue-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-800 dark:to-blue-800 rounded-3xl p-12 text-white shadow-2xl"
+            viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
               Ready to Transform Your Career?
             </h2>
-            <p className="text-xl mb-8 opacity-90">
-              Join the next generation of job seekers using AI to accelerate their careers
+            <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+              Join thousands of professionals who have accelerated their careers with AI-powered resume optimization.
             </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={handleGetStarted}
-              className="bg-white text-purple-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-100 transition-colors duration-200 flex items-center space-x-2 mx-auto"
+              className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              <Zap className="h-5 w-5" />
-              <span>Start Your Journey</span>
-            </motion.button>
+              Start Your Success Story
+              <ArrowRight className="inline-block ml-2 h-5 w-5" />
+            </button>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white dark:text-gray-200 py-12 transition-colors duration-300">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
-                <Zap className="h-6 w-6 text-white" />
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="md:col-span-2">
+              <div className="flex items-center space-x-2 mb-4">
+                <Zap className="h-8 w-8 text-purple-400" />
+                <span className="text-2xl font-bold">ResumeZap</span>
               </div>
-              <span className="text-xl font-bold">ResumeZap</span>
+              <p className="text-gray-400 mb-4 max-w-md">
+                AI-powered resume optimization platform helping professionals land their dream jobs with intelligent career tools.
+              </p>
+              <div className="flex space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-400">
+                  <Shield className="h-4 w-4" />
+                  <span>Secure & Private</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-400">
+                  <Clock className="h-4 w-4" />
+                  <span>24/7 Available</span>
+                </div>
+              </div>
             </div>
             
-            <div className="text-gray-400 dark:text-gray-500 text-sm">
-              © 2025 ResumeZap. All rights reserved. Powered by AI.
+            <div>
+              <h3 className="font-semibold mb-4">Features</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Resume Analysis</li>
+                <li>Cover Letter Generator</li>
+                <li>Skill Gap Analysis</li>
+                <li>Application Tracking</li>
+                <li>ATS Optimization</li>
+              </ul>
             </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>
+                  <button 
+                    onClick={() => navigate('/support')}
+                    className="hover:text-white transition-colors duration-200"
+                  >
+                    Contact Us
+                  </button>
+                </li>
+                <li>Help Center</li>
+                <li>Privacy Policy</li>
+                <li>Terms of Service</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 ResumeZap. All rights reserved. Accelerate your career with AI.</p>
           </div>
         </div>
       </footer>
