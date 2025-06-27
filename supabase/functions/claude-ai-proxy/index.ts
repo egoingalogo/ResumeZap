@@ -73,6 +73,28 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+  // Add a debug endpoint to check environment variables
+  if (req.method === 'GET' && new URL(req.url).pathname.includes('/debug')) {
+    const allEnvVars = Deno.env.toObject()
+    const relevantVars = Object.keys(allEnvVars).filter(key => 
+      key.toUpperCase().includes('ANTHROPIC') || 
+      key.toUpperCase().includes('API') ||
+      key.startsWith('SUPABASE_')
+    )
+    
+    return new Response(
+      JSON.stringify({
+        message: 'Debug info',
+        relevantEnvVars,
+        hasAnthropicKey: !!Deno.env.get('ANTHROPIC_API_KEY'),
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
 
   try {
     // Verify request method
