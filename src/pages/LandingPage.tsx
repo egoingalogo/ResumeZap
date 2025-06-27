@@ -349,7 +349,7 @@ const LandingPage: React.FC = () => {
                 tier={{
                   name: "Premium",
                   price: isAnnual ? "$79.99" : "$7.99",
-                  period: isAnnual ? "year" : "month",
+                  period: isAnnual ? "/year" : "/month",
                   description: "Enhanced features for active job seekers",
                   features: [
                     '40 resume tailoring sessions/month',
@@ -377,7 +377,7 @@ const LandingPage: React.FC = () => {
                 tier={{
                   name: "Pro",
                   price: isAnnual ? "$149.99" : "$14.99",
-                  period: isAnnual ? "year" : "month",
+                  period: isAnnual ? "/year" : "/month",
                   description: "Advanced tools for career professionals",
                   features: [
                     'Unlimited resume tailoring',
