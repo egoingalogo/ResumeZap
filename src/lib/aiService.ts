@@ -1,12 +1,54 @@
-import { supabase } from './supabase';
-
 /**
- * AI Service for interacting with Claude API through Supabase Edge Functions
- * Provides secure, server-side AI processing for resume analysis, cover letter generation, and skill gap analysis
+ * AI Service for Claude API integration through Supabase Edge Functions
+ * Handles resume analysis, cover letter generation, and skill gap analysis
  * Now supports file attachments for direct document processing by Claude
  */
 
-// Type definitions for AI responses
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/claude-ai-proxy`;
+
+/**
+ * Convert File to base64 for Claude API
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Get media type for Claude API based on file type
+ */
+function getMediaType(file: File): string {
+  const mimeType = file.type.toLowerCase();
+  
+  // Map common MIME types to Claude-supported media types
+  switch (mimeType) {
+    case 'application/pdf':
+      return 'application/pdf';
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'text/plain':
+      return 'text/plain';
+    default:
+      // Fallback based on file extension
+      const fileName = file.name.toLowerCase();
+      if (fileName.endsWith('.pdf')) return 'application/pdf';
+      if (fileName.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      if (fileName.endsWith('.txt')) return 'text/plain';
+      
+      // Default to text/plain for unknown types
+      return 'text/plain';
+  }
+}
+
 export interface ResumeAnalysisResult {
   tailoredResume: string;
   matchScore: number;
@@ -103,147 +145,135 @@ export interface SkillGapResult {
 }
 
 /**
- * Convert file to base64 for Claude API
+ * Make API call to Claude through Edge Function with enhanced error handling
  */
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
-      const base64 = result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
-/**
- * Get media type for Claude API based on file type
- */
-const getMediaType = (file: File): string => {
-  const mimeType = file.type;
-  if (mimeType === 'application/pdf') return 'application/pdf';
-  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-  if (mimeType === 'text/plain') return 'text/plain';
-  
-  // Fallback based on file extension
-  const extension = file.name.toLowerCase().split('.').pop();
-  switch (extension) {
-    case 'pdf': return 'application/pdf';
-    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'txt': return 'text/plain';
-    default: return 'application/octet-stream';
-  }
-};
-
-/**
- * Base function for making requests to the Claude AI proxy Edge Function
- */
-async function callClaudeAPI<T>(requestData: any): Promise<T> {
-  console.log('AIService: Making request to Claude API proxy');
+async function callClaudeAPI(requestData: any): Promise<any> {
+  console.log('AIService: Making request to Edge Function');
   
   try {
-    const { data, error } = await supabase.functions.invoke('claude-ai-proxy', {
-      body: requestData,
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
     });
 
-    if (error) {
-      console.error('AIService: Edge function error:', error);
-      throw new Error(error.message || 'AI service request failed');
+    console.log('AIService: Response status:', response.status);
+    console.log('AIService: Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      try {
+        const errorData = await response.json();
+        console.error('AIService: Error response data:', errorData);
+        errorMessage = errorData.error || errorMessage;
+      } catch (parseError) {
+        console.error('AIService: Failed to parse error response:', parseError);
+        const errorText = await response.text();
+        console.error('AIService: Raw error response:', errorText);
+      }
+      
+      throw new Error(errorMessage);
     }
 
-    if (!data) {
-      throw new Error('No response data received from AI service');
+    const responseData = await response.json();
+    console.log('AIService: Response data structure:', {
+      hasSuccess: 'success' in responseData,
+      hasData: 'data' in responseData,
+      hasError: 'error' in responseData,
+      keys: Object.keys(responseData)
+    });
+
+    if (!responseData.success) {
+      const errorMessage = responseData.error || 'AI service returned unsuccessful response';
+      console.error('AIService: Unsuccessful response:', errorMessage);
+      throw new Error(errorMessage);
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'AI service returned an error');
+    if (!responseData.data) {
+      console.error('AIService: No data in successful response:', responseData);
+      throw new Error('AI service returned no data');
     }
 
-    console.log('AIService: Successfully received response from Claude API');
-    return data.data as T;
+    console.log('AIService: Successfully received data from Edge Function');
+    return responseData.data;
 
   } catch (error) {
     console.error('AIService: Request failed:', error);
     
-    // Provide user-friendly error messages
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
-        throw new Error('Unable to connect to AI service. Please check your internet connection and try again.');
-      } else if (error.message.includes('timeout')) {
-        throw new Error('AI service request timed out. Please try again.');
-      } else if (error.message.includes('busy') || error.message.includes('429')) {
-        throw new Error('AI service is currently busy. Please wait a moment and try again.');
-      } else if (error.message.includes('authentication') || error.message.includes('401')) {
-        throw new Error('AI service authentication error. Please contact support.');
-      } else {
-        throw error; // Re-throw with original message if it's already user-friendly
-      }
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to AI service. Please check your internet connection.');
     }
     
-    throw new Error('An unexpected error occurred while processing your request.');
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error('Unknown error occurred while calling AI service');
   }
 }
 
 /**
- * Analyze resume with Claude AI through Edge Function
- * Now supports both text content and file attachments
+ * Analyze resume with Claude AI - supports both text content and file uploads
  */
 export async function analyzeResume(
-  resumeContent: string,
-  jobPosting: string,
+  resumeContent: string, 
+  jobPosting: string, 
   resumeFile?: File
 ): Promise<ResumeAnalysisResult> {
   console.log('AIService: Starting resume analysis');
-  
-  if (!resumeContent?.trim() && !resumeFile) {
-    throw new Error('Resume content or file is required for analysis');
-  }
-  
-  if (!jobPosting?.trim()) {
-    throw new Error('Job posting is required for analysis');
+  console.log('AIService: Has resume content:', !!resumeContent.trim());
+  console.log('AIService: Has resume file:', !!resumeFile);
+  console.log('AIService: Has job posting:', !!jobPosting.trim());
+
+  if (!resumeContent.trim() && !resumeFile) {
+    throw new Error('Either resume content or resume file is required');
   }
 
-  const requestData: any = {
-    type: 'resume_analysis',
-    jobPosting: jobPosting.trim(),
-  };
-
-  // If file is provided, use file attachment; otherwise use text content
-  if (resumeFile) {
-    try {
-      const base64Content = await fileToBase64(resumeFile);
-      const mediaType = getMediaType(resumeFile);
-      
-      requestData.resumeFile = {
-        data: base64Content,
-        media_type: mediaType,
-        filename: resumeFile.name
-      };
-      
-      console.log('AIService: Using file attachment for resume analysis');
-    } catch (error) {
-      console.error('AIService: Failed to process file:', error);
-      throw new Error('Failed to process the uploaded file. Please try again.');
-    }
-  } else {
-    requestData.resumeContent = resumeContent.trim();
-    console.log('AIService: Using text content for resume analysis');
+  if (!jobPosting.trim()) {
+    throw new Error('Job posting is required');
   }
 
   try {
-    const result = await callClaudeAPI<ResumeAnalysisResult>(requestData);
+    const requestData: any = {
+      type: 'resume_analysis',
+      jobPosting: jobPosting.trim(),
+    };
+
+    // Add resume content or file
+    if (resumeFile) {
+      console.log('AIService: Processing resume file:', resumeFile.name, resumeFile.type);
+      const base64Data = await fileToBase64(resumeFile);
+      const mediaType = getMediaType(resumeFile);
+      
+      requestData.resumeFile = {
+        data: base64Data,
+        media_type: mediaType,
+        filename: resumeFile.name,
+      };
+      
+      console.log('AIService: File processed for Claude API:', {
+        filename: resumeFile.name,
+        mediaType,
+        dataLength: base64Data.length,
+      });
+    } else {
+      requestData.resumeContent = resumeContent.trim();
+    }
+
+    const result = await callClaudeAPI(requestData);
     
     // Validate the response structure
     if (!result.tailoredResume || typeof result.matchScore !== 'number') {
+      console.error('AIService: Invalid resume analysis response structure:', result);
       throw new Error('Invalid response format from AI service');
     }
-    
+
     console.log('AIService: Resume analysis completed successfully');
-    return result;
-    
+    return result as ResumeAnalysisResult;
+
   } catch (error) {
     console.error('AIService: Resume analysis failed:', error);
     throw error;
@@ -251,8 +281,7 @@ export async function analyzeResume(
 }
 
 /**
- * Generate personalized cover letter using Claude AI through Edge Function
- * Creates compelling cover letters tailored to specific job postings
+ * Generate cover letter with Claude AI - supports both text content and file uploads
  */
 export async function generateCoverLetter(
   resumeContent: string,
@@ -260,71 +289,63 @@ export async function generateCoverLetter(
   companyName: string,
   jobTitle: string,
   tone: 'professional' | 'enthusiastic' | 'concise',
+  resumeFile?: File,
   hiringManager?: string,
-  personalExperience?: string,
-  resumeFile?: File
+  personalExperience?: string
 ): Promise<CoverLetterResult> {
   console.log('AIService: Starting cover letter generation');
-  
-  if (!resumeContent?.trim() && !resumeFile) {
-    throw new Error('Resume content or file is required for cover letter generation');
-  }
-  
-  if (!jobPosting?.trim()) {
-    throw new Error('Job posting is required for cover letter generation');
-  }
-  
-  if (!companyName?.trim()) {
-    throw new Error('Company name is required for cover letter generation');
-  }
-  
-  if (!jobTitle?.trim()) {
-    throw new Error('Job title is required for cover letter generation');
+
+  if (!resumeContent.trim() && !resumeFile) {
+    throw new Error('Either resume content or resume file is required');
   }
 
-  const requestData: any = {
-    type: 'cover_letter',
-    jobPosting: jobPosting.trim(),
-    companyName: companyName.trim(),
-    jobTitle: jobTitle.trim(),
-    tone,
-    hiringManager: hiringManager?.trim(),
-    personalExperience: personalExperience?.trim(),
-  };
-
-  // If file is provided, use file attachment; otherwise use text content
-  if (resumeFile) {
-    try {
-      const base64Content = await fileToBase64(resumeFile);
-      const mediaType = getMediaType(resumeFile);
-      
-      requestData.resumeFile = {
-        data: base64Content,
-        media_type: mediaType,
-        filename: resumeFile.name
-      };
-      
-      console.log('AIService: Using file attachment for cover letter generation');
-    } catch (error) {
-      console.error('AIService: Failed to process file:', error);
-      throw new Error('Failed to process the uploaded file. Please try again.');
-    }
-  } else {
-    requestData.resumeContent = resumeContent.trim();
-    console.log('AIService: Using text content for cover letter generation');
+  if (!jobPosting.trim() || !companyName.trim() || !jobTitle.trim()) {
+    throw new Error('Job posting, company name, and job title are required');
   }
 
   try {
-    const result = await callClaudeAPI<CoverLetterResult>(requestData);
+    const requestData: any = {
+      type: 'cover_letter',
+      jobPosting: jobPosting.trim(),
+      companyName: companyName.trim(),
+      jobTitle: jobTitle.trim(),
+      tone,
+    };
+
+    // Add optional fields
+    if (hiringManager?.trim()) {
+      requestData.hiringManager = hiringManager.trim();
+    }
+    if (personalExperience?.trim()) {
+      requestData.personalExperience = personalExperience.trim();
+    }
+
+    // Add resume content or file
+    if (resumeFile) {
+      console.log('AIService: Processing resume file for cover letter:', resumeFile.name);
+      const base64Data = await fileToBase64(resumeFile);
+      const mediaType = getMediaType(resumeFile);
+      
+      requestData.resumeFile = {
+        data: base64Data,
+        media_type: mediaType,
+        filename: resumeFile.name,
+      };
+    } else {
+      requestData.resumeContent = resumeContent.trim();
+    }
+
+    const result = await callClaudeAPI(requestData);
     
     // Validate the response structure
-    if (!result.coverLetter || !Array.isArray(result.customizations)) {
+    if (!result.coverLetter) {
+      console.error('AIService: Invalid cover letter response structure:', result);
       throw new Error('Invalid response format from AI service');
     }
-    
+
     console.log('AIService: Cover letter generation completed successfully');
-    return result;
-    
+    return result as CoverLetterResult;
+
   } catch (error) {
     console.error('AIService: Cover letter generation failed:', error);
     throw error;
@@ -332,8 +353,7 @@ export async function generateCoverLetter(
 }
 
 /**
- * Analyze skill gaps and provide learning recommendations using Claude AI
- * Identifies missing skills and creates comprehensive learning roadmaps
+ * Analyze skill gaps with Claude AI - supports both text content and file uploads
  */
 export async function analyzeSkillGaps(
   resumeContent: string,
@@ -341,78 +361,49 @@ export async function analyzeSkillGaps(
   resumeFile?: File
 ): Promise<SkillGapResult> {
   console.log('AIService: Starting skill gap analysis');
-  
-  if (!resumeContent?.trim() && !resumeFile) {
-    throw new Error('Resume content or file is required for skill gap analysis');
-  }
-  
-  if (!jobPosting?.trim()) {
-    throw new Error('Job posting is required for skill gap analysis');
+
+  if (!resumeContent.trim() && !resumeFile) {
+    throw new Error('Either resume content or resume file is required');
   }
 
-  const requestData: any = {
-    type: 'skill_gap',
-    jobPosting: jobPosting.trim(),
-  };
+  if (!jobPosting.trim()) {
+    throw new Error('Job posting is required');
+  }
 
-  // If file is provided, use file attachment; otherwise use text content
-  if (resumeFile) {
-    try {
-      const base64Content = await fileToBase64(resumeFile);
+  try {
+    const requestData: any = {
+      type: 'skill_gap',
+      jobPosting: jobPosting.trim(),
+    };
+
+    // Add resume content or file
+    if (resumeFile) {
+      console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
+      const base64Data = await fileToBase64(resumeFile);
       const mediaType = getMediaType(resumeFile);
       
       requestData.resumeFile = {
-        data: base64Content,
+        data: base64Data,
         media_type: mediaType,
-        filename: resumeFile.name
+        filename: resumeFile.name,
       };
-      
-      console.log('AIService: Using file attachment for skill gap analysis');
-    } catch (error) {
-      console.error('AIService: Failed to process file:', error);
-      throw new Error('Failed to process the uploaded file. Please try again.');
+    } else {
+      requestData.resumeContent = resumeContent.trim();
     }
-  } else {
-    requestData.resumeContent = resumeContent.trim();
-    console.log('AIService: Using text content for skill gap analysis');
-  }
 
-  try {
-    const result = await callClaudeAPI<SkillGapResult>(requestData);
+    const result = await callClaudeAPI(requestData);
     
     // Validate the response structure
-    if (!result.skillGapAnalysis || !Array.isArray(result.learningRecommendations)) {
+    if (!result.skillGapAnalysis || !result.learningRecommendations) {
+      console.error('AIService: Invalid skill gap response structure:', result);
       throw new Error('Invalid response format from AI service');
     }
-    
+
     console.log('AIService: Skill gap analysis completed successfully');
-    return result;
-    
+    return result as SkillGapResult;
+
   } catch (error) {
     console.error('AIService: Skill gap analysis failed:', error);
     throw error;
-  }
-}
-
-/**
- * Test the AI service connection
- * Useful for debugging and health checks
- */
-export async function testAIService(): Promise<boolean> {
-  console.log('AIService: Testing AI service connection');
-  
-  try {
-    // Make a simple test request
-    const testResult = await analyzeResume(
-      'Test resume content with basic information',
-      'Test job posting with basic requirements'
-    );
-    
-    console.log('AIService: Connection test successful');
-    return true;
-    
-  } catch (error) {
-    console.error('AIService: Connection test failed:', error);
-    return false;
   }
 }

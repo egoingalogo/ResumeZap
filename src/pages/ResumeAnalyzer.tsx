@@ -140,15 +140,44 @@ const ResumeAnalyzer: React.FC = () => {
     }
 
     console.log('ResumeAnalyzer: Starting analysis');
+    console.log('ResumeAnalyzer: Analysis parameters:', {
+      hasResumeText: !!resumeText.trim(),
+      hasUploadedFile: !!uploadedFile,
+      hasJobPosting: !!jobPosting.trim(),
+      uploadedFileName: uploadedFile?.name,
+      uploadedFileType: uploadedFile?.type,
+      uploadedFileSize: uploadedFile?.size
+    });
+    
     updateUsage('resumeTailoring');
     
     try {
       // Pass the uploaded file to the AI service if available
-      await analyzeResume(resumeText, jobPosting, uploadedFile || undefined);
+      const result = await analyzeResume(resumeText, jobPosting, uploadedFile || undefined);
+      console.log('ResumeAnalyzer: Analysis completed successfully:', {
+        hasResult: !!result,
+        matchScore: result?.matchScore,
+        hasTailoredResume: !!result?.tailoredResume
+      });
       toast.success('Resume analyzed successfully!');
     } catch (error) {
       console.error('ResumeAnalyzer: Analysis failed:', error);
-      toast.error('Analysis failed. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Analysis failed. Please try again.';
+      if (error instanceof Error) {
+        if (error.message.includes('Network error')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('AI service')) {
+          errorMessage = 'AI service is temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('Invalid response')) {
+          errorMessage = 'Received invalid response from AI service. Please try again.';
+        } else {
+          errorMessage = `Analysis failed: ${error.message}`;
+        }
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
