@@ -61,24 +61,22 @@ const ResumeAnalyzer: React.FC = () => {
    */
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    console.log('ResumeAnalyzer: File dropped:', file.name, 'Type:', file.type);
+    console.log('ResumeAnalyzer: PDF file dropped:', file.name, 'Type:', file.type);
     
     if (file) {
-      // Validate file type
+      // Validate PDF file type only
       const allowedTypes = [
         'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain',
       ];
       
-      const allowedExtensions = ['.pdf', '.docx', '.txt'];
+      const allowedExtensions = ['.pdf'];
       const fileName = file.name.toLowerCase();
       
       const hasValidType = allowedTypes.includes(file.type.toLowerCase());
       const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasValidType && !hasValidExtension) {
-        toast.error('Please upload a PDF, DOCX, or TXT file.');
+        toast.error('Please upload a PDF file only.');
         return;
       }
       
@@ -101,12 +99,10 @@ const ResumeAnalyzer: React.FC = () => {
       setResumeText('');
       
       // Show success message
-      const fileType = file.type === 'application/pdf' ? 'PDF' :
-                      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ? 'DOCX' :
-                      file.type === 'text/plain' ? 'TXT' : 'Document';
+      const fileType = 'PDF';
       
       toast.success(
-        `${fileType} file uploaded successfully! Ready for AI analysis.`,
+        `PDF file uploaded successfully! Ready for AI analysis.`,
         { duration: 4000 }
       );
       
@@ -122,8 +118,6 @@ const ResumeAnalyzer: React.FC = () => {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/plain': ['.txt'],
     },
     multiple: false,
   });
@@ -305,11 +299,11 @@ const ResumeAnalyzer: React.FC = () => {
                       <p className="text-lg font-medium text-gray-900 dark:text-white">
                         {uploadedFile 
                           ? `✓ ${uploadedFile.name}`
-                          : 'Drop your resume here'
+                          : 'Drop your PDF resume here'
                         }
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Supports PDF, DOCX, and TXT files (max 10MB)
+                        Supports PDF files only (max 10MB)
                       </p>
                     </div>
                   </div>
@@ -327,8 +321,7 @@ const ResumeAnalyzer: React.FC = () => {
                         <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
                           <div className="flex items-center space-x-4">
                             <span>Size: {(uploadedFile.size / 1024).toFixed(1)}KB</span>
-                            <span>Type: {uploadedFile.type.includes('pdf') ? 'PDF' : 
-                                           uploadedFile.type.includes('wordprocessingml') ? 'DOCX' : 'TXT'}</span>
+                            <span>Type: PDF</span>
                           </div>
                           <p className="text-xs">AI will process this file directly for optimal accuracy.</p>
                         </div>
@@ -351,7 +344,7 @@ const ResumeAnalyzer: React.FC = () => {
                   />
                   {uploadedFile && resumeText.trim() && (
                     <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                      Note: File upload takes priority over text content for analysis.
+                      Note: PDF file upload takes priority over text content for analysis.
                     </p>
                   )}
                 </div>
