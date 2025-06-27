@@ -1,0 +1,7 @@
+src/components/Navbar.tsx
+src/components/ProfilePictureUpload.tsx
+src/components/UpgradeModal.tsx
+src/lib/profilePicture.ts
+src/pages/AuthPage.tsx
+src/pages/Dashboard.tsx
+src/pages/LandingPage.tsx
