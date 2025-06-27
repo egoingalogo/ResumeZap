@@ -97,36 +97,64 @@ kbd {
 }
 
 /* Fix dropdown border visual glitch */
-select,
-.dropdown,
-[role="listbox"],
-[role="combobox"] {
+/* Fix dropdown border visual glitch - ensure complete borders */
+select {
+  border: 1px solid #D1D5DB !important;
+  border-radius: 0.5rem;
+  background-color: white;
+}
+
+.dark select {
+  border: 1px solid #4B5563 !important;
+  background-color: #374151;
+}
+
+/* Ensure focused dropdowns have complete borders */
+select:focus {
+  border: 2px solid #8B5CF6 !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Fix dropdown options styling */
+select option {
+  padding: 0.5rem;
+  border: none;
+  background-color: white;
+  color: #1F2937;
+}
+
+.dark select option {
+  background-color: #374151;
+  color: #F9FAFB;
+}
+
+/* Ensure all form select elements have consistent borders */
+.form-select,
+input[type="select"],
+select[class*="border"] {
   border: 1px solid #D1D5DB !important;
 }
 
-.dark select,
-.dark .dropdown,
-.dark [role="listbox"],
-.dark [role="combobox"] {
+.dark .form-select,
+.dark input[type="select"],
+.dark select[class*="border"] {
   border: 1px solid #4B5563 !important;
 }
 
-/* Ensure all dropdown elements have complete borders */
-select:focus,
-.dropdown:focus,
-[role="listbox"]:focus,
-[role="combobox"]:focus {
-  border: 2px solid #8B5CF6 !important;
-  outline: none;
+/* Fix any custom dropdown components */
+[data-dropdown],
+.dropdown-menu,
+.select-dropdown {
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Fix any missing border lines on dropdown options */
-option,
-[role="option"] {
-  border-bottom: 1px solid #E5E7EB;
-}
-
-.dark option,
-.dark [role="option"] {
-  border-bottom: 1px solid #374151;
+.dark [data-dropdown],
+.dark .dropdown-menu,
+.dark .select-dropdown {
+  border: 1px solid #4B5563;
+  background-color: #374151;
 }
