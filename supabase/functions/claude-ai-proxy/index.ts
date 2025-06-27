@@ -1,81 +1,85 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
+
 /**
  * Clean Claude response by removing markdown code blocks
- */ function cleanClaudeResponse(responseText) {
+ */
+function cleanClaudeResponse(responseText: string): string {
   // Remove markdown code blocks if present
   let cleaned = responseText.trim();
+  
   // Check if response starts with ```json and ends with ```
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
+  
   return cleaned.trim();
 }
+
 /**
  * Supabase Edge Function for secure Claude AI API proxy
  * Handles resume analysis, cover letter generation, and skill gap analysis
  * Now supports file attachments for direct document processing
- */ serve(async (req)=>{
+ */
+serve(async (req: Request) => {
   console.log('Edge Function invoked');
   console.log('Request method:', req.method);
   console.log('Request URL:', req.url);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log('Handling CORS preflight request');
-    return new Response('ok', {
-      headers: corsHeaders
-    });
+    return new Response('ok', { headers: corsHeaders });
   }
+
   try {
     // Verify request method
     if (req.method !== 'POST') {
       console.error('Invalid request method:', req.method);
-      return new Response(JSON.stringify({
-        error: 'Method not allowed'
-      }), {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // Get the Anthropic API key from Supabase secrets
     console.log('Checking for Anthropic API key...');
-    // Try multiple possible environment variable names
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('SUPABASE_SECRET_ANTHROPIC_API_KEY') || Deno.env.get('_ANTHROPIC_API_KEY');
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    
     console.log('API key found:', !!anthropicApiKey);
     console.log('API key length:', anthropicApiKey?.length || 0);
     console.log('API key prefix:', anthropicApiKey ? anthropicApiKey.substring(0, 10) + '...' : 'null');
+
     if (!anthropicApiKey) {
       console.error('ANTHROPIC_API_KEY not found in environment variables');
+      
       // Log environment variables for debugging (filtered for security)
       const allEnvVars = Deno.env.toObject();
       const envKeys = Object.keys(allEnvVars);
       console.error('Total environment variables:', envKeys.length);
-      console.error('Environment variable keys:', envKeys.slice(0, 10)) // Only show first 10 for security
-      ;
-      const anthropicKeys = envKeys.filter((key)=>key.toUpperCase().includes('ANTHROPIC'));
-      const apiKeys = envKeys.filter((key)=>key.toUpperCase().includes('API'));
+      console.error('Environment variable keys:', envKeys.slice(0, 10)); // Only show first 10 for security
+      
+      const anthropicKeys = envKeys.filter(key => key.toUpperCase().includes('ANTHROPIC'));
+      const apiKeys = envKeys.filter(key => key.toUpperCase().includes('API'));
       console.error('Keys containing "ANTHROPIC":', anthropicKeys);
       console.error('Keys containing "API":', apiKeys);
+
       return new Response(JSON.stringify({
         error: 'AI service configuration error',
         details: 'ANTHROPIC_API_KEY not found in environment variables'
       }), {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // Validate API key format
     if (!anthropicApiKey.startsWith('sk-ant-')) {
       console.error('Invalid API key format - should start with sk-ant-');
@@ -84,14 +88,12 @@ const corsHeaders = {
         details: 'Invalid API key format'
       }), {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // Parse request body
-    let requestData;
+    let requestData: any;
     try {
       const requestText = await req.text();
       console.log('Request body length:', requestText.length);
@@ -99,32 +101,24 @@ const corsHeaders = {
       console.log('Request type:', requestData.type);
     } catch (error) {
       console.error('Failed to parse request body:', error);
-      return new Response(JSON.stringify({
-        error: 'Invalid request format'
-      }), {
+      return new Response(JSON.stringify({ error: 'Invalid request format' }), {
         status: 400,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // Validate request data
     if (!requestData.type || !requestData.jobPosting) {
       console.error('Missing required fields:', {
         type: requestData.type,
         hasJobPosting: !!requestData.jobPosting
       });
-      return new Response(JSON.stringify({
-        error: 'Missing required fields'
-      }), {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // Validate that either resumeContent or resumeFile is provided
     if (!requestData.resumeContent && !requestData.resumeFile) {
       console.error('Neither resume content nor resume file provided');
@@ -132,18 +126,18 @@ const corsHeaders = {
         error: 'Either resume content or resume file is required'
       }), {
         status: 400,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     console.log(`Processing ${requestData.type} request`);
+
     // Generate appropriate prompt based on request type
     let systemPrompt = '';
     let userPrompt = '';
-    let messageContent = [];
-    switch(requestData.type){
+    let messageContent: any[] = [];
+
+    switch (requestData.type) {
       case 'resume_analysis':
         systemPrompt = `You are ResumeZap AI, an expert ATS optimization and resume tailoring specialist. Your role is to analyze resumes against job postings and provide detailed tailoring recommendations with quantifiable improvements.
 
@@ -162,6 +156,7 @@ OUTPUT REQUIREMENTS:
 - Focus on ATS-friendly formatting improvements
 - Ensure all recommendations maintain authenticity
 - CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
+
         if (requestData.resumeFile) {
           userPrompt = `Analyze this resume file against the job posting and provide comprehensive tailoring:`;
           messageContent = [
@@ -247,24 +242,23 @@ Please provide a JSON response with these exact keys:
     "Specific formatting improvements made for ATS compatibility"
   ]
 }`;
-          messageContent = [
-            {
-              type: "text",
-              text: userPrompt
-            }
-          ];
+          messageContent = [{ type: "text", text: userPrompt }];
         }
         break;
+
       case 'cover_letter':
         const coverLetterReq = requestData;
+        
         // Dynamic tone instructions based on user selection
         const toneInstructions = {
           professional: 'Use a formal, business-appropriate tone that demonstrates professionalism and competence.',
           enthusiastic: 'Use an energetic, passionate tone that shows genuine excitement for the role and company.',
           concise: 'Use a brief, direct tone that gets straight to the point while maintaining professionalism.'
         };
+        
         const selectedTone = coverLetterReq.tone;
         const toneInstruction = toneInstructions[selectedTone] || toneInstructions.professional;
+
         systemPrompt = `You are ResumeZap AI's cover letter specialist. Create compelling, personalized cover letters that demonstrate clear value alignment between candidate experience and job requirements.
 
 EXPERTISE:
@@ -283,6 +277,7 @@ STRUCTURE REQUIREMENTS:
 
 OUTPUT: Provide both the cover letter and customization details used.
 CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
+
         if (coverLetterReq.resumeFile) {
           userPrompt = `Create a ${coverLetterReq.tone} cover letter based on this resume file:`;
           messageContent = [
@@ -348,14 +343,10 @@ Provide JSON response:
   ],
   "callToAction": "Specific closing statement used"
 }`;
-          messageContent = [
-            {
-              type: "text",
-              text: userPrompt
-            }
-          ];
+          messageContent = [{ type: "text", text: userPrompt }];
         }
         break;
+
       case 'skill_gap':
         systemPrompt = `You are ResumeZap AI's career development analyst specializing in skill gap identification and learning pathway creation. 
 
@@ -377,6 +368,7 @@ APPROACH:
 
 OUTPUT: Detailed analysis with specific, actionable learning recommendations.
 CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
+
         if (requestData.resumeFile) {
           userPrompt = `Analyze skill gaps between this resume file and job posting, then provide comprehensive learning recommendations:`;
           messageContent = [
@@ -542,30 +534,21 @@ Provide detailed JSON response:
     "Skills user already possesses that match job requirements"
   ]
 }`;
-          messageContent = [
-            {
-              type: "text",
-              text: userPrompt
-            }
-          ];
+          messageContent = [{ type: "text", text: userPrompt }];
         }
         break;
+
       default:
         console.error('Invalid request type:', requestData.type);
-        return new Response(JSON.stringify({
-          error: 'Invalid request type'
-        }), {
+        return new Response(JSON.stringify({ error: 'Invalid request type' }), {
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
+
     // Set max_tokens based on request type
-    let maxTokens = 4000 // default
-    ;
-    switch(requestData.type){
+    let maxTokens = 4000; // default
+    switch (requestData.type) {
       case 'resume_analysis':
         maxTokens = 6000;
         break;
@@ -576,11 +559,13 @@ Provide detailed JSON response:
         maxTokens = 8000;
         break;
     }
+
     console.log('Making request to Claude API...');
     console.log('Model: claude-sonnet-4-20250514');
     console.log('Max tokens:', maxTokens);
     console.log('System prompt length:', systemPrompt.length);
     console.log('Message content length:', JSON.stringify(messageContent).length);
+
     // Make request to Claude API with correct headers
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -601,8 +586,10 @@ Provide detailed JSON response:
         ]
       })
     });
+
     console.log('Claude API response status:', claudeResponse.status);
     console.log('Claude API response headers:', Object.fromEntries(claudeResponse.headers.entries()));
+
     if (!claudeResponse.ok) {
       const errorText = await claudeResponse.text();
       console.error('Claude API error:', {
@@ -611,6 +598,7 @@ Provide detailed JSON response:
         headers: Object.fromEntries(claudeResponse.headers.entries()),
         body: errorText
       });
+
       // Return user-friendly error message
       let errorMessage = 'AI service temporarily unavailable';
       if (claudeResponse.status === 429) {
@@ -621,35 +609,31 @@ Provide detailed JSON response:
       } else if (claudeResponse.status === 400) {
         errorMessage = 'Invalid request to AI service. Please check your input.';
       }
-      return new Response(JSON.stringify({
-        error: errorMessage
-      }), {
+
+      return new Response(JSON.stringify({ error: errorMessage }), {
         status: 503,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     const claudeData = await claudeResponse.json();
     console.log('Claude API response received successfully');
+
     // Extract the response content
     if (!claudeData.content || !claudeData.content[0] || !claudeData.content[0].text) {
       console.error('Unexpected Claude response format:', claudeData);
-      return new Response(JSON.stringify({
-        error: 'Invalid AI response format'
-      }), {
+      return new Response(JSON.stringify({ error: 'Invalid AI response format' }), {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     const responseText = claudeData.content[0].text;
+
     // Clean the response to remove markdown code blocks
     const cleanedResponse = cleanClaudeResponse(responseText);
     console.log('Cleaned response length:', cleanedResponse.length);
+
     // Parse the JSON response from Claude
     let parsedResponse;
     try {
@@ -659,28 +643,23 @@ Provide detailed JSON response:
       console.error('Failed to parse Claude JSON response:', error);
       console.error('Raw response:', responseText.substring(0, 500) + '...');
       console.error('Cleaned response:', cleanedResponse.substring(0, 500) + '...');
-      return new Response(JSON.stringify({
-        error: 'AI response parsing error'
-      }), {
+      return new Response(JSON.stringify({ error: 'AI response parsing error' }), {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     console.log(`Successfully processed ${requestData.type} request`);
+
     // Return the parsed response
     return new Response(JSON.stringify({
       success: true,
       data: parsedResponse
     }), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+
   } catch (error) {
     console.error('Edge function error:', error);
     return new Response(JSON.stringify({
@@ -688,10 +667,7 @@ Provide detailed JSON response:
       message: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
