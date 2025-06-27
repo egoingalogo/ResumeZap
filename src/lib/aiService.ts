@@ -170,9 +170,16 @@ async function callClaudeAPI(requestData: any): Promise<any> {
   console.log('AIService: Making request to Edge Function');
   
   try {
+    // Get Supabase anon key for authorization
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseAnonKey) {
+      throw new Error('Missing Supabase configuration. Please check your environment variables.');
+    }
+    
     const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
