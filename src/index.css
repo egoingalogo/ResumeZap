@@ -175,15 +175,68 @@ select {
 .modal,
 .modal-content,
 .form-container,
-[role="dialog"] {
+[role="dialog"],
+.fixed,
+.absolute,
+.relative {
+  overflow: visible !important;
+}
+
+/* Specific fixes for modal containers */
+.fixed.inset-0,
+.absolute.inset-0,
+div[class*="fixed"],
+div[class*="absolute"] {
+  overflow: visible !important;
+}
+
+/* Ensure modal backgrounds don't clip content */
+.bg-black\/50,
+.backdrop-blur-sm,
+div[class*="backdrop-blur"] {
   overflow: visible !important;
 }
 
 /* Ensure dropdown menus in modals are properly positioned */
 .modal select,
-[role="dialog"] select {
+[role="dialog"] select,
+.fixed select,
+.absolute select {
   position: relative !important;
   z-index: 1000 !important;
+  overflow: visible !important;
+}
+
+/* Force all containers to show dropdown content */
+* {
+  overflow: visible !important;
+}
+
+/* Override any Tailwind classes that might cause clipping */
+.overflow-hidden,
+.overflow-auto,
+.overflow-scroll,
+.overflow-x-hidden,
+.overflow-y-hidden,
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-x-scroll,
+.overflow-y-scroll {
+  overflow: visible !important;
+}
+
+/* Specific fix for Framer Motion containers */
+div[style*="overflow"],
+.motion-div,
+[data-framer-component] {
+  overflow: visible !important;
+}
+
+/* Ensure select elements can expand beyond their containers */
+select {
+  overflow: visible !important;
+  clip: unset !important;
+  clip-path: unset !important;
 }
 
 /* Fix any custom dropdown implementations */
