@@ -27,27 +27,46 @@ async function fileToBase64(file: File): Promise<string> {
  * Get media type for Claude API based on file type
  */
 function getMediaType(file: File): string {
-  const mimeType = file.type.toLowerCase();
-  
-  // Map common MIME types to Claude-supported media types
-  switch (mimeType) {
-    case 'application/pdf':
-      return 'application/pdf';
-    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'text/plain':
-      return 'text/plain';
-    default:
-      // Fallback based on file extension
-      const fileName = file.name.toLowerCase();
-      if (fileName.endsWith('.pdf')) return 'application/pdf';
-      if (fileName.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      if (fileName.endsWith('.txt')) return 'text/plain';
-      
-      // Default to text/plain for unknown types
-      return 'text/plain';
-  }
+  // Only support PDF files now
+  return 'application/pdf';
 }
+
+/**
+ * Validate image file for profile picture upload
+ * Checks file type, size, and dimensions
+ */
+export const validatePdfFile = (file: File): ImageValidationResult => {
+  console.log('ImageUtils: Validating image file:', file.name);
+  
+  // Check file type - only allow PDF files
+  const allowedTypes = ['application/pdf'];
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      isValid: false,
+      error: 'Please upload a PDF file only.'
+    };
+  }
+  
+  // Check file size - limit to 10MB
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    return {
+      isValid: false,
+      error: 'PDF file must be smaller than 10MB.'
+    };
+  }
+  
+  // Check file extension
+  const fileName = file.name.toLowerCase();
+  if (!fileName.endsWith('.pdf')) {
+    return {
+      isValid: false,
+      error: 'Please upload a PDF file only.'
+    };
+  }
+  
+  return { isValid: true };
+};
 
 export interface ResumeAnalysisResult {
   tailoredResume: string;
@@ -217,19 +236,27 @@ async function callClaudeAPI(requestData: any): Promise<any> {
 
 /**
  * Analyze resume with Claude AI - supports both text content and file uploads
+ * For resume analysis specifically, requires PDF file upload
  */
 export async function analyzeResume(
-  resumeContent: string, 
+  resumeContent: string,
   jobPosting: string, 
   resumeFile?: File
 ): Promise<ResumeAnalysisResult> {
   console.log('AIService: Starting resume analysis');
-  console.log('AIService: Has resume content:', !!resumeContent.trim());
+  console.log('AIService: Has resume content:', !!resumeContent?.trim());
   console.log('AIService: Has resume file:', !!resumeFile);
   console.log('AIService: Has job posting:', !!jobPosting.trim());
 
-  if (!resumeContent.trim() && !resumeFile) {
-    throw new Error('Either resume content or resume file is required');
+  // For resume analysis, require PDF file
+  if (!resumeFile) {
+    throw new Error('PDF resume file is required for analysis');
+  }
+
+  // Validate PDF file
+  const validation = validatePdfFile(resumeFile);
+  if (!validation.isValid) {
+    throw new Error(validation.error);
   }
 
   if (!jobPosting.trim()) {
@@ -240,28 +267,18 @@ export async function analyzeResume(
     const requestData: any = {
       type: 'resume_analysis',
       jobPosting: jobPosting.trim(),
+      resumeFile: {
+        data: await fileToBase64(resumeFile),
+        media_type: getMediaType(resumeFile),
+        filename: resumeFile.name,
+      },
     };
 
-    // Add resume content or file
-    if (resumeFile) {
-      console.log('AIService: Processing resume file:', resumeFile.name, resumeFile.type);
-      const base64Data = await fileToBase64(resumeFile);
-      const mediaType = getMediaType(resumeFile);
-      
-      requestData.resumeFile = {
-        data: base64Data,
-        media_type: mediaType,
-        filename: resumeFile.name,
-      };
-      
-      console.log('AIService: File processed for Claude API:', {
-        filename: resumeFile.name,
-        mediaType,
-        dataLength: base64Data.length,
-      });
-    } else {
-      requestData.resumeContent = resumeContent.trim();
-    }
+    console.log('AIService: PDF file processed for Claude API:', {
+      filename: resumeFile.name,
+      mediaType: requestData.resumeFile.media_type,
+      dataLength: requestData.resumeFile.data.length,
+    });
 
     const result = await callClaudeAPI(requestData);
     
@@ -282,6 +299,7 @@ export async function analyzeResume(
 
 /**
  * Generate cover letter with Claude AI - supports both text content and file uploads
+ * Can work with either PDF file or text content
  */
 export async function generateCoverLetter(
   resumeContent: string,
@@ -323,12 +341,16 @@ export async function generateCoverLetter(
     // Add resume content or file
     if (resumeFile) {
       console.log('AIService: Processing resume file for cover letter:', resumeFile.name);
-      const base64Data = await fileToBase64(resumeFile);
-      const mediaType = getMediaType(resumeFile);
+      
+      // Validate PDF file if provided
+      const validation = validatePdfFile(resumeFile);
+      if (!validation.isValid) {
+        throw new Error(validation.error);
+      }
       
       requestData.resumeFile = {
-        data: base64Data,
-        media_type: mediaType,
+        data: await fileToBase64(resumeFile),
+        media_type: getMediaType(resumeFile),
         filename: resumeFile.name,
       };
     } else {
@@ -354,6 +376,7 @@ export async function generateCoverLetter(
 
 /**
  * Analyze skill gaps with Claude AI - supports both text content and file uploads
+ * Can work with either PDF file or text content
  */
 export async function analyzeSkillGaps(
   resumeContent: string,
@@ -379,12 +402,16 @@ export async function analyzeSkillGaps(
     // Add resume content or file
     if (resumeFile) {
       console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
-      const base64Data = await fileToBase64(resumeFile);
-      const mediaType = getMediaType(resumeFile);
+      
+      // Validate PDF file if provided
+      const validation = validatePdfFile(resumeFile);
+      if (!validation.isValid) {
+        throw new Error(validation.error);
+      }
       
       requestData.resumeFile = {
-        data: base64Data,
-        media_type: mediaType,
+        data: await fileToBase64(resumeFile),
+        media_type: getMediaType(resumeFile),
         filename: resumeFile.name,
       };
     } else {
