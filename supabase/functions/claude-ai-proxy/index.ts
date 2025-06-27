@@ -90,6 +90,7 @@ serve(async (req) => {
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!anthropicApiKey) {
       console.error('ANTHROPIC_API_KEY not found in environment variables')
+      console.error('Available environment variables:', Object.keys(Deno.env.toObject()))
       return new Response(
         JSON.stringify({ error: 'AI service configuration error' }),
         { 
@@ -573,7 +574,7 @@ Provide detailed JSON response:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
+        'x-api-key': anthropicApiKey.trim(),
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
@@ -591,14 +592,20 @@ Provide detailed JSON response:
 
     if (!claudeResponse.ok) {
       const errorText = await claudeResponse.text()
-      console.error('Claude API error:', claudeResponse.status, errorText)
+      console.error('Claude API error:', {
+        status: claudeResponse.status,
+        statusText: claudeResponse.statusText,
+        headers: Object.fromEntries(claudeResponse.headers.entries()),
+        body: errorText
+      })
       
       // Return user-friendly error message
       let errorMessage = 'AI service temporarily unavailable'
       if (claudeResponse.status === 429) {
         errorMessage = 'AI service is busy. Please try again in a moment.'
       } else if (claudeResponse.status === 401) {
-        errorMessage = 'AI service authentication error'
+        errorMessage = 'AI service authentication error. Please check API key configuration.'
+        console.error('Authentication failed - API key may be missing or invalid')
       }
       
       return new Response(
