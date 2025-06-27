@@ -74,6 +74,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  console.log('Edge Function invoked, checking environment...')
+  console.log('Request method:', req.method)
+  console.log('Request URL:', req.url)
+
   try {
     // Verify request method
     if (req.method !== 'POST') {
@@ -87,12 +91,26 @@ serve(async (req) => {
     }
 
     // Get the Anthropic API key from Supabase secrets
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('SUPABASE_SECRET_ANTHROPIC_API_KEY')
+    // Try multiple possible environment variable names
+    const anthropicApiKey = 
+      Deno.env.get('ANTHROPIC_API_KEY') || 
+      Deno.env.get('SUPABASE_SECRET_ANTHROPIC_API_KEY') ||
+      Deno.env.get('_ANTHROPIC_API_KEY') ||
+      globalThis.Deno?.env?.get('ANTHROPIC_API_KEY')
+      
     if (!anthropicApiKey) {
       console.error('ANTHROPIC_API_KEY not found in environment variables')
-      console.error('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => 
-        key.includes('ANTHROPIC') || key.includes('API') || key.startsWith('SUPABASE_')
-      ))
+      
+      // Log all environment variables for debugging (be careful in production)
+      const allEnvVars = Deno.env.toObject()
+      console.error('All environment variables:', Object.keys(allEnvVars))
+      console.error('Environment variables containing "ANTHROPIC":', 
+        Object.keys(allEnvVars).filter(key => key.toUpperCase().includes('ANTHROPIC'))
+      )
+      console.error('Environment variables containing "API":', 
+        Object.keys(allEnvVars).filter(key => key.toUpperCase().includes('API'))
+      )
+      
       return new Response(
         JSON.stringify({ error: 'AI service configuration error' }),
         { 
@@ -102,7 +120,9 @@ serve(async (req) => {
       )
     }
     
-    console.log('Found API key:', anthropicApiKey ? `${anthropicApiKey.substring(0, 10)}...` : 'null')
+    console.log('Found API key:', anthropicApiKey ? `${anthropicApiKey.substring(0, 15)}...` : 'null')
+    console.log('API key length:', anthropicApiKey ? anthropicApiKey.length : 0)
+    console.log('API key starts with sk-ant:', anthropicApiKey ? anthropicApiKey.startsWith('sk-ant') : false)
 
     // Parse request body
     let requestData: AIRequest
@@ -574,19 +594,12 @@ Provide detailed JSON response:
     }
 
     // Make request to Claude API
-    console.log('Making request to Claude API with headers:', {
-      'Content-Type': 'application/json',
-      'x-api-key': anthropicApiKey ? `${anthropicApiKey.substring(0, 10)}...` : 'null',
-      'anthropic-version': '2023-06-01'
-    })
-    
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': anthropicApiKey.trim(),
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'pdfs-2024-09-25'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
