@@ -1,15 +1,3 @@
-src/components/ApplicationFormModal.tsx
-src/components/Navbar.tsx
-src/components/PricingCard.tsx
 src/components/ProfilePictureUpload.tsx
 src/components/RichTextEditor.tsx
-src/components/UpgradeModal.tsx
-src/lib/applications.ts
 src/lib/profilePicture.ts
-src/lib/support.ts
-src/pages/ApplicationTracker.tsx
-src/pages/AuthPage.tsx
-src/pages/Dashboard.tsx
-src/pages/EmailSupport.tsx
-src/pages/LandingPage.tsx
-src/pages/Settings/tsx
