@@ -289,14 +289,39 @@ export async function analyzeResume(
 
     const result = await callClaudeAPI(requestData);
     
-    // Validate the response structure
-    if (!result.tailoredResume || typeof result.matchScore !== 'number') {
+    // Convert string numbers to actual numbers and validate structure
+    if (!result.tailoredResume) {
       console.error('AIService: Invalid resume analysis response structure:', result);
       throw new Error('Invalid response format from AI service');
     }
 
+    // Convert string numbers to actual numbers for proper typing
+    const processedResult: ResumeAnalysisResult = {
+      ...result,
+      matchScore: typeof result.matchScore === 'string' ? parseInt(result.matchScore) : result.matchScore,
+      matchBreakdown: {
+        keywords: typeof result.matchBreakdown?.keywords === 'string' ? parseInt(result.matchBreakdown.keywords) : result.matchBreakdown?.keywords || 0,
+        skills: typeof result.matchBreakdown?.skills === 'string' ? parseInt(result.matchBreakdown.skills) : result.matchBreakdown?.skills || 0,
+        experience: typeof result.matchBreakdown?.experience === 'string' ? parseInt(result.matchBreakdown.experience) : result.matchBreakdown?.experience || 0,
+        formatting: typeof result.matchBreakdown?.formatting === 'string' ? parseInt(result.matchBreakdown.formatting) : result.matchBreakdown?.formatting || 0,
+      },
+      changes: result.changes || [],
+      keywordMatches: {
+        found: result.keywordMatches?.found || [],
+        missing: result.keywordMatches?.missing || [],
+        suggestions: result.keywordMatches?.suggestions || [],
+      },
+      atsOptimizations: result.atsOptimizations || [],
+    };
+
+    // Validate final processed result
+    if (typeof processedResult.matchScore !== 'number' || isNaN(processedResult.matchScore)) {
+      console.error('AIService: Invalid match score in response:', result.matchScore);
+      throw new Error('Invalid match score format from AI service');
+    }
+
     console.log('AIService: Resume analysis completed successfully');
-    return result as ResumeAnalysisResult;
+    return processedResult;
 
   } catch (error) {
     console.error('AIService: Resume analysis failed:', error);
