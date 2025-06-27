@@ -384,19 +384,20 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <PricingCard
-                title="Free"
-                price="$0"
-                period="forever"
-                description="Perfect for getting started with AI resume optimization"
-                features={[
-                  '3 resume tailoring sessions/month',
-                  '2 cover letter generations/month',
-                  'Basic skill gap analysis',
-                  'Email support (48-72 hours)',
-                  'Export to PDF, DOCX, TXT'
-                ]}
-                buttonText="Get Started Free"
-                buttonVariant="outline"
+                tier={{
+                  name: "Free",
+                  price: "$0",
+                  period: "forever",
+                  description: "Perfect for getting started with AI resume optimization",
+                  features: [
+                    '3 resume tailoring sessions/month',
+                    '2 cover letter generations/month',
+                    'Basic skill gap analysis',
+                    'Email support (48-72 hours)',
+                    'Export to PDF, DOCX, TXT'
+                  ],
+                  buttonText: "Get Started Free"
+                }}
                 onSelect={() => handleGetStarted()}
               />
             </motion.div>
@@ -408,22 +409,23 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <PricingCard
-                title="Premium"
-                price="$7.99"
-                period="month"
-                description="Enhanced features for active job seekers"
-                features={[
-                  '40 resume tailoring sessions/month',
-                  '30 cover letter generations/month',
-                  'Enhanced skill gap analysis',
-                  'Priority email support (24-48 hours)',
-                  'Usage analytics dashboard',
-                  'All export formats'
-                ]}
-                buttonText="Upgrade to Premium"
-                buttonVariant="primary"
+                tier={{
+                  name: "Premium",
+                  price: "$7.99",
+                  period: "month",
+                  description: "Enhanced features for active job seekers",
+                  features: [
+                    '40 resume tailoring sessions/month',
+                    '30 cover letter generations/month',
+                    'Enhanced skill gap analysis',
+                    'Priority email support (24-48 hours)',
+                    'Usage analytics dashboard',
+                    'All export formats'
+                  ],
+                  buttonText: "Upgrade to Premium",
+                  isPopular: true
+                }}
                 onSelect={() => handleGetStarted()}
-                popular={true}
               />
             </motion.div>
 
@@ -434,21 +436,22 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <PricingCard
-                title="Pro"
-                price="$14.99"
-                period="month"
-                description="Advanced tools for career professionals"
-                features={[
-                  'Unlimited resume tailoring',
-                  'Unlimited cover letters',
-                  'Advanced skill gap analysis',
-                  'Priority email support (4 hours)',
-                  'Advanced analytics & tracking',
-                  'Custom templates',
-                  'Bulk processing'
-                ]}
-                buttonText="Go Pro"
-                buttonVariant="primary"
+                tier={{
+                  name: "Pro",
+                  price: "$14.99",
+                  period: "month",
+                  description: "Advanced tools for career professionals",
+                  features: [
+                    'Unlimited resume tailoring',
+                    'Unlimited cover letters',
+                    'Advanced skill gap analysis',
+                    'Priority email support (4 hours)',
+                    'Advanced analytics & tracking',
+                    'Custom templates',
+                    'Bulk processing'
+                  ],
+                  buttonText: "Go Pro"
+                }}
                 onSelect={() => handleGetStarted()}
               />
             </motion.div>
@@ -460,24 +463,24 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
             >
               <PricingCard
-                title="Lifetime"
-                price="$79.99"
-                period="one-time"
-                description="All Pro features forever - limited time offer"
-                features={[
-                  'All Pro features permanently',
-                  'Unlimited everything forever',
-                  'VIP support & early access',
-                  'Future feature updates included',
-                  '60-day money-back guarantee',
-                  `Limited to first 1,000 customers`,
-                  lifetimeUserCount !== null ? `${Math.max(0, 1000 - lifetimeUserCount)} spots remaining` : 'Limited availability'
-                ]}
-                buttonText="Get Lifetime Access"
-                buttonVariant="lifetime"
+                tier={{
+                  name: "Lifetime",
+                  price: "$79.99",
+                  period: "one-time",
+                  description: "All Pro features forever - limited time offer",
+                  features: [
+                    'All Pro features permanently',
+                    'Unlimited everything forever',
+                    'VIP support & early access',
+                    'Future feature updates included',
+                    '60-day money-back guarantee',
+                    `Limited to first 1,000 customers`,
+                    lifetimeUserCount !== null ? `${Math.max(0, 1000 - lifetimeUserCount)} spots remaining` : 'Limited availability'
+                  ],
+                  buttonText: "Get Lifetime Access",
+                  isLifetime: true
+                }}
                 onSelect={() => handleGetStarted()}
-                badge="Limited Time"
-                disabled={lifetimeUserCount !== null && lifetimeUserCount >= 1000}
               />
             </motion.div>
           </div>
