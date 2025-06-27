@@ -69,18 +69,20 @@ function cleanClaudeResponse(responseText: string): string {
  * Now supports file attachments for direct document processing
  */
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  console.log('Edge Function invoked, checking environment...')
+  console.log('Edge Function invoked')
   console.log('Request method:', req.method)
   console.log('Request URL:', req.url)
+
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request')
+    return new Response('ok', { headers: corsHeaders })
+  }
 
   try {
     // Verify request method
     if (req.method !== 'POST') {
+      console.error('Invalid request method:', req.method)
       return new Response(
         JSON.stringify({ error: 'Method not allowed' }),
         { 
@@ -91,43 +93,66 @@ serve(async (req) => {
     }
 
     // Get the Anthropic API key from Supabase secrets
+    console.log('Checking for Anthropic API key...')
+    
     // Try multiple possible environment variable names
     const anthropicApiKey = 
       Deno.env.get('ANTHROPIC_API_KEY') || 
       Deno.env.get('SUPABASE_SECRET_ANTHROPIC_API_KEY') ||
-      Deno.env.get('_ANTHROPIC_API_KEY') ||
-      globalThis.Deno?.env?.get('ANTHROPIC_API_KEY')
+      Deno.env.get('_ANTHROPIC_API_KEY')
       
+    console.log('API key found:', !!anthropicApiKey)
+    console.log('API key length:', anthropicApiKey?.length || 0)
+    console.log('API key prefix:', anthropicApiKey ? anthropicApiKey.substring(0, 10) + '...' : 'null')
+    
     if (!anthropicApiKey) {
       console.error('ANTHROPIC_API_KEY not found in environment variables')
       
-      // Log all environment variables for debugging (be careful in production)
+      // Log environment variables for debugging (filtered for security)
       const allEnvVars = Deno.env.toObject()
-      console.error('All environment variables:', Object.keys(allEnvVars))
-      console.error('Environment variables containing "ANTHROPIC":', 
-        Object.keys(allEnvVars).filter(key => key.toUpperCase().includes('ANTHROPIC'))
-      )
-      console.error('Environment variables containing "API":', 
-        Object.keys(allEnvVars).filter(key => key.toUpperCase().includes('API'))
-      )
+      const envKeys = Object.keys(allEnvVars)
+      console.error('Total environment variables:', envKeys.length)
+      console.error('Environment variable keys:', envKeys.slice(0, 10)) // Only show first 10 for security
+      
+      const anthropicKeys = envKeys.filter(key => key.toUpperCase().includes('ANTHROPIC'))
+      const apiKeys = envKeys.filter(key => key.toUpperCase().includes('API'))
+      console.error('Keys containing "ANTHROPIC":', anthropicKeys)
+      console.error('Keys containing "API":', apiKeys)
       
       return new Response(
-        JSON.stringify({ error: 'AI service configuration error' }),
+        JSON.stringify({ 
+          error: 'AI service configuration error',
+          details: 'ANTHROPIC_API_KEY not found in environment variables'
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
-    
-    console.log('Found API key:', anthropicApiKey ? `${anthropicApiKey.substring(0, 15)}...` : 'null')
-    console.log('API key length:', anthropicApiKey ? anthropicApiKey.length : 0)
-    console.log('API key starts with sk-ant:', anthropicApiKey ? anthropicApiKey.startsWith('sk-ant') : false)
+
+    // Validate API key format
+    if (!anthropicApiKey.startsWith('sk-ant-')) {
+      console.error('Invalid API key format - should start with sk-ant-')
+      return new Response(
+        JSON.stringify({ 
+          error: 'AI service configuration error',
+          details: 'Invalid API key format'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     // Parse request body
     let requestData: AIRequest
     try {
-      requestData = await req.json()
+      const requestText = await req.text()
+      console.log('Request body length:', requestText.length)
+      requestData = JSON.parse(requestText)
+      console.log('Request type:', requestData.type)
     } catch (error) {
       console.error('Failed to parse request body:', error)
       return new Response(
@@ -141,6 +166,7 @@ serve(async (req) => {
 
     // Validate request data
     if (!requestData.type || !requestData.jobPosting) {
+      console.error('Missing required fields:', { type: requestData.type, hasJobPosting: !!requestData.jobPosting })
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { 
@@ -152,6 +178,7 @@ serve(async (req) => {
 
     // Validate that either resumeContent or resumeFile is provided
     if (!requestData.resumeContent && !requestData.resumeFile) {
+      console.error('Neither resume content nor resume file provided')
       return new Response(
         JSON.stringify({ error: 'Either resume content or resume file is required' }),
         { 
@@ -570,6 +597,7 @@ Provide detailed JSON response:
         break
 
       default:
+        console.error('Invalid request type:', requestData.type)
         return new Response(
           JSON.stringify({ error: 'Invalid request type' }),
           { 
@@ -593,16 +621,22 @@ Provide detailed JSON response:
         break
     }
 
-    // Make request to Claude API
+    console.log('Making request to Claude API...')
+    console.log('Model: claude-3-5-sonnet-20241022')
+    console.log('Max tokens:', maxTokens)
+    console.log('System prompt length:', systemPrompt.length)
+    console.log('Message content length:', JSON.stringify(messageContent).length)
+
+    // Make request to Claude API with correct headers
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey.trim(),
+        'Authorization': `Bearer ${anthropicApiKey.trim()}`,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: [
@@ -613,6 +647,9 @@ Provide detailed JSON response:
         ]
       })
     })
+
+    console.log('Claude API response status:', claudeResponse.status)
+    console.log('Claude API response headers:', Object.fromEntries(claudeResponse.headers.entries()))
 
     if (!claudeResponse.ok) {
       const errorText = await claudeResponse.text()
@@ -630,6 +667,8 @@ Provide detailed JSON response:
       } else if (claudeResponse.status === 401) {
         errorMessage = 'AI service authentication error. Please check API key configuration.'
         console.error('Authentication failed - API key may be missing or invalid')
+      } else if (claudeResponse.status === 400) {
+        errorMessage = 'Invalid request to AI service. Please check your input.'
       }
       
       return new Response(
@@ -642,6 +681,7 @@ Provide detailed JSON response:
     }
 
     const claudeData = await claudeResponse.json()
+    console.log('Claude API response received successfully')
     
     // Extract the response content
     if (!claudeData.content || !claudeData.content[0] || !claudeData.content[0].text) {
@@ -665,10 +705,11 @@ Provide detailed JSON response:
     let parsedResponse
     try {
       parsedResponse = JSON.parse(cleanedResponse)
+      console.log('Successfully parsed Claude JSON response')
     } catch (error) {
       console.error('Failed to parse Claude JSON response:', error)
-      console.error('Raw response:', responseText)
-      console.error('Cleaned response:', cleanedResponse)
+      console.error('Raw response:', responseText.substring(0, 500) + '...')
+      console.error('Cleaned response:', cleanedResponse.substring(0, 500) + '...')
       return new Response(
         JSON.stringify({ error: 'AI response parsing error' }),
         { 
