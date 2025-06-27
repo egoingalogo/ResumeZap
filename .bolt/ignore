@@ -2,9 +2,9 @@ src/components/ApplicationFormModal.tsx
 src/components/Navbar.tsx
 src/components/PricingCard.tsx
 src/components/ProfilePictureUpload.tsx
+src/components/RichTextEditor.tsx
 src/components/UpgradeModal.tsx
 src/lib/applications.ts
-src/lib/imageUtils.ts
 src/lib/profilePicture.ts
 src/lib/support.ts
 src/pages/ApplicationTracker.tsx
