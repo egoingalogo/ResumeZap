@@ -25,17 +25,23 @@
 }
 
 [contenteditable="true"] ul {
-  margin-left: 1rem;
+  list-style-type: disc !important;
+  padding-left: 20px !important;
+  margin-left: 0px !important;
   margin-bottom: 0.5rem;
 }
 
 [contenteditable="true"] ol {
-  margin-left: 1rem;
+  list-style-type: decimal !important;
+  padding-left: 20px !important;
+  margin-left: 0px !important;
   margin-bottom: 0.5rem;
 }
 
 [contenteditable="true"] li {
-  margin-bottom: 0.125rem;
+  margin-bottom: 4px !important;
+  display: list-item !important;
+  list-style-position: outside !important;
 }
 
 [contenteditable="true"] strong,
@@ -55,6 +61,25 @@
 /* Preserve spacing and indentation */
 [contenteditable="true"] [style*="margin-left"] {
   display: block;
+}
+
+/* Ensure bullet points are visible */
+[contenteditable="true"] ul li::marker {
+  content: "• " !important;
+  color: currentColor !important;
+}
+
+[contenteditable="true"] ol li::marker {
+  color: currentColor !important;
+}
+
+/* Fix list styling in contenteditable */
+[contenteditable="true"] ul li {
+  list-style: disc outside !important;
+}
+
+[contenteditable="true"] ol li {
+  list-style: decimal outside !important;
 }
 
 /* Keyboard shortcut styling */

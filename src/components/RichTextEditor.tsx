@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Bold, Italic, List, AlignLeft, AlignCenter, AlignRight, Type, MoreHorizontal, Copy, Cast as Paste, RotateCcw, Info } from 'lucide-react';
+import { Bold, Italic, List, AlignLeft, AlignCenter, AlignRight, Type, MoreHorizontal, Copy, Cast as Paste, RotateCcw, Info, Underline } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -27,9 +27,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFormatting, setIsFormatting] = useState(false);
-  const [showFormatMenu, setShowFormatMenu] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    justifyLeft: false,
+    justifyCenter: false,
+    justifyRight: false,
+    insertUnorderedList: false
+  });
 
   console.log('RichTextEditor: Rendering with value length:', value.length);
 
@@ -53,6 +61,32 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   /**
+   * Update active formatting states based on current selection
+   */
+  const updateActiveFormats = () => {
+    if (!editorRef.current) return;
+
+    try {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      const newActiveFormats = {
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        justifyLeft: document.queryCommandState('justifyLeft'),
+        justifyCenter: document.queryCommandState('justifyCenter'),
+        justifyRight: document.queryCommandState('justifyRight'),
+        insertUnorderedList: document.queryCommandState('insertUnorderedList')
+      };
+
+      setActiveFormats(newActiveFormats);
+    } catch (error) {
+      console.warn('RichTextEditor: Failed to update active formats:', error);
+    }
+  };
+
+  /**
    * Handle content changes with formatting preservation
    */
   const handleContentChange = () => {
@@ -60,7 +94,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const content = editorRef.current.innerHTML;
       onChange(content);
       updateCounts();
+      updateActiveFormats();
     }
+  };
+
+  /**
+   * Handle selection changes to update active formatting states
+   */
+  const handleSelectionChange = () => {
+    updateActiveFormats();
   };
 
   /**
@@ -191,15 +233,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       // Detect and format different types of content
       let formattedLine = '';
 
-      // Detect bullet points and lists
+      // Detect bullet points and lists with proper bullet symbols
       if (/^[•·▪▫‣⁃◦‣]\s/.test(trimmedLine)) {
-        formattedLine = `<div style="margin-left: 20px;">• ${trimmedLine.substring(2)}</div>`;
+        const bulletText = trimmedLine.substring(2);
+        formattedLine = `<li style="list-style-type: disc; margin-left: 20px;">${bulletText}</li>`;
       } else if (/^[-*+]\s/.test(trimmedLine)) {
-        formattedLine = `<div style="margin-left: 20px;">• ${trimmedLine.substring(2)}</div>`;
+        const bulletText = trimmedLine.substring(2);
+        formattedLine = `<li style="list-style-type: disc; margin-left: 20px;">${bulletText}</li>`;
       } else if (/^\d+\.\s/.test(trimmedLine)) {
         const match = trimmedLine.match(/^(\d+)\.\s(.+)/);
         if (match) {
-          formattedLine = `<div style="margin-left: 20px;">${match[1]}. ${match[2]}</div>`;
+          formattedLine = `<li style="list-style-type: decimal; margin-left: 20px;">${match[2]}</li>`;
         }
       }
       // Detect headings (ALL CAPS or ending with colon)
@@ -225,12 +269,41 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   /**
-   * Apply formatting commands
+   * Apply formatting commands with proper state updates
    */
   const applyFormat = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    handleContentChange();
-    editorRef.current?.focus();
+    try {
+      // Focus the editor first
+      editorRef.current?.focus();
+      
+      // Apply the command
+      const success = document.execCommand(command, false, value);
+      
+      if (success) {
+        // Handle special cases for list formatting
+        if (command === 'insertUnorderedList') {
+          // Ensure proper bullet styling
+          setTimeout(() => {
+            const lists = editorRef.current?.querySelectorAll('ul');
+            lists?.forEach(list => {
+              list.style.listStyleType = 'disc';
+              list.style.paddingLeft = '20px';
+              list.style.marginLeft = '0px';
+              
+              // Style list items
+              const items = list.querySelectorAll('li');
+              items.forEach(item => {
+                item.style.marginBottom = '4px';
+              });
+            });
+          }, 0);
+        }
+        
+        handleContentChange();
+      }
+    } catch (error) {
+      console.error('RichTextEditor: Format command failed:', error);
+    }
   };
 
   /**
@@ -302,8 +375,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       editorRef.current.innerHTML = '';
       onChange('');
       updateCounts();
+      updateActiveFormats();
     }
   };
+
+  // Set up selection change listener
+  useEffect(() => {
+    const handleDocumentSelectionChange = () => {
+      if (document.activeElement === editorRef.current) {
+        updateActiveFormats();
+      }
+    };
+
+    document.addEventListener('selectionchange', handleDocumentSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleDocumentSelectionChange);
+    };
+  }, []);
 
   return (
     <div className={`relative ${className}`}>
@@ -319,28 +407,53 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => applyFormat('bold')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.bold
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Bold (Ctrl+B)"
           >
-            <Bold className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <Bold className="h-4 w-4" />
           </button>
           
           <button
             type="button"
             onClick={() => applyFormat('italic')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.italic
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Italic (Ctrl+I)"
           >
-            <Italic className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <Italic className="h-4 w-4" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => applyFormat('underline')}
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.underline
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
+            title="Underline (Ctrl+U)"
+          >
+            <Underline className="h-4 w-4" />
           </button>
           
           <button
             type="button"
             onClick={() => applyFormat('insertUnorderedList')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.insertUnorderedList
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Bullet List"
           >
-            <List className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <List className="h-4 w-4" />
           </button>
           
           <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
@@ -348,28 +461,40 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => applyFormat('justifyLeft')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.justifyLeft
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Align Left"
           >
-            <AlignLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <AlignLeft className="h-4 w-4" />
           </button>
           
           <button
             type="button"
             onClick={() => applyFormat('justifyCenter')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.justifyCenter
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Align Center"
           >
-            <AlignCenter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <AlignCenter className="h-4 w-4" />
           </button>
           
           <button
             type="button"
             onClick={() => applyFormat('justifyRight')}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors duration-200"
+            className={`p-1.5 rounded transition-colors duration-200 ${
+              activeFormats.justifyRight
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
             title="Align Right"
           >
-            <AlignRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <AlignRight className="h-4 w-4" />
           </button>
         </div>
         
@@ -410,6 +535,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onInput={handleContentChange}
         onPaste={handlePaste}
         onKeyDown={handleKeyDown}
+        onMouseUp={handleSelectionChange}
+        onKeyUp={handleSelectionChange}
         className={`w-full px-4 py-3 border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none overflow-y-auto transition-all duration-200 ${
           isFormatting ? 'opacity-75' : ''
         }`}
@@ -447,6 +574,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <span>Shortcuts:</span>
           <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-xs">Ctrl+B</kbd> Bold</span>
           <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-xs">Ctrl+I</kbd> Italic</span>
+          <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-xs">Ctrl+U</kbd> Underline</span>
           <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-xs">Tab</kbd> Indent</span>
           <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-xs">Ctrl+Z</kbd> Undo</span>
         </div>
