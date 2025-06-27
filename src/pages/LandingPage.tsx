@@ -35,6 +35,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, lifetimeUserCount, fetchLifetimeUserCount } = useAuthStore();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   console.log('LandingPage: Component mounted');
 
@@ -210,24 +211,6 @@ const LandingPage: React.FC = () => {
               </button>
             </motion.div>
 
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
-            >
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                    {stat.number}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-400 font-medium">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </motion.div>
           </div>
         </div>
       </section>
@@ -280,81 +263,6 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-              Success Stories from
-              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                {' '}Real Users
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Join thousands of professionals who have transformed their careers with ResumeZap
-            </p>
-          </motion.div>
-
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              key={currentTestimonial}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12 shadow-xl border border-gray-100 dark:border-gray-700"
-            >
-              <div className="flex items-center mb-6">
-                {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              
-              <blockquote className="text-xl md:text-2xl text-gray-900 dark:text-white mb-8 leading-relaxed">
-                "{testimonials[currentTestimonial].content}"
-              </blockquote>
-              
-              <div className="flex items-center">
-                <img
-                  src={testimonials[currentTestimonial].avatar}
-                  alt={testimonials[currentTestimonial].name}
-                  className="w-16 h-16 rounded-full mr-4 object-cover"
-                />
-                <div>
-                  <div className="font-semibold text-gray-900 dark:text-white text-lg">
-                    {testimonials[currentTestimonial].name}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-400">
-                    {testimonials[currentTestimonial].role} at {testimonials[currentTestimonial].company}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Testimonial indicators */}
-            <div className="flex justify-center mt-8 space-x-2">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                    index === currentTestimonial
-                      ? 'bg-purple-600 scale-125'
-                      : 'bg-gray-300 dark:bg-gray-600 hover:bg-purple-400'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section id="pricing" className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -374,6 +282,35 @@ const LandingPage: React.FC = () => {
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Start free and upgrade as you grow. All plans include our core AI optimization features.
             </p>
+            
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center mt-8 mb-8">
+              <span className="text-gray-600 dark:text-gray-400 mr-3">Monthly</span>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  id="billing-toggle"
+                  className="sr-only"
+                  onChange={(e) => setIsAnnual(e.target.checked)}
+                />
+                <label
+                  htmlFor="billing-toggle"
+                  className="flex items-center cursor-pointer"
+                >
+                  <div className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
+                    isAnnual ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}>
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                      isAnnual ? 'translate-x-6' : 'translate-x-0'
+                    }`}></div>
+                  </div>
+                </label>
+              </div>
+              <span className="text-gray-600 dark:text-gray-400 ml-3">
+                Annual 
+                <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
+              </span>
+            </div>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
@@ -411,8 +348,8 @@ const LandingPage: React.FC = () => {
               <PricingCard
                 tier={{
                   name: "Premium",
-                  price: "$7.99",
-                  period: "month",
+                  price: isAnnual ? "$79.99" : "$7.99",
+                  period: isAnnual ? "year" : "month",
                   description: "Enhanced features for active job seekers",
                   features: [
                     '40 resume tailoring sessions/month',
@@ -420,7 +357,8 @@ const LandingPage: React.FC = () => {
                     'Enhanced skill gap analysis',
                     'Priority email support (24-48 hours)',
                     'Usage analytics dashboard',
-                    'All export formats'
+                    'All export formats',
+                    ...(isAnnual ? ['Save $16/year vs monthly'] : [])
                   ],
                   buttonText: "Upgrade to Premium",
                   isPopular: true
@@ -438,8 +376,8 @@ const LandingPage: React.FC = () => {
               <PricingCard
                 tier={{
                   name: "Pro",
-                  price: "$14.99",
-                  period: "month",
+                  price: isAnnual ? "$149.99" : "$14.99",
+                  period: isAnnual ? "year" : "month",
                   description: "Advanced tools for career professionals",
                   features: [
                     'Unlimited resume tailoring',
@@ -448,7 +386,8 @@ const LandingPage: React.FC = () => {
                     'Priority email support (4 hours)',
                     'Advanced analytics & tracking',
                     'Custom templates',
-                    'Bulk processing'
+                    'Bulk processing',
+                    ...(isAnnual ? ['Save $30/year vs monthly'] : [])
                   ],
                   buttonText: "Go Pro"
                 }}

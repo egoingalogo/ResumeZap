@@ -95,3 +95,38 @@ kbd {
 .dark kbd {
   border-color: #4B5563;
 }
+
+/* Fix dropdown border visual glitch */
+select,
+.dropdown,
+[role="listbox"],
+[role="combobox"] {
+  border: 1px solid #D1D5DB !important;
+}
+
+.dark select,
+.dark .dropdown,
+.dark [role="listbox"],
+.dark [role="combobox"] {
+  border: 1px solid #4B5563 !important;
+}
+
+/* Ensure all dropdown elements have complete borders */
+select:focus,
+.dropdown:focus,
+[role="listbox"]:focus,
+[role="combobox"]:focus {
+  border: 2px solid #8B5CF6 !important;
+  outline: none;
+}
+
+/* Fix any missing border lines on dropdown options */
+option,
+[role="option"] {
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.dark option,
+.dark [role="option"] {
+  border-bottom: 1px solid #374151;
+}
