@@ -6,3 +6,4 @@ src/pages/AuthPage.tsx
 src/pages/Dashboard.tsx
 src/pages/LandingPage.tsx
 src/pages/ResumeAnalyzer.tsx
+src/pages/Settings.tsx
