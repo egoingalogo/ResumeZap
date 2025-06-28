@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { 
   Mail, 
@@ -34,11 +34,13 @@ import type { CoverLetter } from '../lib/coverLetters';
  */
 const CoverLetterGenerator: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
   const { generateCoverLetter, currentCoverLetter, isAnalyzing, saveCoverLetter } = useResumeStore();
   
   // Use drop state for file upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isViewingMode, setIsViewingMode] = useState(false);
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -57,8 +59,30 @@ const CoverLetterGenerator: React.FC = () => {
     if (!isAuthenticated) {
       console.log('CoverLetterGenerator: User not authenticated, redirecting to landing page');
       navigate('/');
+      return;
     }
-  }, [isAuthenticated, navigate]);
+
+    // Check if we're viewing a cover letter from the library
+    if (location.state?.coverLetterData && location.state?.isViewing) {
+      const coverLetterData = location.state.coverLetterData;
+      console.log('CoverLetterGenerator: Loading cover letter data for viewing:', coverLetterData.id);
+      
+      // Populate form with cover letter data
+      setFormData({
+        companyName: coverLetterData.companyName,
+        jobTitle: coverLetterData.jobTitle,
+        hiringManager: coverLetterData.hiringManager || '',
+        jobDescription: coverLetterData.jobPosting || '',
+        personalExperience: coverLetterData.personalHighlights || '',
+        tone: coverLetterData.tone,
+      });
+      
+      setIsViewingMode(true);
+      
+      // Clear the location state to prevent re-loading on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [isAuthenticated, navigate, location.state]);
 
   /**
    * Handle file drop for direct Claude AI processing
@@ -467,7 +491,11 @@ const CoverLetterGenerator: React.FC = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGenerateCoverLetter}
                 disabled={isAnalyzing || !formData.companyName || !formData.jobTitle || !formData.jobDescription || !uploadedFile}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                  isViewingMode 
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                }`}
               >
                 {isAnalyzing ? (
                   <>
@@ -477,10 +505,23 @@ const CoverLetterGenerator: React.FC = () => {
                 ) : (
                   <>
                     <Zap className="h-5 w-5" />
-                    <span>Generate Cover Letter</span>
+                    <span>{isViewingMode ? 'Regenerate Cover Letter' : 'Generate Cover Letter'}</span>
                   </>
                 )}
               </motion.button>
+              
+              {isViewingMode && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-400">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">Viewing Mode</span>
+                  </div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    You're viewing a previously generated cover letter. The form has been populated with the original data. 
+                    You can modify the fields and regenerate if needed.
+                  </p>
+                </div>
+              )}
             </motion.div>
 
             {/* Output Section */}
@@ -631,10 +672,13 @@ const CoverLetterGenerator: React.FC = () => {
                     <Mail className="h-8 w-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Ready to Generate
+                    {isViewingMode ? 'Cover Letter Loaded' : 'Ready to Generate'}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Fill in the job details and click generate to create your personalized cover letter
+                    {isViewingMode 
+                      ? 'The form has been populated with your saved cover letter data. Upload a resume file and click regenerate to create a new version.'
+                      : 'Fill in the job details and click generate to create your personalized cover letter'
+                    }
                   </p>
                 </div>
               )}

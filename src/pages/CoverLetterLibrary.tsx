@@ -30,7 +30,7 @@ import type { CoverLetter } from '../lib/coverLetters';
 const CoverLetterLibrary: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
-  const { coverLetters, isLoading, fetchCoverLetters, deleteCoverLetter } = useResumeStore();
+  const { coverLetters, isLoading, fetchCoverLetters, deleteCoverLetter, loadCoverLetterForViewing } = useResumeStore();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'company' | 'title'>('date');
@@ -56,11 +56,26 @@ const CoverLetterLibrary: React.FC = () => {
   /**
    * Handle cover letter viewing - loads the cover letter for editing
    */
-  const handleViewCoverLetter = (coverLetter: CoverLetter) => {
+  const handleViewCoverLetter = async (coverLetter: CoverLetter) => {
     console.log('CoverLetterLibrary: Viewing cover letter:', coverLetter.id);
-    // Navigate to cover letter generator with the data
-    navigate('/cover-letter');
-    toast.success('Navigate to cover letter generator to create a new one!');
+    
+    try {
+      // Load the cover letter data
+      await loadCoverLetterForViewing(coverLetter.id);
+      
+      // Navigate to cover letter generator with the loaded data
+      navigate('/cover-letter', { 
+        state: { 
+          coverLetterData: coverLetter,
+          isViewing: true 
+        } 
+      });
+      
+      toast.success('Cover letter loaded successfully!');
+    } catch (error) {
+      console.error('CoverLetterLibrary: Failed to load cover letter:', error);
+      toast.error('Failed to load cover letter. Please try again.');
+    }
   };
 
   /**

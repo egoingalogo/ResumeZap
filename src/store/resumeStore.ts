@@ -65,6 +65,7 @@ interface ResumeState {
   fetchCoverLetters: () => Promise<void>;
   saveCoverLetter: (coverLetterData: Omit<CoverLetter, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   deleteCoverLetter: (id: string) => Promise<void>;
+  loadCoverLetterForViewing: (coverLetterId: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -743,6 +744,50 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       currentSkillGapAnalysis: null,
       skillGaps: [],
     });
+  },
+  
+  /**
+   * Load a specific cover letter for viewing and editing
+   * Used when navigating from the Cover Letter Library
+   */
+  loadCoverLetterForViewing: async (coverLetterId: string) => {
+    console.log('ResumeStore: Loading cover letter for viewing:', coverLetterId);
+    set({ error: null });
+    
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user found. Please log in again.');
+      }
+      
+      // Find the cover letter in current cover letters array
+      const coverLetter = get().coverLetters.find(cl => cl.id === coverLetterId);
+      if (!coverLetter) {
+        throw new Error('Cover letter not found');
+      }
+      
+      // Create a simulated cover letter result based on stored data
+      const simulatedCoverLetterResult: CoverLetterResult = {
+        coverLetter: coverLetter.content,
+        customizations: coverLetter.customizations,
+        keyStrengths: coverLetter.keyStrengths,
+        callToAction: coverLetter.callToAction || 'Thank you for your consideration.',
+      };
+      
+      // Set as current cover letter result
+      set({ currentCoverLetter: simulatedCoverLetterResult });
+      
+      console.log('ResumeStore: Cover letter loaded for viewing successfully');
+      
+      // Return the cover letter data for form population
+      return coverLetter;
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load cover letter';
+      console.error('ResumeStore: Failed to load cover letter for viewing:', errorMessage);
+      set({ error: errorMessage });
+      throw error;
+    }
   },
   
   /**
