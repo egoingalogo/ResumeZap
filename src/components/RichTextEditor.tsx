@@ -417,19 +417,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   /**
-   * Handle key up events to check for formatting reset opportunities
-   */
-  const handleKeyUp = (e: React.KeyboardEvent) => {
-    // Check for backspace/delete key to reset formatting
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      checkAndResetFormatting();
-    }
-    
-    // Update active formats on key up
-    updateActiveFormats();
-  };
-
-  /**
    * Handle keyboard shortcuts
    */
   const handleKeyDown = (e: React.KeyboardEvent) => {
