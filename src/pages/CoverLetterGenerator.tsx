@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 import { 
   Mail, 
   Zap, 
@@ -15,10 +16,12 @@ import {
   Target,
   Lightbulb,
   ArrowRight,
-  FileText
+  FileText,
+  Upload,
+  FileCheck,
+  AlertCircle
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
-import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -39,10 +42,10 @@ const CoverLetterGenerator: React.FC = () => {
     hiringManager: '',
     jobDescription: '',
     personalExperience: '',
-    resumeContent: '',
     tone: 'professional' as 'professional' | 'enthusiastic' | 'concise',
   });
   
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<'letter' | 'customizations' | 'strengths'>('letter');
 
   console.log('CoverLetterGenerator: Component mounted');
@@ -53,6 +56,67 @@ const CoverLetterGenerator: React.FC = () => {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
+
+  /**
+   * Handle file drop for direct Claude AI processing
+   * Validates file type and size before storing for AI analysis
+   */
+  const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    console.log('CoverLetterGenerator: PDF file dropped:', file.name, 'Type:', file.type);
+    
+    if (file) {
+      // Validate PDF file type only
+      const allowedTypes = [
+        'application/pdf',
+      ];
+      
+      const allowedExtensions = ['.pdf'];
+      const fileName = file.name.toLowerCase();
+      
+      const hasValidType = allowedTypes.includes(file.type.toLowerCase());
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasValidType && !hasValidExtension) {
+        toast.error('Please upload a PDF file only.');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error('File size exceeds 10MB limit. Please use a smaller file.');
+        return;
+      }
+      
+      // Validate file size (min 1KB to avoid empty files)
+      if (file.size < 1024) {
+        toast.error('File is too small. Please ensure your file contains resume content.');
+        return;
+      }
+      
+      setUploadedFile(file);
+      
+      // Show success message
+      toast.success(
+        `PDF file uploaded successfully! Ready for cover letter generation.`,
+        { duration: 4000 }
+      );
+      
+      console.log('CoverLetterGenerator: File uploaded successfully:', {
+        fileName: file.name,
+        fileSize: `${(file.size / 1024).toFixed(1)}KB`,
+      });
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+    },
+    multiple: false,
+  });
 
   const tones = [
     {
@@ -83,9 +147,17 @@ const CoverLetterGenerator: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Handle cover letter generation with file upload support
+   */
   const handleGenerateCoverLetter = async () => {
-    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription || !formData.resumeContent) {
-      toast.error('Please fill in all required fields');
+    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription) {
+      toast.error('Please fill in company name, job title, and job description');
+      return;
+    }
+    
+    if (!uploadedFile) {
+      toast.error('Please upload your resume as a PDF file');
       return;
     }
 
@@ -94,11 +166,12 @@ const CoverLetterGenerator: React.FC = () => {
 
     try {
       await generateCoverLetter(
-        formData.resumeContent,
+        '',
         formData.jobDescription,
         formData.companyName,
         formData.jobTitle,
-        formData.tone
+        formData.tone,
+        uploadedFile
       );
       toast.success('Cover letter generated successfully!');
       
@@ -254,32 +327,81 @@ const CoverLetterGenerator: React.FC = () => {
                 </div>
               </div>
 
-              {/* Resume Content */}
+              {/* Resume Upload */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Your Resume Content *
+                  Upload Your Resume *
                 </h2>
                 
-                <RichTextEditor
-                  value={formData.resumeContent}
-                  onChange={(value) => setFormData(prev => ({ ...prev, resumeContent: value }))}
-                  placeholder="Paste your resume content here to personalize the cover letter. Formatting will be preserved to maintain structure..."
-                  rows={6}
-                  showWordCount={true}
-                />
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+                    isDragActive
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <div className="space-y-4">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+                      uploadedFile
+                        ? 'bg-green-100 dark:bg-green-900'
+                        : 'bg-purple-100 dark:bg-purple-900'
+                    }`}>
+                      {uploadedFile ? (
+                        <FileCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-lg font-medium text-gray-900 dark:text-white">
+                        {uploadedFile 
+                          ? `✓ ${uploadedFile.name}`
+                          : 'Drop your PDF resume here'
+                        }
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Supports PDF files only (max 10MB)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* File upload success info */}
+                {uploadedFile && (
+                  <div className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                          File ready for cover letter generation
+                        </p>
+                        <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
+                          <div className="flex items-center space-x-4">
+                            <span>Size: {(uploadedFile.size / 1024).toFixed(1)}KB</span>
+                            <span>Type: PDF</span>
+                          </div>
+                          <p className="text-xs">AI will process this file directly for optimal accuracy.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+              
               {/* Job Description */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Job Description *
                 </h2>
                 
-                <RichTextEditor
+                <textarea
                   value={formData.jobDescription}
-                  onChange={(value) => setFormData(prev => ({ ...prev, jobDescription: value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
                   placeholder="Paste the job description or key requirements here. Copy directly from the job posting to preserve all details..."
                   rows={8}
-                  showWordCount={true}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                 />
               </div>
 
@@ -289,12 +411,12 @@ const CoverLetterGenerator: React.FC = () => {
                   Personal Highlights (Optional)
                 </h2>
                 
-                <RichTextEditor
+                <textarea
                   value={formData.personalExperience}
-                  onChange={(value) => setFormData(prev => ({ ...prev, personalExperience: value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, personalExperience: e.target.value }))}
                   placeholder="Share a specific achievement or experience that makes you stand out for this role. Use bullet points or formatting to highlight key accomplishments..."
                   rows={4}
-                  showWordCount={true}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                 />
               </div>
 
@@ -336,7 +458,7 @@ const CoverLetterGenerator: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGenerateCoverLetter}
-                disabled={isAnalyzing || !formData.companyName || !formData.jobTitle || !formData.jobDescription || !formData.resumeContent}
+                disabled={isAnalyzing || !formData.companyName || !formData.jobTitle || !formData.jobDescription || !uploadedFile}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {isAnalyzing ? (

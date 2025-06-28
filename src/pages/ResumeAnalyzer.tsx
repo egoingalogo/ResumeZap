@@ -24,7 +24,6 @@ import {
   Info
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
-import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { exportResume } from '../lib/exportUtils';
@@ -40,7 +39,6 @@ const ResumeAnalyzer: React.FC = () => {
   const { user, isAuthenticated, updateUsage } = useAuthStore();
   const { analyzeResume, currentResume, currentResumeAnalysis, isAnalyzing, saveResume } = useResumeStore();
   
-  const [resumeText, setResumeText] = useState('');
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
@@ -95,9 +93,6 @@ const ResumeAnalyzer: React.FC = () => {
       
       setUploadedFile(file);
       
-      // Clear any existing text content when file is uploaded
-      setResumeText('');
-      
       // Show success message
       const fileType = 'PDF';
       
@@ -123,8 +118,8 @@ const ResumeAnalyzer: React.FC = () => {
   });
 
   const handleAnalyze = async () => {
-    if (!resumeText.trim() && !uploadedFile) {
-      toast.error('Please upload a resume file or paste your resume text');
+    if (!uploadedFile) {
+      toast.error('Please upload a resume file');
       return;
     }
 
@@ -135,7 +130,6 @@ const ResumeAnalyzer: React.FC = () => {
 
     console.log('ResumeAnalyzer: Starting analysis');
     console.log('ResumeAnalyzer: Analysis parameters:', {
-      hasResumeText: !!resumeText.trim(),
       hasUploadedFile: !!uploadedFile,
       hasJobPosting: !!jobPosting.trim(),
       uploadedFileName: uploadedFile?.name,
@@ -147,7 +141,7 @@ const ResumeAnalyzer: React.FC = () => {
     
     try {
       // Pass the uploaded file to the AI service if available
-      const result = await analyzeResume(resumeText, jobPosting, uploadedFile || undefined);
+      const result = await analyzeResume('', jobPosting, uploadedFile);
       console.log('ResumeAnalyzer: Analysis completed successfully:', {
         hasResult: !!result,
         matchScore: result?.matchScore,
@@ -336,24 +330,6 @@ const ResumeAnalyzer: React.FC = () => {
                   </div>
                 )}
 
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Or paste resume text content
-                  </label>
-                  <RichTextEditor
-                    value={resumeText}
-                    onChange={setResumeText}
-                    placeholder="Paste your resume content here if you prefer text input over file upload..."
-                    rows={8}
-                    label=""
-                    showWordCount={true}
-                  />
-                  {uploadedFile && resumeText.trim() && (
-                    <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                      Note: PDF file upload takes priority over text content for analysis.
-                    </p>
-                  )}
-                </div>
               </div>
 
               {/* Job Posting */}
@@ -362,13 +338,12 @@ const ResumeAnalyzer: React.FC = () => {
                   Target Job Posting
                 </h2>
                 
-                <RichTextEditor
+                <textarea
                   value={jobPosting}
-                  onChange={setJobPosting}
+                  onChange={(e) => setJobPosting(e.target.value)}
                   placeholder="Paste the complete job posting here. Copy directly from job boards, company websites, or emails to preserve all formatting and structure..."
                   rows={12}
-                  label=""
-                  showWordCount={true}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                 />
               </div>
 
@@ -377,7 +352,7 @@ const ResumeAnalyzer: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || (!resumeText.trim() && !uploadedFile) || !jobPosting.trim()}
+                disabled={isAnalyzing || !uploadedFile || !jobPosting.trim()}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {isAnalyzing ? (
