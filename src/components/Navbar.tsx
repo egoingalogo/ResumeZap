@@ -320,6 +320,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 Resume Analyzer
               </Link>
               <Link
+                to="/resume-library"
+                className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
+              >
+                Resume Library
+              </Link>
+              <Link
                 to="/skill-gap-analysis"
                 className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
                 onClick={() => setIsMenuOpen(false)}

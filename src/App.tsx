@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import ResumeAnalyzer from './pages/ResumeAnalyzer';
 import CoverLetterGenerator from './pages/CoverLetterGenerator';
 import SkillGapAnalysis from './pages/SkillGapAnalysis';
+import ResumeLibrary from './pages/ResumeLibrary';
 import ApplicationTracker from './pages/ApplicationTracker';
 import Settings from './pages/Settings';
 import EmailSupport from './pages/EmailSupport';
@@ -40,6 +41,7 @@ function App() {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
+              <Route path="/resume-library" element={<ResumeLibrary />} />
               <Route path="/cover-letter" element={<CoverLetterGenerator />} />
               <Route path="/skill-gap-analysis" element={<SkillGapAnalysis />} />
               <Route path="/applications" element={<ApplicationTracker />} />

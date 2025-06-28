@@ -17,6 +17,7 @@ import { Navbar } from '../components/Navbar';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 /**
@@ -24,8 +25,8 @@ import toast from 'react-hot-toast';
  * Provides navigation to all major features and displays usage analytics
  */
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, isAuthenticated, upgradePlan, isLoading, lifetimeUserCount } = useAuthStore();
   const { resumes, skillAnalyses, fetchResumes, fetchSkillAnalyses } = useResumeStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -379,7 +380,25 @@ const Dashboard: React.FC = () => {
             {resumes.length > 0 ? (
               <div className="space-y-4">
                 {resumes.slice(0, 3).map((resume) => (
-                  <div key={resume.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <motion.button
+                    key={resume.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      console.log('Dashboard: Navigating to resume:', resume.id);
+                      // Load the resume and navigate to analyzer
+                      useResumeStore.getState().loadResumeForViewing(resume.id)
+                        .then(() => {
+                          navigate('/resume-analyzer');
+                          toast.success('Resume loaded successfully!');
+                        })
+                        .catch((error) => {
+                          console.error('Dashboard: Failed to load resume:', error);
+                          toast.error('Failed to load resume. Please try again.');
+                        });
+                    }}
+                    className="w-full flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 text-left"
+                  >
                     <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                       <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     </div>
@@ -395,7 +414,7 @@ const Dashboard: React.FC = () => {
                       <Clock className="h-4 w-4" />
                       <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
                     </div>
-                  </div>
+                  </motion.button>
                 ))}
               </div>
             ) : (
