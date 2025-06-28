@@ -20,7 +20,8 @@ import {
   Upload,
   FileCheck,
   AlertCircle,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { RichTextEditor } from '../components/RichTextEditor';
@@ -723,6 +724,34 @@ const CoverLetterGenerator: React.FC = () => {
                       <FileText className="h-5 w-5" />
                       <span>Save to Library</span>
                     </button>
+                  
+                  {/* New Session Button for Viewing Mode */}
+                  {isViewingMode && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setIsViewingMode(false);
+                        setUploadedFile(null);
+                        // Reset form data to defaults
+                        const today = new Date().toISOString().split('T')[0];
+                        setFormData({
+                          companyName: '',
+                          jobTitle: '',
+                          hiringManager: '',
+                          jobDescription: '',
+                          personalExperience: '',
+                          tone: 'professional',
+                        });
+                        // Clear current cover letter from store
+                        useResumeStore.setState({ currentCoverLetter: null });
+                      }}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <Plus className="h-5 w-5" />
+                      <span>Start New Session</span>
+                    </motion.button>
+                  )}
                   </div>
                 </>
               ) : (
