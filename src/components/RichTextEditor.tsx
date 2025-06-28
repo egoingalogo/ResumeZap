@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Bold, Italic, List, AlignLeft, AlignCenter, AlignRight, Type, MoreHorizontal, Copy, Cast as Paste, RotateCcw, Info, Underline } from 'lucide-react';
+import { Bold, Italic, List, AlignLeft, AlignCenter, AlignRight, Type, Copy, RotateCcw, Info, Underline } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -43,7 +43,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Update content when value prop changes
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
+    if (editorRef.current && editorRef.current.innerHTML !== value && !document.activeElement?.contains(editorRef.current)) {
       editorRef.current.innerHTML = value;
       updateCounts();
     }
@@ -65,7 +65,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
    */
   const updateActiveFormats = () => {
     if (!editorRef.current) return;
-
+    
     // Reset active formats when there's no selection
     if (!window.getSelection() || window.getSelection()?.rangeCount === 0) {
       setActiveFormats({
@@ -82,7 +82,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     try {
       const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
+      if (!selection || selection.rangeCount === 0) {
+        // Reset active formats when there's no selection
+        setActiveFormats({
+          bold: false,
+          italic: false,
+          underline: false,
+          justifyLeft: false,
+          justifyCenter: false,
+          justifyRight: false,
+          insertUnorderedList: false
+        });
+        return;
+      }
 
       const newActiveFormats = {
         bold: document.queryCommandState('bold'),
@@ -100,6 +112,55 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
 
+  /**
+   * Reset formatting when needed
+   * This helps prevent formatting from persisting after deletion
+   */
+  const resetFormattingIfNeeded = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !editorRef.current) return;
+    
+    try {
+      const range = selection.getRangeAt(0);
+      
+      // Check if at the beginning of a node or at start of editor
+      const isAtStartOfNode = range.startOffset === 0;
+      
+      if (isAtStartOfNode) {
+        // Force update active formats
+        const currentFormats = {
+          bold: document.queryCommandState('bold'),
+          italic: document.queryCommandState('italic'),
+          underline: document.queryCommandState('underline'),
+          justifyLeft: document.queryCommandState('justifyLeft'),
+          justifyCenter: document.queryCommandState('justifyCenter'),
+          justifyRight: document.queryCommandState('justifyRight'),
+          insertUnorderedList: document.queryCommandState('insertUnorderedList')
+        };
+        
+        // If UI shows underline is off but formatting is on, reset it
+        if (!activeFormats.underline && currentFormats.underline) {
+          // Force toggle underline off
+          document.execCommand('underline', false);
+          document.execCommand('underline', false);
+        }
+        
+        // Same for other formats
+        if (!activeFormats.bold && currentFormats.bold) {
+          document.execCommand('bold', false);
+          document.execCommand('bold', false);
+        }
+        
+        if (!activeFormats.italic && currentFormats.italic) {
+          document.execCommand('italic', false);
+          document.execCommand('italic', false);
+        }
+      }
+    } catch (err) {
+      console.warn('RichTextEditor: Error in resetFormattingIfNeeded', err);
+    }
+  };
+  
   /**
    * Handle content changes with formatting preservation
    */
@@ -132,6 +193,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
 
+  /**
+   * Handle key events that might affect formatting
+   */
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    // Check for keys that might require formatting reset
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      resetFormattingIfNeeded();
+    }
+    
+    // Always update formats on key up
+    updateActiveFormats();
+  };
+  
   /**
    * Handle selection changes to update active formatting states
    */
@@ -310,11 +384,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     try {
       // Focus the editor first
       editorRef.current?.focus();
-      
+
       // Apply the command
       const success = document.execCommand(command, false, value);
       
       if (success) {
+        resetFormattingIfNeeded();
         // Handle special cases for list formatting
         if (command === 'insertUnorderedList') {
           // Ensure proper bullet styling
@@ -430,9 +505,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Set up selection change listener
   useEffect(() => {
     const handleDocumentSelectionChange = () => {
-      if (document.activeElement === editorRef.current) {
-        updateActiveFormats();
-      }
+      if (document.activeElement === editorRef.current) updateActiveFormats();
     };
 
     document.addEventListener('selectionchange', handleDocumentSelectionChange);
@@ -581,10 +654,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         ref={editorRef}
         contentEditable
         onInput={handleContentChange}
+        onKeyUp={handleKeyUp}
         onPaste={handlePaste}
         onKeyUp={handleKeyUp}
         onKeyDown={handleKeyDown}
-        onMouseUp={handleSelectionChange}
+        onMouseUp={() => { handleSelectionChange(); resetFormattingIfNeeded(); }}
         className={`w-full px-4 py-3 border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none overflow-y-auto transition-all duration-200 ${
           isFormatting ? 'opacity-75' : ''
         }`}
