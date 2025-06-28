@@ -17,6 +17,12 @@ import {
   type SkillGap,
   type SkillAnalysisWithRecommendations
 } from '../lib/skillAnalysis';
+import { 
+  fetchCoverLetters,
+  createCoverLetter,
+  deleteCoverLetter,
+  type CoverLetter
+} from '../lib/coverLetters';
 
 interface Resume {
   id: string;
@@ -38,6 +44,7 @@ interface ResumeState {
   skillGaps: SkillGap[];
   skillAnalyses: SkillAnalysisWithRecommendations[];
   currentSkillAnalysis: SkillAnalysisWithRecommendations | null;
+  coverLetters: CoverLetter[];
   isAnalyzing: boolean;
   isLoading: boolean;
   error: string | null;
@@ -55,6 +62,9 @@ interface ResumeState {
   loadSkillAnalysis: (analysisId: string) => Promise<void>;
   deleteSkillAnalysis: (analysisId: string) => Promise<void>;
   clearCurrentSkillAnalysis: () => void;
+  fetchCoverLetters: () => Promise<void>;
+  saveCoverLetter: (coverLetterData: Omit<CoverLetter, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  deleteCoverLetter: (id: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -71,6 +81,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   skillGaps: [],
   skillAnalyses: [],
   currentSkillAnalysis: null,
+  coverLetters: [],
   isAnalyzing: false,
   isLoading: false,
   error: null,
@@ -624,6 +635,78 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     }
   },
   
+  /**
+   * Fetch user's cover letters from database with enhanced error handling
+   */
+  fetchCoverLetters: async () => {
+    console.log('ResumeStore: Fetching user cover letters');
+    set({ isLoading: true, error: null });
+    
+    try {
+      const coverLetters = await fetchCoverLetters();
+      set({ coverLetters, error: null });
+      console.log('ResumeStore: Fetched', coverLetters.length, 'cover letters');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch cover letters';
+      console.error('ResumeStore: Failed to fetch cover letters:', errorMessage);
+      // Don't throw error for cover letters - just log it and continue
+      set({ error: null, coverLetters: [] });
+      console.log('ResumeStore: Continuing with empty cover letters due to error');
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  /**
+   * Save cover letter to database with enhanced error handling
+   */
+  saveCoverLetter: async (coverLetterData: Omit<CoverLetter, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('ResumeStore: Saving new cover letter');
+    set({ error: null });
+    
+    try {
+      const newCoverLetter = await createCoverLetter(coverLetterData);
+      
+      // Update local state
+      set((state) => ({
+        coverLetters: [newCoverLetter, ...state.coverLetters],
+        error: null,
+      }));
+      
+      console.log('ResumeStore: Cover letter saved successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save cover letter';
+      console.error('ResumeStore: Failed to save cover letter:', errorMessage);
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
+  /**
+   * Delete cover letter from database with enhanced error handling
+   */
+  deleteCoverLetter: async (id: string) => {
+    console.log('ResumeStore: Deleting cover letter:', id);
+    set({ error: null });
+    
+    try {
+      await deleteCoverLetter(id);
+      
+      // Update local state
+      set((state) => ({
+        coverLetters: state.coverLetters.filter(cl => cl.id !== id),
+        error: null,
+      }));
+      
+      console.log('ResumeStore: Cover letter deleted successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete cover letter';
+      console.error('ResumeStore: Failed to delete cover letter:', errorMessage);
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
   /**
    * Clear current skill analysis and skill gaps
    */

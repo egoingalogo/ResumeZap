@@ -17,18 +17,10 @@ import {
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
+import { useResumeStore } from '../store/resumeStore';
+import { exportResume } from '../lib/exportUtils';
 import toast from 'react-hot-toast';
-
-interface CoverLetter {
-  id: string;
-  title: string;
-  content: string;
-  companyName: string;
-  jobTitle: string;
-  tone: 'professional' | 'enthusiastic' | 'concise';
-  createdAt: string;
-  updatedAt: string;
-}
+import type { CoverLetter } from '../lib/coverLetters';
 
 /**
  * Cover Letter Library page component for managing saved cover letters
@@ -38,12 +30,12 @@ interface CoverLetter {
 const CoverLetterLibrary: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
+  const { coverLetters, isLoading, fetchCoverLetters, deleteCoverLetter } = useResumeStore();
   
-  const [coverLetters, setCoverLetters] = useState<CoverLetter[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'company' | 'title'>('date');
   const [filterTone, setFilterTone] = useState<'all' | 'professional' | 'enthusiastic' | 'concise'>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   console.log('CoverLetterLibrary: Component mounted');
 
@@ -55,36 +47,20 @@ const CoverLetterLibrary: React.FC = () => {
     }
 
     // Load cover letters from database
-    loadCoverLetters();
-  }, [isAuthenticated, navigate]);
-
-  const loadCoverLetters = async () => {
-    console.log('CoverLetterLibrary: Loading cover letters');
-    setIsLoading(true);
-    
-    try {
-      // TODO: Replace with actual API call to fetch cover letters
-      // Currently no cover letters are stored in the database
-      const mockCoverLetters: CoverLetter[] = [];
-      
-      setCoverLetters(mockCoverLetters);
-      console.log('CoverLetterLibrary: Loaded', mockCoverLetters.length, 'cover letters');
-    } catch (error) {
+    fetchCoverLetters().catch(error => {
       console.error('CoverLetterLibrary: Failed to load cover letters:', error);
       toast.error('Failed to load cover letter library');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    });
+  }, [isAuthenticated, navigate]);
 
   /**
    * Handle cover letter viewing - loads the cover letter for editing
    */
   const handleViewCoverLetter = (coverLetter: CoverLetter) => {
     console.log('CoverLetterLibrary: Viewing cover letter:', coverLetter.id);
-    // TODO: Load cover letter data into the generator and navigate
+    // Navigate to cover letter generator with the data
     navigate('/cover-letter');
-    toast.success('Cover letter loaded for editing!');
+    toast.success('Navigate to cover letter generator to create a new one!');
   };
 
   /**
@@ -98,8 +74,7 @@ const CoverLetterLibrary: React.FC = () => {
     console.log('CoverLetterLibrary: Deleting cover letter:', coverLetterId);
     
     try {
-      // TODO: Replace with actual API call to delete cover letter
-      // setCoverLetters(prev => prev.filter(cl => cl.id !== coverLetterId));
+      await deleteCoverLetter(coverLetterId);
       toast.success('Cover letter deleted successfully!');
     } catch (error) {
       console.error('CoverLetterLibrary: Failed to delete cover letter:', error);
@@ -111,12 +86,26 @@ const CoverLetterLibrary: React.FC = () => {
    * Handle cover letter export
    */
   const handleExportCoverLetter = async (coverLetter: CoverLetter, format: 'pdf' | 'docx' | 'txt') => {
+    console.log('CoverLetterLibrary: Exporting cover letter as:', format);
+    setIsExporting(coverLetter.id);
+    
     try {
-      // TODO: Implement actual export functionality
-      toast.success(`Cover letter exported as ${format.toUpperCase()}!`);
+      const exportFileName = `cover_letter_${coverLetter.companyName}_${coverLetter.jobTitle}`;
+      
+      const result = await exportResume(coverLetter.content, format, exportFileName);
+      
+      if (result.success) {
+        toast.success(`Cover letter exported as ${format.toUpperCase()}! File: ${result.fileName}`, {
+          duration: 5000,
+        });
+      } else {
+        toast.error(result.error || `Failed to export ${format.toUpperCase()}`);
+      }
     } catch (error) {
       console.error('CoverLetterLibrary: Export failed:', error);
-      toast.error('Export failed. Please try again.');
+      toast.error(`Export failed. Please try again.`);
+    } finally {
+      setIsExporting(null);
     }
   };
 
@@ -351,7 +340,28 @@ const CoverLetterLibrary: React.FC = () => {
                       {/* Export Options */}
                       <div className="flex items-center space-x-1">
                         <button
+                          onClick={() => handleExportCoverLetter(coverLetter, 'pdf')}
+                          disabled={isExporting === coverLetter.id}
+                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          title="Export as PDF"
+                        >
+                          {isExporting === coverLetter.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleExportCoverLetter(coverLetter, 'docx')}
+                          disabled={isExporting === coverLetter.id}
+                          className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          title="Export as RTF"
+                        >
+                          <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </button>
+                        <button
                           onClick={() => handleExportCoverLetter(coverLetter, 'txt')}
+                          disabled={isExporting === coverLetter.id}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
                           title="Export as TXT"
                         >
