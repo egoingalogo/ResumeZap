@@ -204,7 +204,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   /**
    * Generate cover letter with Claude AI through Edge Function
    */
-  generateCoverLetter: async (resumeContent: string, jobPosting: string, companyName: string, jobTitle: string, tone: string) => {
+  generateCoverLetter: async (resumeContent: string, jobPosting: string, companyName: string, jobTitle: string, tone: string, resumeFile?: File) => {
     console.log('ResumeStore: Generating cover letter');
     set({ isAnalyzing: true, error: null });
     
@@ -215,7 +215,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         jobPosting,
         companyName,
         jobTitle,
-        tone as 'professional' | 'enthusiastic' | 'concise'
+        tone as 'professional' | 'enthusiastic' | 'concise',
+        resumeFile
       );
       
       set({ 
