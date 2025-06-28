@@ -45,38 +45,8 @@ const ResumeAnalyzer: React.FC = () => {
   const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
   const [isViewingMode, setIsViewingMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
-
-  console.log('ResumeAnalyzer: Component mounted');
-
   React.useEffect(() => {
-    if (!isAuthenticated) {
-      console.log('ResumeAnalyzer: User not authenticated, redirecting to landing page');
-      navigate('/');
-      return;
-    }
-
-    // Check if we're viewing a resume from the library/dashboard/activity and load job posting
-    if (currentResume && currentResumeAnalysis && currentJobPosting && !isViewingMode) {
-      console.log('ResumeAnalyzer: Loading resume data for viewing:', currentResume.id);
-      
-      // Populate form with resume data including job posting
-      setJobPosting(currentJobPosting);
-      setIsViewingMode(true);
-      
-      // Clear the current resume state to prevent re-loading on refresh
-      // Note: We don't clear it immediately to allow the UI to load first
-    }
-    
-    // Handle case where currentJobPosting is available but form hasn't been populated yet
-    if (currentJobPosting && !jobPosting && currentResume && currentResumeAnalysis) {
-      console.log('ResumeAnalyzer: Setting job posting from currentJobPosting');
-      setJobPosting(currentJobPosting);
-      if (!isViewingMode) {
-        setIsViewingMode(true);
-      }
-    }
-    
-  }, [isAuthenticated, navigate, currentResume, currentResumeAnalysis, currentJobPosting]);
+  }, [isAuthenticated, navigate, currentResume, currentResumeAnalysis, hasLoadedJobPosting]);
 
   /**
    * Handle file drop for direct Claude AI processing
