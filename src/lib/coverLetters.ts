@@ -122,6 +122,8 @@ export const createCoverLetter = async (coverLetterData: Omit<CoverLetter, 'id' 
       customizations: coverLetterData.customizations || [],
       key_strengths: coverLetterData.keyStrengths || [],
       call_to_action: coverLetterData.callToAction?.trim() || null,
+      hiring_manager: coverLetterData.hiringManager?.trim() || null,
+      personal_highlights: coverLetterData.personalHighlights?.trim() || null,
     };
     
     const { data, error } = await supabase
@@ -220,6 +222,8 @@ export const updateCoverLetter = async (id: string, updates: Partial<CoverLetter
     if (updates.customizations !== undefined) updateData.customizations = updates.customizations;
     if (updates.keyStrengths !== undefined) updateData.key_strengths = updates.keyStrengths;
     if (updates.callToAction !== undefined) updateData.call_to_action = updates.callToAction?.trim() || null;
+    if (updates.hiringManager !== undefined) updateData.hiring_manager = updates.hiringManager?.trim() || null;
+    if (updates.personalHighlights !== undefined) updateData.personal_highlights = updates.personalHighlights?.trim() || null;
     
     // Only proceed if there are actual updates
     if (Object.keys(updateData).length === 0) {
