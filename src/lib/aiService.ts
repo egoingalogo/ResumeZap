@@ -255,7 +255,7 @@ export async function analyzeResume(
   console.log('AIService: Has resume file:', !!resumeFile);
   console.log('AIService: Has job posting:', !!jobPosting.trim());
 
-  // For resume analysis, require PDF file
+  // For resume analysis, require PDF file - this is now enforced in the UI
   if (!resumeFile) {
     throw new Error('PDF resume file is required for analysis');
   }
@@ -345,8 +345,9 @@ export async function generateCoverLetter(
 ): Promise<CoverLetterResult> {
   console.log('AIService: Starting cover letter generation');
 
-  if (!resumeContent.trim() && !resumeFile) {
-    throw new Error('Either resume content or resume file is required');
+  // Now requiring PDF file upload in the UI
+  if (!resumeFile) {
+    throw new Error('Resume file is required');
   }
 
   if (!jobPosting.trim() || !companyName.trim() || !jobTitle.trim()) {
@@ -371,23 +372,19 @@ export async function generateCoverLetter(
     }
 
     // Add resume content or file
-    if (resumeFile) {
-      console.log('AIService: Processing resume file for cover letter:', resumeFile.name);
-      
-      // Validate PDF file if provided
-      const validation = validatePdfFile(resumeFile);
-      if (!validation.isValid) {
-        throw new Error(validation.error);
-      }
-      
-      requestData.resumeFile = {
-        data: await fileToBase64(resumeFile),
-        media_type: getMediaType(resumeFile),
-        filename: resumeFile.name,
-      };
-    } else {
-      requestData.resumeContent = resumeContent.trim();
+    console.log('AIService: Processing resume file for cover letter:', resumeFile.name);
+    
+    // Validate PDF file if provided
+    const validation = validatePdfFile(resumeFile);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
     }
+    
+    requestData.resumeFile = {
+      data: await fileToBase64(resumeFile),
+      media_type: getMediaType(resumeFile),
+      filename: resumeFile.name,
+    };
 
     const result = await callClaudeAPI(requestData);
     
@@ -417,8 +414,9 @@ export async function analyzeSkillGaps(
 ): Promise<SkillGapResult> {
   console.log('AIService: Starting skill gap analysis');
 
-  if (!resumeContent.trim() && !resumeFile) {
-    throw new Error('Either resume content or resume file is required');
+  // Now requiring PDF file upload in the UI
+  if (!resumeFile) {
+    throw new Error('Resume file is required');
   }
 
   if (!jobPosting.trim()) {
@@ -432,23 +430,19 @@ export async function analyzeSkillGaps(
     };
 
     // Add resume content or file
-    if (resumeFile) {
-      console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
-      
-      // Validate PDF file if provided
-      const validation = validatePdfFile(resumeFile);
-      if (!validation.isValid) {
-        throw new Error(validation.error);
-      }
-      
-      requestData.resumeFile = {
-        data: await fileToBase64(resumeFile),
-        media_type: getMediaType(resumeFile),
-        filename: resumeFile.name,
-      };
-    } else {
-      requestData.resumeContent = resumeContent.trim();
+    console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
+    
+    // Validate PDF file if provided
+    const validation = validatePdfFile(resumeFile);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
     }
+    
+    requestData.resumeFile = {
+      data: await fileToBase64(resumeFile),
+      media_type: getMediaType(resumeFile),
+      filename: resumeFile.name,
+    };
 
     const result = await callClaudeAPI(requestData);
     

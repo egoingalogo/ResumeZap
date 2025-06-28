@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 import { 
   Brain, 
   Target, 
@@ -23,10 +24,11 @@ import {
   Users,
   Zap,
   ArrowRight,
-  MapPin
+  MapPin,
+  Upload,
+  FileCheck
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
-import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -53,8 +55,8 @@ const SkillGapAnalysis: React.FC = () => {
     clearCurrentSkillAnalysis
   } = useResumeStore();
   
-  const [resumeText, setResumeText] = useState('');
   const [jobPosting, setJobPosting] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'roadmap' | 'recommendations'>('overview');
@@ -74,9 +76,70 @@ const SkillGapAnalysis: React.FC = () => {
     });
   }, [isAuthenticated, navigate, fetchSkillAnalyses]);
 
+  /**
+   * Handle file drop for direct Claude AI processing
+   * Validates file type and size before storing for AI analysis
+   */
+  const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    console.log('SkillGapAnalysis: PDF file dropped:', file.name, 'Type:', file.type);
+    
+    if (file) {
+      // Validate PDF file type only
+      const allowedTypes = [
+        'application/pdf',
+      ];
+      
+      const allowedExtensions = ['.pdf'];
+      const fileName = file.name.toLowerCase();
+      
+      const hasValidType = allowedTypes.includes(file.type.toLowerCase());
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasValidType && !hasValidExtension) {
+        toast.error('Please upload a PDF file only.');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error('File size exceeds 10MB limit. Please use a smaller file.');
+        return;
+      }
+      
+      // Validate file size (min 1KB to avoid empty files)
+      if (file.size < 1024) {
+        toast.error('File is too small. Please ensure your file contains resume content.');
+        return;
+      }
+      
+      setUploadedFile(file);
+      
+      // Show success message
+      toast.success(
+        `PDF file uploaded successfully! Ready for skill gap analysis.`,
+        { duration: 4000 }
+      );
+      
+      console.log('SkillGapAnalysis: File uploaded successfully:', {
+        fileName: file.name,
+        fileSize: `${(file.size / 1024).toFixed(1)}KB`,
+      });
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+    },
+    multiple: false,
+  });
+
   const handleAnalyze = async () => {
-    if (!resumeText.trim()) {
-      toast.error('Please paste your resume content');
+    if (!uploadedFile) {
+      toast.error('Please upload your resume as a PDF file');
       return;
     }
 
@@ -88,7 +151,7 @@ const SkillGapAnalysis: React.FC = () => {
     console.log('SkillGapAnalysis: Starting new analysis');
     
     try {
-      await analyzeSkillGaps(resumeText, jobPosting);
+      await analyzeSkillGaps('', jobPosting, uploadedFile);
       toast.success('Skill gap analysis completed and saved!');
       setShowHistory(false); // Hide history when showing new results
     } catch (error) {
@@ -131,7 +194,7 @@ const SkillGapAnalysis: React.FC = () => {
 
   const handleNewAnalysis = () => {
     clearCurrentSkillAnalysis();
-    setResumeText('');
+    setUploadedFile(null);
     setJobPosting('');
     setShowHistory(false);
   };
@@ -330,19 +393,67 @@ const SkillGapAnalysis: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="space-y-6"
               >
-                {/* Resume Input */}
+                {/* Resume Upload */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                    Your Resume
+                    Upload Resume
                   </h2>
                   
-                  <RichTextEditor
-                    value={resumeText}
-                    onChange={(e) => setResumeText(e.target.value)}
-                    placeholder="Paste your resume content here. Formatting and structure will be preserved for accurate skill analysis..."
-                    rows={12}
-                    showWordCount={true}
-                  />
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+                      isDragActive
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    <div className="space-y-4">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+                        uploadedFile
+                          ? 'bg-green-100 dark:bg-green-900'
+                          : 'bg-purple-100 dark:bg-purple-900'
+                      }`}>
+                        {uploadedFile ? (
+                          <FileCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <Upload className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-lg font-medium text-gray-900 dark:text-white">
+                          {uploadedFile 
+                            ? `✓ ${uploadedFile.name}`
+                            : 'Drop your PDF resume here'
+                          }
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Supports PDF files only (max 10MB)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* File upload success info */}
+                  {uploadedFile && (
+                    <div className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                            File ready for AI analysis
+                          </p>
+                          <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
+                            <div className="flex items-center space-x-4">
+                              <span>Size: {(uploadedFile.size / 1024).toFixed(1)}KB</span>
+                              <span>Type: PDF</span>
+                            </div>
+                            <p className="text-xs">AI will process this file directly for optimal accuracy.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Job Posting Input */}
@@ -351,12 +462,12 @@ const SkillGapAnalysis: React.FC = () => {
                     Target Job Posting
                   </h2>
                   
-                  <RichTextEditor
+                  <textarea
                     value={jobPosting}
                     onChange={(e) => setJobPosting(e.target.value)}
                     placeholder="Paste the job posting you're targeting. Include all requirements, qualifications, and responsibilities for comprehensive analysis..."
                     rows={12}
-                    showWordCount={true}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                   />
                 </div>
 
@@ -365,7 +476,7 @@ const SkillGapAnalysis: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || !resumeText.trim() || !jobPosting.trim()}
+                  disabled={isAnalyzing || !uploadedFile || !jobPosting.trim()}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {isAnalyzing ? (
