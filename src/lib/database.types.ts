@@ -242,6 +242,8 @@ export interface Database {
           customizations: Json
           key_strengths: Json
           call_to_action: string | null
+          hiring_manager: string | null
+          personal_highlights: string | null
           created_at: string
           updated_at: string
         }
@@ -258,6 +260,8 @@ export interface Database {
           customizations?: Json
           key_strengths?: Json
           call_to_action?: string | null
+          hiring_manager?: string | null
+          personal_highlights?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -274,6 +278,8 @@ export interface Database {
           customizations?: Json
           key_strengths?: Json
           call_to_action?: string | null
+          hiring_manager?: string | null
+          personal_highlights?: string | null
           created_at?: string
           updated_at?: string
         }

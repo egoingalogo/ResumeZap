@@ -12,6 +12,8 @@ export interface CoverLetter {
   customizations: string[];
   keyStrengths: string[];
   callToAction?: string;
+  hiringManager?: string;
+  personalHighlights?: string;
   createdAt: string;
   updatedAt: string;
 }
