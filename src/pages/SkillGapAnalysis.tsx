@@ -29,6 +29,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -462,12 +463,12 @@ const SkillGapAnalysis: React.FC = () => {
                     Target Job Posting
                   </h2>
                   
-                  <textarea
+                  <RichTextEditor
                     value={jobPosting}
-                    onChange={(e) => setJobPosting(e.target.value)}
+                    onChange={setJobPosting}
                     placeholder="Paste the job posting you're targeting. Include all requirements, qualifications, and responsibilities for comprehensive analysis..."
                     rows={12}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                    showWordCount={true}
                   />
                 </div>
 

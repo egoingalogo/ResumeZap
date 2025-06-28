@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { exportResume } from '../lib/exportUtils';
@@ -338,12 +339,13 @@ const ResumeAnalyzer: React.FC = () => {
                   Target Job Posting
                 </h2>
                 
-                <textarea
+                <RichTextEditor
                   value={jobPosting}
-                  onChange={(e) => setJobPosting(e.target.value)}
+                  onChange={setJobPosting}
                   placeholder="Paste the complete job posting here. Copy directly from job boards, company websites, or emails to preserve all formatting and structure..."
                   rows={12}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                  label=""
+                  showWordCount={true}
                 />
               </div>
 
