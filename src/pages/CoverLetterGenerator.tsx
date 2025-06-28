@@ -410,6 +410,24 @@ const CoverLetterGenerator: React.FC = () => {
                 />
               </div>
 
+              {/* Personal Highlights */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Personal Highlights (Optional)
+                </h2>
+                
+                <RichTextEditor
+                  value={formData.personalExperience}
+                  onChange={(value) => setFormData(prev => ({ ...prev, personalExperience: value }))}
+                  placeholder="Add specific experiences, achievements, or personal stories that you'd like to highlight in your cover letter. This helps create a more personalized and compelling narrative..."
+                  rows={6}
+                  showWordCount={true}
+                />
+                
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  <p>Examples: Leadership experiences, volunteer work, personal projects, unique achievements, or specific stories that demonstrate your value.</p>
+                </div>
+              </div>
               {/* Tone Selection */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
