@@ -40,6 +40,7 @@ interface ResumeState {
   resumes: Resume[];
   currentResume: Resume | null;
   currentResumeAnalysis: ResumeAnalysisResult | null;
+  currentJobPosting: string | null;
   currentCoverLetter: CoverLetterResult | null;
   currentSkillGapAnalysis: SkillGapResult | null;
   skillGaps: SkillGap[];
@@ -78,6 +79,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
   currentResumeAnalysis: null,
+  currentJobPosting: null,
   currentCoverLetter: null,
   currentSkillGapAnalysis: null,
   skillGaps: [],
@@ -427,8 +429,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         throw new Error('Resume not found');
       }
       
-      // Set as current resume
-      set({ currentResume: resume });
+      // Set as current resume and also set the job posting for the form
+      set({ 
+        currentResume: resume,
+        // Store the job posting separately so the component can access it
+        currentJobPosting: resume.jobPosting
+      });
       
       // Load actual analysis data if available, otherwise create fallback
       let analysisResult: ResumeAnalysisResult;

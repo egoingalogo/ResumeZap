@@ -38,7 +38,7 @@ import toast from 'react-hot-toast';
 const ResumeAnalyzer: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
-  const { analyzeResume, currentResume, currentResumeAnalysis, isAnalyzing, saveResume } = useResumeStore();
+  const { analyzeResume, currentResume, currentResumeAnalysis, currentJobPosting, isAnalyzing, saveResume } = useResumeStore();
   
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -55,18 +55,18 @@ const ResumeAnalyzer: React.FC = () => {
       return;
     }
 
-    // Check if we're viewing a resume from the library/dashboard/activity
-    if (currentResume && currentResumeAnalysis) {
+    // Check if we're viewing a resume from the library/dashboard/activity and load job posting
+    if (currentResume && currentResumeAnalysis && currentJobPosting) {
       console.log('ResumeAnalyzer: Loading resume data for viewing:', currentResume.id);
       
-      // Populate form with resume data
-      setJobPosting(currentResume.jobPosting || '');
+      // Populate form with resume data including job posting
+      setJobPosting(currentJobPosting);
       setIsViewingMode(true);
       
       // Clear the current resume state to prevent re-loading on refresh
       // Note: We don't clear it immediately to allow the UI to load first
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, currentResume, currentResumeAnalysis, currentJobPosting]);
 
   /**
    * Handle file drop for direct Claude AI processing
