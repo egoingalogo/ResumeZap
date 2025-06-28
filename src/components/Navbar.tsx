@@ -210,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                           <span>Tailored Resume</span>
                         </Link>
                         <Link
-                          to="/cover-letter"
+                          to="/cover-letter-library"
                           onClick={() => setIsLibraryOpen(false)}
                           className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
@@ -218,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                           <span>Cover Letter</span>
                         </Link>
                         <Link
-                          to="/skill-gap-analysis"
+                          to="/skill-gap-analysis-library"
                           onClick={() => setIsLibraryOpen(false)}
                           className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >

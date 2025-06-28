@@ -7,6 +7,8 @@ import ResumeAnalyzer from './pages/ResumeAnalyzer';
 import CoverLetterGenerator from './pages/CoverLetterGenerator';
 import SkillGapAnalysis from './pages/SkillGapAnalysis';
 import ResumeLibrary from './pages/ResumeLibrary';
+import CoverLetterLibrary from './pages/CoverLetterLibrary';
+import SkillGapAnalysisLibrary from './pages/SkillGapAnalysisLibrary';
 import ApplicationTracker from './pages/ApplicationTracker';
 import ActivityHistory from './pages/ActivityHistory';
 import Settings from './pages/Settings';
@@ -44,8 +46,10 @@ function App() {
               <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
               <Route path="/resume-library" element={<ResumeLibrary />} />
               <Route path="/cover-letter" element={<CoverLetterGenerator />} />
+              <Route path="/cover-letter-library" element={<CoverLetterLibrary />} />
               <Route path="/activity-history" element={<ActivityHistory />} />
               <Route path="/skill-gap-analysis" element={<SkillGapAnalysis />} />
+              <Route path="/skill-gap-analysis-library" element={<SkillGapAnalysisLibrary />} />
               <Route path="/applications" element={<ApplicationTracker />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/support" element={<EmailSupport />} />

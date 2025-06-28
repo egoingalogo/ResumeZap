@@ -11,7 +11,10 @@ import {
   Clock,
   Award,
   Plus,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  BarChart3,
+  MessageSquare
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { UpgradeModal } from '../components/UpgradeModal';
@@ -123,6 +126,33 @@ const Dashboard: React.FC = () => {
       icon: FolderOpen,
       path: '/applications',
       color: 'from-orange-500 to-orange-600',
+      disabled: false,
+    },
+  ];
+
+  const libraryActions = [
+    {
+      title: 'Cover Letter Library',
+      description: 'View and manage your generated cover letters',
+      icon: Mail,
+      path: '/cover-letter-library',
+      color: 'from-blue-500 to-blue-600',
+      disabled: false,
+    },
+    {
+      title: 'Skill Gap Analysis Library',
+      description: 'Review your skill assessments and learning paths',
+      icon: BarChart3,
+      path: '/skill-gap-analysis-library',
+      color: 'from-green-500 to-green-600',
+      disabled: false,
+    },
+    {
+      title: 'Support',
+      description: 'Get help and contact our support team',
+      icon: MessageSquare,
+      path: '/support',
+      color: 'from-purple-500 to-purple-600',
       disabled: false,
     },
   ];
@@ -379,6 +409,34 @@ const Dashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </div>
               </motion.button>
+              
+              {/* Additional Library Actions */}
+              {libraryActions.map((action, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(action.path)}
+                  className="text-left p-6 rounded-2xl shadow-lg border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200"
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.color} flex items-center justify-center mb-4`}>
+                    <action.icon className="h-6 w-6 text-white" />
+                  </div>
+                  
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                    {action.title}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {action.description}
+                  </p>
+                  
+                  <div className="flex items-center text-purple-600 dark:text-purple-400 text-sm font-medium">
+                    Get Started
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </div>
+                </motion.button>
+              ))}
             </div>
           </motion.div>
 
