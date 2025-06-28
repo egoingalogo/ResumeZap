@@ -1,4 +1,3 @@
-src/components/Navbar.tsx
 src/components/PricingCard.tsx
 src/components/ProfilePictureUpload.tsx
 src/components/UpgradeModal.tsx
