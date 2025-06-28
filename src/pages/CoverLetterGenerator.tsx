@@ -75,7 +75,7 @@ const CoverLetterGenerator: React.FC = () => {
         companyName: coverLetterData.companyName,
         jobTitle: coverLetterData.jobTitle,
         hiringManager: coverLetterData.hiringManager || '',
-        jobDescription: coverLetterData.jobPosting || '', // This loads the job posting from database
+        jobDescription: coverLetterData.jobPosting || '',
         personalExperience: coverLetterData.personalHighlights || '',
         tone: coverLetterData.tone,
       });
@@ -197,7 +197,7 @@ const CoverLetterGenerator: React.FC = () => {
     try {
       await generateCoverLetter(
         '',  // Empty string for resumeContent (no longer used)
-        formData.jobDescription, // This will be saved to job_posting column
+        formData.jobDescription,
         formData.companyName,
         formData.jobTitle,
         formData.tone,
@@ -233,7 +233,7 @@ const CoverLetterGenerator: React.FC = () => {
         companyName: formData.companyName,
         jobTitle: formData.jobTitle,
         tone: formData.tone,
-        jobPosting: formData.jobDescription, // Save job description to job_posting column
+        jobPosting: formData.jobDescription,
         resumeContentSnapshot: uploadedFile ? uploadedFile.name : '',
         customizations: currentCoverLetter.customizations || [],
         keyStrengths: currentCoverLetter.keyStrengths || [],
@@ -241,8 +241,6 @@ const CoverLetterGenerator: React.FC = () => {
       };
 
       await saveCoverLetter(coverLetterData);
-      // Refresh cover letters list to show the newly saved one
-      await fetchCoverLetters();
       toast.success('Cover letter saved to your library!');
     } catch (error) {
       console.error('CoverLetterGenerator: Failed to save cover letter:', error);

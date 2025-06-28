@@ -500,14 +500,21 @@ const Dashboard: React.FC = () => {
                     iconColor: 'text-blue-600 dark:text-blue-400',
                     onClick: () => {
                       console.log('Dashboard: Loading cover letter for viewing:', coverLetter.id);
-                      // Navigate to cover letter generator with the complete cover letter data
-                      navigate('/cover-letter', { 
-                        state: { 
-                          coverLetterData: coverLetter,
-                          isViewing: true 
-                        } 
-                      });
-                      toast.success('Cover letter loaded successfully!');
+                      // Load the cover letter and navigate to generator
+                      useResumeStore.getState().loadCoverLetterForViewing(coverLetter.id)
+                        .then(() => {
+                          navigate('/cover-letter', { 
+                            state: { 
+                              coverLetterData: coverLetter,
+                              isViewing: true 
+                            } 
+                          });
+                          toast.success('Cover letter loaded successfully!');
+                        })
+                        .catch((error) => {
+                          console.error('Dashboard: Failed to load cover letter:', error);
+                          toast.error('Failed to load cover letter. Please try again.');
+                        });
                     }
                   }))
                 ]
