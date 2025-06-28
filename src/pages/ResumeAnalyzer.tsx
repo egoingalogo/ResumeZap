@@ -656,11 +656,17 @@ const ResumeAnalyzer: React.FC = () => {
                     </button>
                     
                     <button
+                      disabled={isViewingMode}
                       onClick={handleSaveResume}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                      className={`w-full py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2 ${
+                        isViewingMode 
+                          ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed' 
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                      title={isViewingMode ? 'This resume is already saved to your library' : 'Save resume to library'}
                     >
                       <FileText className="h-5 w-5" />
-                      <span>Save to Library</span>
+                      <span>{isViewingMode ? 'Already in Library' : 'Save to Library'}</span>
                     </button>
                     
                     <div className="grid grid-cols-3 gap-3">

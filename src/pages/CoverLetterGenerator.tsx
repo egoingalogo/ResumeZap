@@ -720,11 +720,17 @@ const CoverLetterGenerator: React.FC = () => {
                     </button>
                     
                     <button
+                      disabled={isViewingMode}
                       onClick={handleSaveCoverLetter}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                      className={`w-full py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2 ${
+                        isViewingMode 
+                          ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed' 
+                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                      }`}
+                      title={isViewingMode ? 'This cover letter is already saved to your library' : 'Save cover letter to library'}
                     >
                       <FileText className="h-5 w-5" />
-                      <span>Save to Library</span>
+                      <span>{isViewingMode ? 'Already in Library' : 'Save to Library'}</span>
                     </button>
                   
                   {/* New Session Button for Viewing Mode */}
