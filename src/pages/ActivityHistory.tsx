@@ -52,6 +52,7 @@ const ActivityHistory: React.FC = () => {
     fetchResumes, 
     fetchSkillAnalyses,
     fetchCoverLetters,
+    loadCoverLetterForViewing,
     loadResumeForViewing,
     loadSkillAnalysis
   } = useResumeStore();
@@ -160,8 +161,15 @@ const ActivityHistory: React.FC = () => {
           break;
           
         case 'cover_letter':
-          navigate('/cover-letter-library');
-          toast.success('Navigate to cover letter library to view your letters!');
+          console.log('ActivityHistory: Loading cover letter for viewing:', activity.id);
+          await loadCoverLetterForViewing(activity.id);
+          navigate('/cover-letter', { 
+            state: { 
+              coverLetterData: activity.data,
+              isViewing: true 
+            } 
+          });
+          toast.success('Cover letter loaded successfully!');
           break;
           
         case 'application':
