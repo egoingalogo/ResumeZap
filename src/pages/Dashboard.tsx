@@ -12,8 +12,6 @@ import {
   Award,
   Plus,
   ChevronRight,
-  Mail,
-  BarChart3,
   MessageSquare
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
