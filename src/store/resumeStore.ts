@@ -429,13 +429,6 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         throw new Error('Resume not found');
       }
       
-      // Set as current resume and also set the job posting for the form
-      set({ 
-        currentResume: resume,
-        // Store the job posting separately so the component can access it
-        currentJobPosting: resume.jobPosting
-      });
-      
       // Load actual analysis data if available, otherwise create fallback
       let analysisResult: ResumeAnalysisResult;
       
@@ -504,7 +497,13 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         ]
       };
       
-      set({ currentResumeAnalysis: safeAnalysisResult });
+      // Set as current resume and also set the job posting for the form
+      set({ 
+        currentResume: resume,
+        currentJobPosting: resume.jobPosting,
+        currentResumeAnalysis: safeAnalysisResult,
+        error: null
+      });
       
       console.log('ResumeStore: Resume loaded for viewing successfully');
       

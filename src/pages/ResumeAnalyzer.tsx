@@ -56,7 +56,7 @@ const ResumeAnalyzer: React.FC = () => {
     }
 
     // Check if we're viewing a resume from the library/dashboard/activity and load job posting
-    if (currentResume && currentResumeAnalysis && currentJobPosting) {
+    if (currentResume && currentResumeAnalysis && currentJobPosting && !isViewingMode) {
       console.log('ResumeAnalyzer: Loading resume data for viewing:', currentResume.id);
       
       // Populate form with resume data including job posting
@@ -66,6 +66,16 @@ const ResumeAnalyzer: React.FC = () => {
       // Clear the current resume state to prevent re-loading on refresh
       // Note: We don't clear it immediately to allow the UI to load first
     }
+    
+    // Handle case where currentJobPosting is available but form hasn't been populated yet
+    if (currentJobPosting && !jobPosting && currentResume && currentResumeAnalysis) {
+      console.log('ResumeAnalyzer: Setting job posting from currentJobPosting');
+      setJobPosting(currentJobPosting);
+      if (!isViewingMode) {
+        setIsViewingMode(true);
+      }
+    }
+    
   }, [isAuthenticated, navigate, currentResume, currentResumeAnalysis, currentJobPosting]);
 
   /**
