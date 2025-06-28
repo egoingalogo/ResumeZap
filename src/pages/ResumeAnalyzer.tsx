@@ -197,10 +197,16 @@ const ResumeAnalyzer: React.FC = () => {
     setIsExporting(format);
     
     try {
+      // Generate filename with original file name if available
+      const originalFileName = uploadedFile ? 
+        uploadedFile.name.replace(/\.[^/.]+$/, '') : // Remove extension
+        'resume';
+      const exportFileName = `optimized_resume_${originalFileName}`;
+      
       const result = await exportResume(
         currentResumeAnalysis.tailoredResume,
         format,
-        'optimized_resume'
+        exportFileName
       );
       
       if (result.success) {

@@ -303,13 +303,18 @@ export const exportResume = async (
   // Sanitize filename
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_-]/g, '_');
   
+  // For the new naming format, ensure it starts with "optimized_resume_"
+  const finalFileName = sanitizedFileName.startsWith('optimized_resume_') 
+    ? sanitizedFileName 
+    : `optimized_resume_${sanitizedFileName}`;
+  
   switch (format) {
     case 'pdf':
-      return await exportToPDF(content, sanitizedFileName);
+      return await exportToPDF(content, finalFileName);
     case 'docx':
-      return await exportToDOCX(content, sanitizedFileName);
+      return await exportToDOCX(content, finalFileName);
     case 'txt':
-      return await exportToTXT(content, sanitizedFileName);
+      return await exportToTXT(content, finalFileName);
     default:
       return {
         success: false,
