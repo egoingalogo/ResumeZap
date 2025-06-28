@@ -282,6 +282,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
               {isAuthenticated && (
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  to="/resume-library"
+                  className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                >
+                  Resume Library
+                </Link>
+                <Link
                   disabled={isLoggingOut}
                   className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
                 >
@@ -318,6 +324,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Resume Analyzer
+              </Link>
+              <Link
+                to="/resume-library"
+                className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
+              >
+                Resume Library
               </Link>
               <Link
                 to="/resume-library"

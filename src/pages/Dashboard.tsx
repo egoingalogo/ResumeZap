@@ -354,6 +354,31 @@ const Dashboard: React.FC = () => {
                   </div>
                 </motion.button>
               ))}
+              
+              {/* Resume Library Quick Action */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('/resume-library')}
+                className="text-left p-6 rounded-2xl shadow-lg border bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center mb-4">
+                  <FolderOpen className="h-6 w-6 text-white" />
+                </div>
+                
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Resume Library
+                </h3>
+                
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  View and manage your optimized resumes
+                </p>
+                
+                <div className="flex items-center text-purple-600 dark:text-purple-400 text-sm font-medium">
+                  View Library
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </div>
+              </motion.button>
             </div>
           </motion.div>
 
@@ -369,7 +394,7 @@ const Dashboard: React.FC = () => {
                 Recent Activity
               </h2>
               <button 
-                onClick={() => navigate('/resume-analyzer')}
+                onClick={() => navigate('/activity-history')}
                 className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium"
               >
                 View All
