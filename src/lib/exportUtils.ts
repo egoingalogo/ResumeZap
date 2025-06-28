@@ -303,10 +303,15 @@ export const exportResume = async (
   // Sanitize filename
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_-]/g, '_');
   
-  // For the new naming format, ensure it starts with "optimized_resume_"
-  const finalFileName = sanitizedFileName.startsWith('optimized_resume_') 
-    ? sanitizedFileName 
-    : `optimized_resume_${sanitizedFileName}`;
+  // Determine if this is a cover letter or resume export
+  const isCoverLetter = sanitizedFileName.startsWith('Cover_Letter_');
+  
+  // Apply appropriate naming convention
+  const finalFileName = isCoverLetter 
+    ? sanitizedFileName  // Keep cover letter format as-is
+    : (sanitizedFileName.startsWith('optimized_resume_') 
+       ? sanitizedFileName 
+       : `optimized_resume_${sanitizedFileName}`); // Apply resume prefix for resumes
   
   switch (format) {
     case 'pdf':

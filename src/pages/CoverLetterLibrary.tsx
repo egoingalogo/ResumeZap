@@ -105,7 +105,10 @@ const CoverLetterLibrary: React.FC = () => {
     setIsExporting(coverLetter.id);
     
     try {
-      const exportFileName = `cover_letter_${coverLetter.companyName}_${coverLetter.jobTitle}`;
+      // Generate filename with new format: Cover_Letter_Company_JobTitle
+      const sanitizedCompany = coverLetter.companyName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const sanitizedJobTitle = coverLetter.jobTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const exportFileName = `Cover_Letter_${sanitizedCompany}_${sanitizedJobTitle}`;
       
       const result = await exportResume(coverLetter.content, format, exportFileName);
       

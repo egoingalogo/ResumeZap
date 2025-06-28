@@ -271,8 +271,10 @@ const CoverLetterGenerator: React.FC = () => {
     setIsExporting(format);
     
     try {
-      // Generate filename with company and job title
-      const exportFileName = `cover_letter_${formData.companyName}_${formData.jobTitle}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      // Generate filename with new format: Cover_Letter_Company_JobTitle
+      const sanitizedCompany = formData.companyName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const sanitizedJobTitle = formData.jobTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const exportFileName = `Cover_Letter_${sanitizedCompany}_${sanitizedJobTitle}`;
       
       const result = await exportResume(
         currentCoverLetter.coverLetter,
