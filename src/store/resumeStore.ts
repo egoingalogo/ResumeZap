@@ -224,6 +224,27 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         error: null 
       });
       
+      // Auto-save the generated cover letter to database
+      try {
+        const coverLetterData: Omit<CoverLetter, 'id' | 'createdAt' | 'updatedAt'> = {
+          title: `Cover Letter - ${companyName} - ${jobTitle}`,
+          content: coverLetterResult.coverLetter,
+          companyName: companyName,
+          jobTitle: jobTitle,
+          tone: tone as 'professional' | 'enthusiastic' | 'concise',
+          jobPosting: jobPosting,
+          resumeContentSnapshot: resumeFile ? resumeFile.name : resumeContent.substring(0, 500),
+          customizations: coverLetterResult.customizations || [],
+          keyStrengths: coverLetterResult.keyStrengths || [],
+          callToAction: coverLetterResult.callToAction,
+        };
+        
+        await get().saveCoverLetter(coverLetterData);
+        console.log('ResumeStore: Cover letter auto-saved to database');
+      } catch (saveError) {
+        console.error('ResumeStore: Failed to auto-save cover letter:', saveError);
+        // Don't throw error for save failure - generation was successful
+      }
       console.log('ResumeStore: Cover letter generated successfully');
       
     } catch (error) {

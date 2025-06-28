@@ -28,7 +28,7 @@ const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, upgradePlan, isLoading, lifetimeUserCount } = useAuthStore();
-  const { resumes, skillAnalyses, fetchResumes, fetchSkillAnalyses } = useResumeStore();
+  const { resumes, skillAnalyses, coverLetters, fetchResumes, fetchSkillAnalyses, fetchCoverLetters } = useResumeStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   console.log('Dashboard: Component mounted for user:', user?.email);
@@ -53,6 +53,12 @@ const Dashboard: React.FC = () => {
         console.error('Dashboard: Failed to fetch skill analyses:', error);
         // Don't crash the dashboard if skill analyses fail to load
       });
+      
+      // Fetch cover letters
+      fetchCoverLetters().catch(error => {
+        console.error('Dashboard: Failed to fetch cover letters:', error);
+        // Don't crash the dashboard if cover letters fail to load
+      });
 
       // Handle upgrade parameter from registration
       const upgradeParam = searchParams.get('upgrade');
@@ -64,7 +70,7 @@ const Dashboard: React.FC = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [isAuthenticated, isLoading, navigate, searchParams, upgradePlan, user, fetchResumes]);
+  }, [isAuthenticated, isLoading, navigate, searchParams, upgradePlan, user, fetchResumes, fetchSkillAnalyses, fetchCoverLetters]);
 
   if (isLoading) {
     return (
@@ -179,7 +185,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Cover Letters',
-      value: 0, // Will be updated when cover letters are tracked
+      value: coverLetters.length,
       icon: Award,
       change: null,
       changeType: null,
@@ -457,16 +463,21 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            {resumes.length > 0 ? (
+            {resumes.length > 0 || coverLetters.length > 0 ? (
               <div className="space-y-4">
-                {resumes.slice(0, 3).map((resume) => (
-                  <motion.button
-                    key={resume.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
+                {/* Combine and sort recent activities */}
+                {[
+                  ...resumes.map(resume => ({
+                    id: resume.id,
+                    type: 'resume' as const,
+                    title: resume.title,
+                    subtitle: `Match Score: ${resume.matchScore}%`,
+                    date: resume.createdAt,
+                    icon: FileText,
+                    color: 'bg-purple-100 dark:bg-purple-900',
+                    iconColor: 'text-purple-600 dark:text-purple-400',
+                    onClick: () => {
                       console.log('Dashboard: Navigating to resume:', resume.id);
-                      // Load the resume and navigate to analyzer
                       useResumeStore.getState().loadResumeForViewing(resume.id)
                         .then(() => {
                           navigate('/resume-analyzer');
@@ -476,23 +487,48 @@ const Dashboard: React.FC = () => {
                           console.error('Dashboard: Failed to load resume:', error);
                           toast.error('Failed to load resume. Please try again.');
                         });
-                    }}
+                    }
+                  })),
+                  ...coverLetters.map(coverLetter => ({
+                    id: coverLetter.id,
+                    type: 'cover_letter' as const,
+                    title: coverLetter.title,
+                    subtitle: `${coverLetter.companyName} - ${coverLetter.jobTitle}`,
+                    date: coverLetter.createdAt,
+                    icon: Mail,
+                    color: 'bg-blue-100 dark:bg-blue-900',
+                    iconColor: 'text-blue-600 dark:text-blue-400',
+                    onClick: () => {
+                      console.log('Dashboard: Navigating to cover letter library');
+                      navigate('/cover-letter-library');
+                      toast.success('Navigate to cover letter library to view your letters!');
+                    }
+                  }))
+                ]
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .slice(0, 3)
+                .map((activity) => (
+                  <motion.button
+                    key={activity.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={activity.onClick}
                     className="w-full flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 text-left"
                   >
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className={`w-10 h-10 ${activity.color} rounded-lg flex items-center justify-center`}>
+                      <activity.icon className={`h-5 w-5 ${activity.iconColor}`} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 dark:text-white">
-                        {resume.title}
+                        {activity.title}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Match Score: {resume.matchScore}%
+                        {activity.subtitle}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                       <Clock className="h-4 w-4" />
-                      <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
+                      <span>{new Date(activity.date).toLocaleDateString()}</span>
                     </div>
                   </motion.button>
                 ))}
@@ -501,10 +537,10 @@ const Dashboard: React.FC = () => {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No resumes yet
+                  No activity yet
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Start by analyzing your first resume to see it here
+                  Start by analyzing your first resume or generating a cover letter to see activity here
                 </p>
                 <button
                   onClick={() => navigate('/resume-analyzer')}
