@@ -561,7 +561,7 @@ const ResumeAnalyzer: React.FC = () => {
                                     <p className="text-sm text-gray-600 dark:text-gray-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
                                       {change.improved}
                                     </p>
-                                    {(currentResumeAnalysis.keywordMatches?.found || []).map((keyword, index) => (
+                                  </div>
                                   <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                                     <p className="text-sm text-blue-800 dark:text-blue-400">
                                       <strong>Why:</strong> {change.reason}
@@ -613,7 +613,7 @@ const ResumeAnalyzer: React.FC = () => {
                               <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-3 flex items-center space-x-2">
                                 <Lightbulb className="h-4 w-4" />
                                 <span>Suggestions</span>
-                                    {(currentResumeAnalysis.keywordMatches?.suggestions || []).map((suggestion, index) => (
+                              </h4>
                               <div className="space-y-2">
                                 {currentResumeAnalysis.keywordMatches.suggestions.map((suggestion, index) => (
                                   <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-sm text-blue-800 dark:text-blue-400">
@@ -630,7 +630,7 @@ const ResumeAnalyzer: React.FC = () => {
                         <div className="space-y-4">
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             ATS Optimization Tips
-                                {(currentResumeAnalysis.atsOptimizations || []).map((tip, index) => (
+                          </h3>
                           <div className="space-y-3">
                             {currentResumeAnalysis.atsOptimizations.map((tip, index) => (
                               <div key={index} className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
