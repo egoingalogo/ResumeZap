@@ -239,6 +239,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           customizations: coverLetterResult.customizations || [],
           keyStrengths: coverLetterResult.keyStrengths || [],
           callToAction: coverLetterResult.callToAction,
+          hiringManager: hiringManager?.trim() || undefined,
+          personalHighlights: personalExperience?.trim() || undefined,
         };
         
         await get().saveCoverLetter(coverLetterData);
