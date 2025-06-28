@@ -10,7 +10,9 @@ import {
   User, 
   Settings, 
   LogOut,
-  Crown
+ Briefcase,
+ ChevronDown,
+ FolderOpen
 } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 import { useAuthStore } from '../store/authStore';
@@ -31,7 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const { user, isAuthenticated, logout, isLoggingOut } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = React.useState(false);
   const profileDropdownRef = React.useRef<HTMLDivElement>(null);
+  const libraryDropdownRef = React.useRef<HTMLDivElement>(null);
   
   console.log('Navbar: Rendering with authentication state:', isAuthenticated);
   console.log('Navbar: User profile picture URL:', user?.profilePictureUrl);
@@ -42,16 +46,19 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
+      if (libraryDropdownRef.current && !libraryDropdownRef.current.contains(event.target as Node)) {
+        setIsLibraryOpen(false);
+      }
     };
 
-    if (isProfileOpen) {
+    if (isProfileOpen || isLibraryOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileOpen]);
+  }, [isProfileOpen, isLibraryOpen]);
 
   const handleLogout = async () => {
     console.log('Navbar: User logout initiated');
@@ -145,6 +152,16 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                     Resume Analyzer
                   </Link>
                   <Link
+                    to="/cover-letter"
+                    className={`text-sm font-medium transition-colors duration-200 ${
+                      location.pathname === '/cover-letter'
+                        ? 'text-purple-600 dark:text-purple-400'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                    }`}
+                  >
+                    Cover Letter
+                  </Link>
+                  <Link
                     to="/skill-gap-analysis"
                     className={`text-sm font-medium transition-colors duration-200 ${
                       location.pathname === '/skill-gap-analysis'
@@ -154,26 +171,60 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                   >
                     Skill Gap Analysis
                   </Link>
-                  <Link
-                    to="/applications"
-                    className={`text-sm font-medium transition-colors duration-200 ${
-                      location.pathname === '/applications'
-                        ? 'text-purple-600 dark:text-purple-400'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
-                    }`}
-                  >
-                    Applications
-                  </Link>
-                  <Link
-                    to="/support"
-                    className={`text-sm font-medium transition-colors duration-200 ${
-                      location.pathname === '/support'
-                        ? 'text-purple-600 dark:text-purple-400'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
-                    }`}
-                  >
-                    Support
-                  </Link>
+                  
+                  {/* Library Dropdown */}
+                  <div className="relative" ref={libraryDropdownRef}>
+                    <button
+                      onClick={() => setIsLibraryOpen(!isLibraryOpen)}
+                      disabled={isLoggingOut}
+                      className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 disabled:opacity-50 flex items-center space-x-1"
+                    >
+                      <span>Library</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+
+                    {isLibraryOpen && !isLoggingOut && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                      >
+                        <Link
+                          to="/applications"
+                          onClick={() => setIsLibraryOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <FolderOpen className="h-4 w-4" />
+                          <span>Applications</span>
+                        </Link>
+                        <Link
+                          to="/resume-library"
+                          onClick={() => setIsLibraryOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span>Tailored Resume</span>
+                        </Link>
+                        <Link
+                          to="/cover-letter"
+                          onClick={() => setIsLibraryOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <Mail className="h-4 w-4" />
+                          <span>Cover Letter</span>
+                        </Link>
+                        <Link
+                          to="/skill-gap-analysis"
+                          onClick={() => setIsLibraryOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                          <span>Skill Gap Analysis</span>
+                        </Link>
+                      </motion.div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -249,6 +300,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                         <Settings className="h-4 w-4" />
                         <span>Settings</span>
                       </Link>
+                      <Link
+                        to="/support"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <Mail className="h-4 w-4" />
+                        <span>Support</span>
+                      </Link>
                       <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}
@@ -320,6 +379,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 Resume Analyzer
               </Link>
               <Link
+                to="/cover-letter"
+                className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Cover Letter
+              </Link>
+              <Link
                 to="/skill-gap-analysis"
                 className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
                 onClick={() => setIsMenuOpen(false)}
@@ -334,11 +400,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
                 Applications
               </Link>
               <Link
-                to="/support"
+                to="/resume-library"
                 className="block py-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Support
+                Resume Library
               </Link>
             </div>
           </motion.div>
