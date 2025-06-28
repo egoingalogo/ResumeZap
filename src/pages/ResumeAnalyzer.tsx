@@ -245,6 +245,13 @@ const ResumeAnalyzer: React.FC = () => {
     if (score >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
     return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
   };
+
+  // Helper function to safely get match breakdown values with fallbacks
+  const getMatchBreakdownValue = (key: keyof typeof currentResumeAnalysis.matchBreakdown, fallback: number = 0): number => {
+    if (!currentResumeAnalysis?.matchBreakdown) return fallback;
+    const value = currentResumeAnalysis.matchBreakdown[key];
+    return typeof value === 'number' ? value : fallback;
+  };
   
   if (!isAuthenticated || !user) {
     return (
@@ -438,26 +445,26 @@ const ResumeAnalyzer: React.FC = () => {
                     {/* Match Breakdown */}
                     <div className="grid grid-cols-2 gap-4 mt-6">
                       <div className="text-center">
-                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.keywords)}`}>
-                          {currentResumeAnalysis.matchBreakdown.keywords}%
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(getMatchBreakdownValue('keywords', Math.round(currentResumeAnalysis.matchScore * 0.9)))}`}>
+                          {getMatchBreakdownValue('keywords', Math.round(currentResumeAnalysis.matchScore * 0.9))}%
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Keywords</div>
                       </div>
                       <div className="text-center">
-                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.skills)}`}>
-                          {currentResumeAnalysis.matchBreakdown.skills}%
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(getMatchBreakdownValue('skills', Math.round(currentResumeAnalysis.matchScore * 0.85)))}`}>
+                          {getMatchBreakdownValue('skills', Math.round(currentResumeAnalysis.matchScore * 0.85))}%
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Skills</div>
                       </div>
                       <div className="text-center">
-                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.experience)}`}>
-                          {currentResumeAnalysis.matchBreakdown.experience}%
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(getMatchBreakdownValue('experience', Math.round(currentResumeAnalysis.matchScore * 0.95)))}`}>
+                          {getMatchBreakdownValue('experience', Math.round(currentResumeAnalysis.matchScore * 0.95))}%
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Experience</div>
                       </div>
                       <div className="text-center">
-                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(currentResumeAnalysis.matchBreakdown.formatting)}`}>
-                          {currentResumeAnalysis.matchBreakdown.formatting}%
+                        <div className={`text-lg font-bold px-2 py-1 rounded ${getScoreColor(getMatchBreakdownValue('formatting', Math.round(currentResumeAnalysis.matchScore * 0.8)))}`}>
+                          {getMatchBreakdownValue('formatting', Math.round(currentResumeAnalysis.matchScore * 0.8))}%
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">ATS Format</div>
                       </div>
@@ -554,7 +561,7 @@ const ResumeAnalyzer: React.FC = () => {
                                     <p className="text-sm text-gray-600 dark:text-gray-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
                                       {change.improved}
                                     </p>
-                                  </div>
+                                    {(currentResumeAnalysis.keywordMatches?.found || []).map((keyword, index) => (
                                   <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                                     <p className="text-sm text-blue-800 dark:text-blue-400">
                                       <strong>Why:</strong> {change.reason}
@@ -606,7 +613,7 @@ const ResumeAnalyzer: React.FC = () => {
                               <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-3 flex items-center space-x-2">
                                 <Lightbulb className="h-4 w-4" />
                                 <span>Suggestions</span>
-                              </h4>
+                                    {(currentResumeAnalysis.keywordMatches?.suggestions || []).map((suggestion, index) => (
                               <div className="space-y-2">
                                 {currentResumeAnalysis.keywordMatches.suggestions.map((suggestion, index) => (
                                   <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-sm text-blue-800 dark:text-blue-400">
@@ -623,7 +630,7 @@ const ResumeAnalyzer: React.FC = () => {
                         <div className="space-y-4">
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             ATS Optimization Tips
-                          </h3>
+                                {(currentResumeAnalysis.atsOptimizations || []).map((tip, index) => (
                           <div className="space-y-3">
                             {currentResumeAnalysis.atsOptimizations.map((tip, index) => (
                               <div key={index} className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">

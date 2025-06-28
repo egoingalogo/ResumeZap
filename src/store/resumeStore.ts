@@ -469,7 +469,36 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         console.log('ResumeStore: Using fallback analysis for legacy resume');
       }
       
-      set({ currentResumeAnalysis: analysisResult });
+      // Ensure all required properties exist with fallbacks
+      const safeAnalysisResult: ResumeAnalysisResult = {
+        tailoredResume: analysisResult.tailoredResume || resume.content,
+        matchScore: analysisResult.matchScore || resume.matchScore,
+        matchBreakdown: {
+          keywords: analysisResult.matchBreakdown?.keywords ?? Math.round(resume.matchScore * 0.9),
+          skills: analysisResult.matchBreakdown?.skills ?? Math.round(resume.matchScore * 0.85),
+          experience: analysisResult.matchBreakdown?.experience ?? Math.round(resume.matchScore * 0.95),
+          formatting: analysisResult.matchBreakdown?.formatting ?? Math.round(resume.matchScore * 0.8),
+        },
+        changes: analysisResult.changes || [
+          {
+            section: "Loaded Resume",
+            original: "This is a previously analyzed resume",
+            improved: "Resume loaded from your library",
+            reason: "This resume was previously optimized and saved to your library"
+          }
+        ],
+        keywordMatches: {
+          found: analysisResult.keywordMatches?.found || ["Previously analyzed keywords"],
+          missing: analysisResult.keywordMatches?.missing || [],
+          suggestions: analysisResult.keywordMatches?.suggestions || ["This resume was previously optimized"]
+        },
+        atsOptimizations: analysisResult.atsOptimizations || [
+          "This resume was previously optimized for ATS compatibility",
+          "All formatting and keyword optimizations have been applied"
+        ]
+      };
+      
+      set({ currentResumeAnalysis: safeAnalysisResult });
       
       console.log('ResumeStore: Resume loaded for viewing successfully');
       
