@@ -387,7 +387,7 @@ const SkillGapAnalysis: React.FC = () => {
 
           {skillGaps.length === 0 && !currentSkillAnalysis && !currentSkillGapAnalysis ? (
             /* Input Section */
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-8">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -494,23 +494,6 @@ const SkillGapAnalysis: React.FC = () => {
                 </motion.button>
               </motion.div>
 
-              {/* Placeholder */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg border border-gray-100 dark:border-gray-700 text-center"
-              >
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Brain className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Ready for Analysis
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Paste your resume and target job posting to get personalized skill gap insights and learning recommendations
-                </p>
-              </motion.div>
             </div>
           ) : (
             /* Results Section */
@@ -853,7 +836,7 @@ const SkillGapAnalysis: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Legacy Skill Gaps Display for backward compatibility */}
+              {/* Skill Gaps Display */}
               {!currentSkillGapAnalysis && skillGaps.length > 0 && (
                 <div className="space-y-6">
                   {skillGaps.map((gap, index) => {

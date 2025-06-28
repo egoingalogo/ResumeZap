@@ -643,7 +643,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onInput={handleContentChange}
         onKeyUp={handleKeyUp}
         onPaste={handlePaste}
-        onKeyUp={handleKeyUp}
         onKeyDown={handleKeyDown}
         onMouseUp={() => { handleSelectionChange(); resetFormattingIfNeeded(); }}
         className={`w-full px-4 py-3 border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none overflow-y-auto transition-all duration-200 ${

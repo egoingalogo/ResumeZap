@@ -269,7 +269,7 @@ const CoverLetterGenerator: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="flex flex-col gap-8">
             {/* Input Section */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -477,12 +477,15 @@ const CoverLetterGenerator: React.FC = () => {
             </motion.div>
 
             {/* Output Section */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-6"
-            >
+          </div>
+          
+          {/* Output Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-6 mt-8"
+          >
               {currentCoverLetter ? (
                 <>
                   {/* Cover Letter Tabs */}
@@ -631,8 +634,7 @@ const CoverLetterGenerator: React.FC = () => {
                   </p>
                 </div>
               )}
-            </motion.div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
