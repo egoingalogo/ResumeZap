@@ -45,10 +45,10 @@ const CoverLetterGenerator: React.FC = () => {
     jobTitle: '',
     hiringManager: '',
     jobDescription: '',
+    personalExperience: '',
     tone: 'professional' as 'professional' | 'enthusiastic' | 'concise',
   });
   
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<'letter' | 'customizations' | 'strengths'>('letter');
 
   console.log('CoverLetterGenerator: Component mounted');
@@ -59,67 +59,6 @@ const CoverLetterGenerator: React.FC = () => {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
-
-  /**
-   * Handle file drop for direct Claude AI processing
-   * Validates file type and size before storing for AI analysis
-   */
-  const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    console.log('CoverLetterGenerator: PDF file dropped:', file.name, 'Type:', file.type);
-    
-    if (file) {
-      // Validate PDF file type only
-      const allowedTypes = [
-        'application/pdf',
-      ];
-      
-      const allowedExtensions = ['.pdf'];
-      const fileName = file.name.toLowerCase();
-      
-      const hasValidType = allowedTypes.includes(file.type.toLowerCase());
-      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-      
-      if (!hasValidType && !hasValidExtension) {
-        toast.error('Please upload a PDF file only.');
-        return;
-      }
-      
-      // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        toast.error('File size exceeds 10MB limit. Please use a smaller file.');
-        return;
-      }
-      
-      // Validate file size (min 1KB to avoid empty files)
-      if (file.size < 1024) {
-        toast.error('File is too small. Please ensure your file contains resume content.');
-        return;
-      }
-      
-      setUploadedFile(file);
-      
-      // Show success message
-      toast.success(
-        `PDF file uploaded successfully! Ready for cover letter generation.`,
-        { duration: 4000 }
-      );
-      
-      console.log('CoverLetterGenerator: File uploaded successfully:', {
-        fileName: file.name,
-        fileSize: `${(file.size / 1024).toFixed(1)}KB`,
-      });
-    }
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-    },
-    multiple: false,
-  });
 
   /**
    * Handle file drop for direct Claude AI processing
@@ -225,11 +164,6 @@ const CoverLetterGenerator: React.FC = () => {
       return;
     }
     
-    if (!uploadedFile) {
-      toast.error('Please upload your resume as a PDF file');
-      return;
-    }
-    
     console.log('CoverLetterGenerator: Starting generation with tone:', formData.tone);
     updateUsage('coverLetters');
 
@@ -241,7 +175,6 @@ const CoverLetterGenerator: React.FC = () => {
         formData.jobTitle,
         formData.tone,
         uploadedFile  // Pass the uploaded file to the function
-        uploadedFile
       );
       toast.success('Cover letter generated successfully!');
       
@@ -340,15 +273,12 @@ const CoverLetterGenerator: React.FC = () => {
 
           <div className="flex flex-col gap-8">
             {/* Input Section */}
-          </div>
-          
-          {/* Output Section - Now below input instead of side-by-side */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-6 mt-8"
-          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="space-y-6"
+            >
               {/* Job Details */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -449,55 +379,6 @@ const CoverLetterGenerator: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-green-800 dark:text-green-400">
                           File ready for cover letter generation
-              {/* Resume Upload */}
-                        <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
-                          <div className="flex items-center space-x-4">
-                  Upload Your Resume *
-                            <span>Type: PDF</span>
-                          </div>
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
-                    isDragActive
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500'
-                  }`}
-                >
-                  <input {...getInputProps()} />
-                  <div className="space-y-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
-                      uploadedFile
-                        ? 'bg-green-100 dark:bg-green-900'
-                        : 'bg-purple-100 dark:bg-purple-900'
-                    }`}>
-                      {uploadedFile ? (
-                        <FileCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <Upload className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-lg font-medium text-gray-900 dark:text-white">
-                        {uploadedFile 
-                          ? `✓ ${uploadedFile.name}`
-                          : 'Drop your PDF resume here'
-                        }
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Supports PDF files only (max 10MB)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* File upload success info */}
-                {uploadedFile && (
-                  <div className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-green-800 dark:text-green-400">
-                          File ready for cover letter generation
                         </p>
                         <div className="mt-2 text-xs text-green-700 dark:text-green-500 space-y-1">
                           <div className="flex items-center space-x-4">
@@ -510,7 +391,7 @@ const CoverLetterGenerator: React.FC = () => {
                     </div>
                   </div>
                 )}
-              
+              </div>
 
               {/* Job Description */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
@@ -523,21 +404,6 @@ const CoverLetterGenerator: React.FC = () => {
                   onChange={(value) => setFormData(prev => ({ ...prev, jobDescription: value }))}
                   placeholder="Paste the job description or key requirements here. Copy directly from the job posting to preserve all details..."
                   rows={8}
-                  showWordCount={true}
-                />
-              </div>
-
-              {/* Personal Experience */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Personal Highlights (Optional)
-                </h2>
-                
-                <RichTextEditor
-                  value={formData.personalExperience}
-                  onChange={(value) => setFormData(prev => ({ ...prev, personalExperience: value }))}
-                  placeholder="Share a specific achievement or experience that makes you stand out for this role. Use bullet points or formatting to highlight key accomplishments..."
-                  rows={4}
                   showWordCount={true}
                 />
               </div>
@@ -598,15 +464,12 @@ const CoverLetterGenerator: React.FC = () => {
             </motion.div>
 
             {/* Output Section */}
-          </div>
-          
-          {/* Output Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-6 mt-8"
-          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="space-y-6"
+            >
               {currentCoverLetter ? (
                 <>
                   {/* Cover Letter Tabs */}
@@ -755,7 +618,9 @@ const CoverLetterGenerator: React.FC = () => {
                   </p>
                 </div>
               )}
-          </motion.div>
+            </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );
