@@ -79,7 +79,6 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
   currentResumeAnalysis: null,
-  currentJobPosting: null,
   currentCoverLetter: null,
   currentSkillGapAnalysis: null,
   skillGaps: [],

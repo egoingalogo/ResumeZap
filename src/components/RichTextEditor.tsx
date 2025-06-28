@@ -43,9 +43,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Update content when value prop changes
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value && !document.activeElement?.contains(editorRef.current)) {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      // Only update if the editor is not currently focused (to avoid interrupting user typing)
+      const isEditorFocused = document.activeElement === editorRef.current || 
+                             editorRef.current.contains(document.activeElement);
+      
+      if (!isEditorFocused) {
+        console.log('RichTextEditor: Updating content with value:', value.substring(0, 100) + '...');
       editorRef.current.innerHTML = value;
       updateCounts();
+        updateActiveFormats();
+      }
     }
   }, [value]);
 
