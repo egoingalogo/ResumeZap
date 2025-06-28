@@ -10,7 +10,10 @@ import {
   User, 
   Settings, 
   LogOut,
- Briefcase,
+  Crown,
+  Mail,
+  FileText,
+  BarChart3,
  ChevronDown,
  FolderOpen
 } from 'lucide-react';
