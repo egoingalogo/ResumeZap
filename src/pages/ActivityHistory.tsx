@@ -47,9 +47,11 @@ const ActivityHistory: React.FC = () => {
   const { 
     resumes, 
     skillAnalyses, 
+    coverLetters,
     isLoading, 
     fetchResumes, 
     fetchSkillAnalyses,
+    fetchCoverLetters,
     loadResumeForViewing,
     loadSkillAnalysis
   } = useResumeStore();
@@ -76,8 +78,11 @@ const ActivityHistory: React.FC = () => {
       fetchSkillAnalyses().catch(error => {
         console.error('ActivityHistory: Failed to fetch skill analyses:', error);
       })
+      fetchCoverLetters().catch(error => {
+        console.error('ActivityHistory: Failed to fetch cover letters:', error);
+      })
     ]);
-  }, [isAuthenticated, navigate, fetchResumes, fetchSkillAnalyses]);
+  }, [isAuthenticated, navigate, fetchResumes, fetchSkillAnalyses, fetchCoverLetters]);
 
   // Combine all activities into a unified list
   useEffect(() => {
@@ -115,11 +120,24 @@ const ActivityHistory: React.FC = () => {
       });
     });
 
-    // TODO: Add cover letter activities when implemented
+    // Add cover letter activities
+    coverLetters.forEach(coverLetter => {
+      allActivities.push({
+        id: coverLetter.id,
+        type: 'cover_letter',
+        title: coverLetter.title,
+        subtitle: `${coverLetter.companyName} - ${coverLetter.jobTitle} (${coverLetter.tone})`,
+        date: coverLetter.createdAt,
+        icon: Mail,
+        color: 'from-blue-500 to-blue-600',
+        data: coverLetter
+      });
+    });
+
     // TODO: Add application activities when implemented
 
     setActivities(allActivities);
-  }, [resumes, skillAnalyses]);
+  }, [resumes, skillAnalyses, coverLetters]);
 
   /**
    * Handle activity item click - navigate to appropriate page with data loaded
@@ -142,9 +160,8 @@ const ActivityHistory: React.FC = () => {
           break;
           
         case 'cover_letter':
-          // TODO: Implement cover letter loading
-          navigate('/cover-letter');
-          toast.info('Cover letter feature - loading previous letters coming soon!');
+          navigate('/cover-letter-library');
+          toast.success('Navigate to cover letter library to view your letters!');
           break;
           
         case 'application':
@@ -205,7 +222,7 @@ const ActivityHistory: React.FC = () => {
       total: activities.length,
       resume: activities.filter(a => a.type === 'resume').length,
       skill_analysis: activities.filter(a => a.type === 'skill_analysis').length,
-      cover_letter: activities.filter(a => a.type === 'cover_letter').length,
+      cover_letter: coverLetters.length,
       application: activities.filter(a => a.type === 'application').length,
     };
     return stats;
@@ -302,7 +319,7 @@ const ActivityHistory: React.FC = () => {
                   <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.cover_letter}</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{coverLetters.length}</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">Cover Letters</div>
                 </div>
               </div>
@@ -465,6 +482,12 @@ const ActivityHistory: React.FC = () => {
                       className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200"
                     >
                       Analyze Resume
+                    </button>
+                    <button
+                      onClick={() => navigate('/cover-letter')}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200"
+                    >
+                      Generate Cover Letter
                     </button>
                     <button
                       onClick={() => navigate('/skill-gap-analysis')}
