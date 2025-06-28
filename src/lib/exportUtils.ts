@@ -139,122 +139,17 @@ export const exportToDOCX = async (content: string, fileName: string = 'resume')
   console.log('ExportUtils: Starting DOCX export');
   
   try {
-    // Create a basic DOCX structure using PizZip
-    const zip = new PizZip();
+    // For now, export as RTF format which is compatible with Word
+    // RTF is simpler and doesn't require complex ZIP manipulation
+    const rtfContent = convertToRTF(content);
     
-    // Add required DOCX files
-    
-    // 1. [Content_Types].xml
-    const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-</Types>`;
-    
-    // 2. _rels/.rels
-    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-    
-    // 3. word/_rels/document.xml.rels
-    const documentRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>`;
-    
-    // 4. word/styles.xml
-    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:docDefaults>
-    <w:rPrDefault>
-      <w:rPr>
-        <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
-        <w:sz w:val="22"/>
-      </w:rPr>
-    </w:rPrDefault>
-  </w:docDefaults>
-  <w:style w:type="paragraph" w:styleId="Normal">
-    <w:name w:val="Normal"/>
-    <w:pPr>
-      <w:spacing w:after="200"/>
-    </w:pPr>
-  </w:style>
-  <w:style w:type="paragraph" w:styleId="Heading">
-    <w:name w:val="Heading"/>
-    <w:pPr>
-      <w:spacing w:before="240" w:after="120"/>
-    </w:pPr>
-    <w:rPr>
-      <w:b/>
-      <w:sz w:val="28"/>
-    </w:rPr>
-  </w:style>
-</w:styles>`;
-    
-    // 5. word/document.xml - Main content
-    const escapeXml = (text: string) => {
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    };
-    
-    // Process content into paragraphs
-    const paragraphs = content.split('\n').filter(p => p.trim().length > 0);
-    let documentContent = '';
-    
-    paragraphs.forEach(paragraph => {
-      const trimmedParagraph = paragraph.trim();
-      if (trimmedParagraph.length === 0) return;
-      
-      // Determine if this is a heading
-      const isHeading = trimmedParagraph.length < 100 && 
-                       (trimmedParagraph.toUpperCase() === trimmedParagraph || 
-                        trimmedParagraph.includes(':') || 
-                        /^[A-Z][A-Z\s]+$/.test(trimmedParagraph));
-      
-      const styleId = isHeading ? 'Heading' : 'Normal';
-      const escapedText = escapeXml(trimmedParagraph);
-      
-      documentContent += `
-    <w:p>
-      <w:pPr>
-        <w:pStyle w:val="${styleId}"/>
-      </w:pPr>
-      <w:r>
-        <w:t>${escapedText}</w:t>
-      </w:r>
-    </w:p>`;
+    const blob = new Blob([rtfContent], { 
+      type: 'application/rtf' 
     });
-    
-    const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body>${documentContent}
-    <w:sectPr>
-      <w:pgSz w:w="12240" w:h="15840"/>
-      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>
-    </w:sectPr>
-  </w:body>
-</w:document>`;
-    
-    // Add files to ZIP
-    zip.file('[Content_Types].xml', contentTypes);
-    zip.folder('_rels')?.file('.rels', rels);
-    zip.folder('word')?.file('document.xml', document);
-    zip.folder('word')?.file('styles.xml', styles);
-    zip.folder('word')?.folder('_rels')?.file('document.xml.rels', documentRels);
-    
-    // Generate the DOCX file
-    const blob = zip.generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     
     // Create download link
     const timestamp = new Date().toISOString().slice(0, 10);
-    const finalFileName = `${fileName}_${timestamp}.docx`;
+    const finalFileName = `${fileName}_${timestamp}.rtf`;
     
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -265,20 +160,78 @@ export const exportToDOCX = async (content: string, fileName: string = 'resume')
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    console.log('ExportUtils: DOCX export completed successfully');
+    console.log('ExportUtils: RTF export completed successfully');
     
     return {
       success: true,
       fileName: finalFileName,
     };
   } catch (error) {
-    console.error('ExportUtils: DOCX export failed:', error);
+    console.error('ExportUtils: RTF export failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to export DOCX',
+      error: error instanceof Error ? error.message : 'Failed to export RTF',
     };
   }
 };
+
+/**
+ * Convert plain text content to RTF format
+ * RTF is compatible with Microsoft Word and other word processors
+ */
+function convertToRTF(content: string): string {
+  // RTF header
+  let rtfContent = '{\\rtf1\\ansi\\deff0\\nouicompat{\\fonttbl{\\f0\\fnil\\fcharset0 Calibri;}}';
+  rtfContent += '{\\*\\generator ResumeZap;}';
+  rtfContent += '\\viewkind4\\uc1\\pard\\sa200\\sl276\\slmult1\\f0\\fs22\\lang9 ';
+  
+  // Process content
+  const lines = content.split('\n');
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    if (!trimmedLine) {
+      rtfContent += '\\par ';
+      continue;
+    }
+    
+    // Escape RTF special characters
+    let escapedLine = trimmedLine
+      .replace(/\\/g, '\\\\')
+      .replace(/{/g, '\\{')
+      .replace(/}/g, '\\}');
+    
+    // Determine if this is a heading
+    const isHeading = trimmedLine.length < 100 && 
+                     (trimmedLine.toUpperCase() === trimmedLine || 
+                      trimmedLine.includes(':') || 
+                      /^[A-Z][A-Z\s]+$/.test(trimmedLine));
+    
+    if (isHeading) {
+      // Format as heading (bold, larger font)
+      rtfContent += `\\pard\\sa200\\sl276\\slmult1\\b\\fs26 ${escapedLine}\\b0\\fs22\\par `;
+    } else {
+      // Check for bullet points
+      if (/^[•·▪▫‣⁃◦\-\*\+]\s/.test(trimmedLine)) {
+        // Format as bullet point with indentation
+        const bulletText = escapedLine.substring(2);
+        rtfContent += `\\pard\\fi-360\\li720\\sa200\\sl276\\slmult1 \\bullet\\tab ${bulletText}\\par `;
+      } else {
+        // Regular paragraph
+        rtfContent += `\\pard\\sa200\\sl276\\slmult1 ${escapedLine}\\par `;
+      }
+    }
+  }
+  
+  // Add footer
+  rtfContent += '\\par\\pard\\sa200\\sl276\\slmult1\\fs18\\i Generated by ResumeZap AI Resume Analyzer\\i0\\fs22\\par ';
+  
+  // RTF footer
+  rtfContent += '}';
+  
+  return rtfContent;
+}
 
 /**
  * Export resume content as TXT file

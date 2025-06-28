@@ -663,7 +663,7 @@ const ResumeAnalyzer: React.FC = () => {
                         ) : (
                           <Download className="h-4 w-4" />
                         )}
-                        <span>{isExporting === 'docx' ? 'Exporting...' : 'DOCX'}</span>
+                        <span>{isExporting === 'docx' ? 'Exporting...' : 'RTF'}</span>
                       </button>
                       <button
                         onClick={() => handleExport('txt')}
