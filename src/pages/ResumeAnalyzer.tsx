@@ -43,6 +43,7 @@ const ResumeAnalyzer: React.FC = () => {
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
+  const [isViewingMode, setIsViewingMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
 
   console.log('ResumeAnalyzer: Component mounted');
@@ -51,6 +52,19 @@ const ResumeAnalyzer: React.FC = () => {
     if (!isAuthenticated) {
       console.log('ResumeAnalyzer: User not authenticated, redirecting to landing page');
       navigate('/');
+      return;
+    }
+
+    // Check if we're viewing a resume from the library/dashboard/activity
+    if (currentResume && currentResumeAnalysis) {
+      console.log('ResumeAnalyzer: Loading resume data for viewing:', currentResume.id);
+      
+      // Populate form with resume data
+      setJobPosting(currentResume.jobPosting || '');
+      setIsViewingMode(true);
+      
+      // Clear the current resume state to prevent re-loading on refresh
+      // Note: We don't clear it immediately to allow the UI to load first
     }
   }, [isAuthenticated, navigate]);
 
@@ -355,7 +369,11 @@ const ResumeAnalyzer: React.FC = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || !uploadedFile || !jobPosting.trim()}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                  isViewingMode 
+                    ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                }`}
               >
                 {isAnalyzing ? (
                   <>
@@ -365,10 +383,23 @@ const ResumeAnalyzer: React.FC = () => {
                 ) : (
                   <>
                     <Zap className="h-5 w-5" />
-                    <span>Analyze Resume</span>
+                    <span>{isViewingMode ? 'Re-analyze Resume' : 'Analyze Resume'}</span>
                   </>
                 )}
               </motion.button>
+              
+              {isViewingMode && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-400">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">Viewing Mode</span>
+                  </div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    You're viewing a previously analyzed resume. The job posting has been loaded from your saved data. 
+                    Upload a new resume file and click re-analyze if you want to update the analysis.
+                  </p>
+                </div>
+              )}
             </motion.div>
 
             {/* Results Section */}
@@ -665,6 +696,26 @@ const ResumeAnalyzer: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  
+                  {/* New Analysis Button for Viewing Mode */}
+                  {isViewingMode && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setIsViewingMode(false);
+                        setJobPosting('');
+                        setUploadedFile(null);
+                        // Clear current resume and analysis
+                        useResumeStore.getState().setCurrentResume(null);
+                        useResumeStore.setState({ currentResumeAnalysis: null });
+                      }}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <Plus className="h-5 w-5" />
+                      <span>Start New Analysis</span>
+                    </motion.button>
+                  )}
                 </>
               ) : (
                 /* Placeholder */
@@ -673,10 +724,13 @@ const ResumeAnalyzer: React.FC = () => {
                     <FileText className="h-8 w-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Ready for Analysis
+                    {isViewingMode ? 'Resume Loaded' : 'Ready for Analysis'}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Upload your resume file, then add a job posting to get started with AI-powered optimization
+                    {isViewingMode 
+                      ? 'The job posting has been loaded from your saved data. Upload a resume file and click re-analyze to update the analysis.'
+                      : 'Upload your resume file, then add a job posting to get started with AI-powered optimization'
+                    }
                   </p>
                 </div>
               )}
