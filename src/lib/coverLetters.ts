@@ -12,8 +12,6 @@ export interface CoverLetter {
   customizations: string[];
   keyStrengths: string[];
   callToAction?: string;
-  hiringManager?: string;
-  personalHighlights?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -216,6 +214,8 @@ export const updateCoverLetter = async (id: string, updates: Partial<CoverLetter
     if (updates.customizations !== undefined) updateData.customizations = updates.customizations;
     if (updates.keyStrengths !== undefined) updateData.key_strengths = updates.keyStrengths;
     if (updates.callToAction !== undefined) updateData.call_to_action = updates.callToAction?.trim() || null;
+    if (updates.hiringManager !== undefined) updateData.hiring_manager = updates.hiringManager?.trim() || null;
+    if (updates.personalHighlights !== undefined) updateData.personal_highlights = updates.personalHighlights?.trim() || null;
     
     // Only proceed if there are actual updates
     if (Object.keys(updateData).length === 0) {
