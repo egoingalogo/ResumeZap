@@ -725,7 +725,10 @@ const ResumeAnalyzer: React.FC = () => {
                         setUploadedFile(null);
                         // Clear current resume and analysis
                         useResumeStore.getState().setCurrentResume(null);
-                        useResumeStore.setState({ currentResumeAnalysis: null });
+                        useResumeStore.setState({ 
+                          currentResumeAnalysis: null,
+                          currentJobPosting: null
+                        });
                       }}
                       className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
                     >
