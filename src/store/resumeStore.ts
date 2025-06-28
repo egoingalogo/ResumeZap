@@ -40,7 +40,6 @@ interface ResumeState {
   resumes: Resume[];
   currentResume: Resume | null;
   currentResumeAnalysis: ResumeAnalysisResult | null;
-  currentJobPosting: string | null;
   currentCoverLetter: CoverLetterResult | null;
   currentSkillGapAnalysis: SkillGapResult | null;
   skillGaps: SkillGap[];
@@ -496,10 +495,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         ]
       };
       
-      // Set as current resume and also set the job posting for the form
+      // Set as current resume with analysis data
       set({ 
         currentResume: resume,
-        currentJobPosting: resume.jobPosting,
         currentResumeAnalysis: safeAnalysisResult,
         error: null
       });

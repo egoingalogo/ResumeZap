@@ -38,14 +38,33 @@ import toast from 'react-hot-toast';
 const ResumeAnalyzer: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
-  const { analyzeResume, currentResume, currentResumeAnalysis, currentJobPosting, isAnalyzing, saveResume } = useResumeStore();
+  const { analyzeResume, currentResume, currentResumeAnalysis, isAnalyzing, saveResume } = useResumeStore();
   
   const [jobPosting, setJobPosting] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
   const [isViewingMode, setIsViewingMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'changes' | 'keywords' | 'ats'>('overview');
+  const [hasLoadedJobPosting, setHasLoadedJobPosting] = useState(false);
+
+  console.log('ResumeAnalyzer: Component mounted');
   React.useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('ResumeAnalyzer: User not authenticated, redirecting to landing page');
+      navigate('/');
+      return;
+    }
+
+    // Check if we're viewing a resume from the library/dashboard/activity
+    if (currentResume && currentResumeAnalysis && !hasLoadedJobPosting) {
+      console.log('ResumeAnalyzer: Loading resume data for viewing:', currentResume.id);
+      console.log('ResumeAnalyzer: Job posting content:', currentResume.jobPosting?.substring(0, 100) + '...');
+      
+      // Populate form with resume data - set the job posting directly
+      setJobPosting(currentResume.jobPosting || '');
+      setIsViewingMode(true);
+      setHasLoadedJobPosting(true);
+    }
   }, [isAuthenticated, navigate, currentResume, currentResumeAnalysis, hasLoadedJobPosting]);
 
   /**
@@ -693,10 +712,12 @@ const ResumeAnalyzer: React.FC = () => {
                         setIsViewingMode(false);
                         setJobPosting('');
                         setUploadedFile(null);
+                        setHasLoadedJobPosting(false);
                         // Clear current resume and analysis
                         useResumeStore.getState().setCurrentResume(null);
                         useResumeStore.setState({ 
                           currentResumeAnalysis: null,
+                          currentJobPosting: null,
                         });
                       }}
                       className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
