@@ -77,7 +77,7 @@ const ActivityHistory: React.FC = () => {
       }),
       fetchSkillAnalyses().catch(error => {
         console.error('ActivityHistory: Failed to fetch skill analyses:', error);
-      })
+      }),
       fetchCoverLetters().catch(error => {
         console.error('ActivityHistory: Failed to fetch cover letters:', error);
       })
