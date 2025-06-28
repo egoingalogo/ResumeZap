@@ -12,6 +12,8 @@ export interface CoverLetter {
   customizations: string[];
   keyStrengths: string[];
   callToAction?: string;
+  hiringManager?: string;
+  personalHighlights?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +59,8 @@ export const fetchCoverLetters = async (): Promise<CoverLetter[]> => {
       customizations: cl.customizations as string[],
       keyStrengths: cl.key_strengths as string[],
       callToAction: cl.call_to_action,
+      hiringManager: cl.hiring_manager,
+      personalHighlights: cl.personal_highlights,
       createdAt: cl.created_at,
       updatedAt: cl.updated_at,
     }));
@@ -147,6 +151,8 @@ export const createCoverLetter = async (coverLetterData: Omit<CoverLetter, 'id' 
       customizations: data.customizations as string[],
       keyStrengths: data.key_strengths as string[],
       callToAction: data.call_to_action,
+      hiringManager: data.hiring_manager,
+      personalHighlights: data.personal_highlights,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -214,8 +220,6 @@ export const updateCoverLetter = async (id: string, updates: Partial<CoverLetter
     if (updates.customizations !== undefined) updateData.customizations = updates.customizations;
     if (updates.keyStrengths !== undefined) updateData.key_strengths = updates.keyStrengths;
     if (updates.callToAction !== undefined) updateData.call_to_action = updates.callToAction?.trim() || null;
-    if (updates.hiringManager !== undefined) updateData.hiring_manager = updates.hiringManager?.trim() || null;
-    if (updates.personalHighlights !== undefined) updateData.personal_highlights = updates.personalHighlights?.trim() || null;
     
     // Only proceed if there are actual updates
     if (Object.keys(updateData).length === 0) {
@@ -382,6 +386,8 @@ export const searchCoverLetters = async (searchTerm: string): Promise<CoverLette
       customizations: cl.customizations as string[],
       keyStrengths: cl.key_strengths as string[],
       callToAction: cl.call_to_action,
+      hiringManager: cl.hiring_manager,
+      personalHighlights: cl.personal_highlights,
       createdAt: cl.created_at,
       updatedAt: cl.updated_at,
     }));

@@ -174,7 +174,9 @@ const CoverLetterGenerator: React.FC = () => {
         formData.companyName,
         formData.jobTitle,
         formData.tone,
-        uploadedFile  // Pass the uploaded file to the function
+        uploadedFile,  // Pass the uploaded file to the function
+        formData.hiringManager,
+        formData.personalExperience
       );
       toast.success('Cover letter generated successfully!');
       

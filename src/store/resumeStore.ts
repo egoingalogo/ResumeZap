@@ -216,7 +216,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         companyName,
         jobTitle,
         tone as 'professional' | 'enthusiastic' | 'concise',
-        resumeFile
+        resumeFile,
+        hiringManager,
+        personalExperience
       );
       
       set({ 
