@@ -676,7 +676,7 @@ const ResumeAnalyzer: React.FC = () => {
                     Ready for Analysis
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Upload your resume file or paste text content, then add a job posting to get started with AI-powered optimization
+                    Upload your resume file, then add a job posting to get started with AI-powered optimization
                   </p>
                 </div>
               )}
