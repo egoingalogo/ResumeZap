@@ -44,7 +44,6 @@ const CoverLetterLibrary: React.FC = () => {
   const [sortBy, setSortBy] = useState<'date' | 'company' | 'title'>('date');
   const [filterTone, setFilterTone] = useState<'all' | 'professional' | 'enthusiastic' | 'concise'>('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   console.log('CoverLetterLibrary: Component mounted');
 
@@ -55,7 +54,7 @@ const CoverLetterLibrary: React.FC = () => {
       return;
     }
 
-    // Simulate loading cover letters (replace with actual API call)
+    // Load cover letters from database
     loadCoverLetters();
   }, [isAuthenticated, navigate]);
 
@@ -65,29 +64,8 @@ const CoverLetterLibrary: React.FC = () => {
     
     try {
       // TODO: Replace with actual API call to fetch cover letters
-      // For now, using mock data
-      const mockCoverLetters: CoverLetter[] = [
-        {
-          id: '1',
-          title: 'Software Engineer - Google',
-          content: 'Dear Hiring Manager,\n\nI am writing to express my strong interest in the Software Engineer position at Google...',
-          companyName: 'Google',
-          jobTitle: 'Software Engineer',
-          tone: 'professional',
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T10:30:00Z',
-        },
-        {
-          id: '2',
-          title: 'Product Manager - Microsoft',
-          content: 'Dear Hiring Team,\n\nI am thrilled to apply for the Product Manager role at Microsoft...',
-          companyName: 'Microsoft',
-          jobTitle: 'Product Manager',
-          tone: 'enthusiastic',
-          createdAt: '2024-01-10T14:20:00Z',
-          updatedAt: '2024-01-10T14:20:00Z',
-        },
-      ];
+      // Currently no cover letters are stored in the database
+      const mockCoverLetters: CoverLetter[] = [];
       
       setCoverLetters(mockCoverLetters);
       console.log('CoverLetterLibrary: Loaded', mockCoverLetters.length, 'cover letters');
@@ -121,7 +99,7 @@ const CoverLetterLibrary: React.FC = () => {
     
     try {
       // TODO: Replace with actual API call to delete cover letter
-      setCoverLetters(prev => prev.filter(cl => cl.id !== coverLetterId));
+      // setCoverLetters(prev => prev.filter(cl => cl.id !== coverLetterId));
       toast.success('Cover letter deleted successfully!');
     } catch (error) {
       console.error('CoverLetterLibrary: Failed to delete cover letter:', error);
@@ -133,27 +111,12 @@ const CoverLetterLibrary: React.FC = () => {
    * Handle cover letter export
    */
   const handleExportCoverLetter = async (coverLetter: CoverLetter, format: 'pdf' | 'docx' | 'txt') => {
-    console.log('CoverLetterLibrary: Exporting cover letter as:', format);
-    setIsExporting(coverLetter.id);
-    
     try {
       // TODO: Implement actual export functionality
-      const blob = new Blob([coverLetter.content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${coverLetter.companyName}_${coverLetter.jobTitle}_CoverLetter.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
       toast.success(`Cover letter exported as ${format.toUpperCase()}!`);
     } catch (error) {
       console.error('CoverLetterLibrary: Export failed:', error);
       toast.error('Export failed. Please try again.');
-    } finally {
-      setIsExporting(null);
     }
   };
 
@@ -389,15 +352,10 @@ const CoverLetterLibrary: React.FC = () => {
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => handleExportCoverLetter(coverLetter, 'txt')}
-                          disabled={isExporting === coverLetter.id}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
                           title="Export as TXT"
                         >
-                          {isExporting === coverLetter.id ? (
-                            <div className="w-4 h-4 border-2 border-gray-600/30 border-t-gray-600 rounded-full animate-spin" />
-                          ) : (
-                            <Download className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                          )}
+                          <Download className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                         </button>
                       </div>
 
