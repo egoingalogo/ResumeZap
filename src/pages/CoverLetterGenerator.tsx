@@ -14,13 +14,15 @@ import {
   CheckCircle,
   Target,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
+import type { CoverLetter } from '../lib/coverLetters';
 
 /**
  * Cover letter generator component with tone selection and AI-powered personalization
@@ -29,7 +31,7 @@ import toast from 'react-hot-toast';
 const CoverLetterGenerator: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, updateUsage } = useAuthStore();
-  const { generateCoverLetter, currentCoverLetter, isAnalyzing } = useResumeStore();
+  const { generateCoverLetter, currentCoverLetter, isAnalyzing, saveCoverLetter } = useResumeStore();
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -103,6 +105,42 @@ const CoverLetterGenerator: React.FC = () => {
     } catch (error) {
       console.error('CoverLetterGenerator: Generation failed:', error);
       toast.error('Generation failed. Please try again.');
+    }
+  };
+
+  const handleSaveCoverLetter = async () => {
+    if (!currentCoverLetter) {
+      toast.error('No cover letter to save');
+      return;
+    }
+
+    if (!formData.companyName || !formData.jobTitle) {
+      toast.error('Company name and job title are required to save');
+      return;
+    }
+
+    console.log('CoverLetterGenerator: Saving cover letter');
+
+    try {
+      const coverLetterData: Omit<CoverLetter, 'id' | 'createdAt' | 'updatedAt'> = {
+        title: `Cover Letter - ${formData.companyName} - ${formData.jobTitle}`,
+        content: currentCoverLetter.coverLetter,
+        companyName: formData.companyName,
+        jobTitle: formData.jobTitle,
+        tone: formData.tone,
+        jobPosting: formData.jobDescription,
+        resumeContentSnapshot: formData.resumeContent,
+        customizations: currentCoverLetter.customizations || [],
+        keyStrengths: currentCoverLetter.keyStrengths || [],
+        callToAction: currentCoverLetter.callToAction,
+      };
+
+      await saveCoverLetter(coverLetterData);
+      toast.success('Cover letter saved to your library!');
+    } catch (error) {
+      console.error('CoverLetterGenerator: Failed to save cover letter:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save cover letter';
+      toast.error(errorMessage);
     }
   };
 
@@ -445,6 +483,14 @@ const CoverLetterGenerator: React.FC = () => {
                     >
                       <MessageSquare className="h-5 w-5" />
                       <span>Save to Applications</span>
+                    </button>
+                    
+                    <button
+                      onClick={handleSaveCoverLetter}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <FileText className="h-5 w-5" />
+                      <span>Save to Library</span>
                     </button>
                   </div>
                 </>

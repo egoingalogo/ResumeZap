@@ -228,6 +228,56 @@ export interface Database {
           updated_at?: string
         }
       }
+      cover_letters: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          content: string
+          company_name: string
+          job_title: string
+          tone: 'professional' | 'enthusiastic' | 'concise'
+          job_posting: string | null
+          resume_content_snapshot: string | null
+          customizations: Json
+          key_strengths: Json
+          call_to_action: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          content: string
+          company_name: string
+          job_title: string
+          tone?: 'professional' | 'enthusiastic' | 'concise'
+          job_posting?: string | null
+          resume_content_snapshot?: string | null
+          customizations?: Json
+          key_strengths?: Json
+          call_to_action?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          content?: string
+          company_name?: string
+          job_title?: string
+          tone?: 'professional' | 'enthusiastic' | 'concise'
+          job_posting?: string | null
+          resume_content_snapshot?: string | null
+          customizations?: Json
+          key_strengths?: Json
+          call_to_action?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -241,6 +291,7 @@ export interface Database {
       ticket_priority: 'low' | 'medium' | 'high'
       ticket_status: 'open' | 'in_progress' | 'resolved' | 'closed'
       skill_importance: 'low' | 'medium' | 'high'
+      cover_letter_tone: 'professional' | 'enthusiastic' | 'concise'
     }
   }
 }
