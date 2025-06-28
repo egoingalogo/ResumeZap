@@ -235,7 +235,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           companyName: companyName,
           jobTitle: jobTitle,
           tone: tone as 'professional' | 'enthusiastic' | 'concise',
-          jobPosting: jobPosting,
+          jobPosting: jobPosting, // Save job description to job_posting column
           resumeContentSnapshot: resumeFile ? resumeFile.name : resumeContent.substring(0, 500),
           customizations: coverLetterResult.customizations || [],
           keyStrengths: coverLetterResult.keyStrengths || [],
@@ -246,6 +246,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         
         await get().saveCoverLetter(coverLetterData);
         console.log('ResumeStore: Cover letter auto-saved to database');
+        
+        // Refresh cover letters list to include the new one
+        await get().fetchCoverLetters();
       } catch (saveError) {
         console.error('ResumeStore: Failed to auto-save cover letter:', saveError);
         // Don't throw error for save failure - generation was successful
@@ -701,6 +704,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       }));
       
       console.log('ResumeStore: Cover letter saved successfully');
+      
+      // Refresh cover letters list to show the updated data
+      await get().fetchCoverLetters();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save cover letter';
       console.error('ResumeStore: Failed to save cover letter:', errorMessage);
@@ -726,6 +732,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       }));
       
       console.log('ResumeStore: Cover letter deleted successfully');
+      
+      // Refresh cover letters list to reflect the deletion
+      await get().fetchCoverLetters();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete cover letter';
       console.error('ResumeStore: Failed to delete cover letter:', errorMessage);
@@ -778,6 +787,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       set({ currentCoverLetter: simulatedCoverLetterResult });
       
       console.log('ResumeStore: Cover letter loaded for viewing successfully');
+      
+      // Also refresh the cover letters list to ensure we have the latest data
+      await get().fetchCoverLetters();
       
       // Return the cover letter data for form population
       return coverLetter;

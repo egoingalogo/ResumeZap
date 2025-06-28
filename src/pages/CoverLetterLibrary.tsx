@@ -56,26 +56,18 @@ const CoverLetterLibrary: React.FC = () => {
   /**
    * Handle cover letter viewing - loads the cover letter for editing
    */
-  const handleViewCoverLetter = async (coverLetter: CoverLetter) => {
+  const handleViewCoverLetter = (coverLetter: CoverLetter) => {
     console.log('CoverLetterLibrary: Viewing cover letter:', coverLetter.id);
     
-    try {
-      // Load the cover letter data
-      await loadCoverLetterForViewing(coverLetter.id);
-      
-      // Navigate to cover letter generator with the loaded data
-      navigate('/cover-letter', { 
-        state: { 
-          coverLetterData: coverLetter,
-          isViewing: true 
-        } 
-      });
-      
-      toast.success('Cover letter loaded successfully!');
-    } catch (error) {
-      console.error('CoverLetterLibrary: Failed to load cover letter:', error);
-      toast.error('Failed to load cover letter. Please try again.');
-    }
+    // Navigate to cover letter generator with the complete cover letter data
+    navigate('/cover-letter', { 
+      state: { 
+        coverLetterData: coverLetter,
+        isViewing: true 
+      } 
+    });
+    
+    toast.success('Cover letter loaded successfully!');
   };
 
   /**
