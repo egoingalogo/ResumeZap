@@ -59,6 +59,31 @@ const CoverLetterGenerator: React.FC = () => {
 
   console.log('CoverLetterGenerator: Component mounted');
 
+  // Cleanup function to reset state when navigating away
+  React.useEffect(() => {
+    return () => {
+      console.log('CoverLetterGenerator: Component unmounting, clearing viewing mode and data');
+      if (isViewingMode) {
+        // Reset local state
+        setIsViewingMode(false);
+        setUploadedFile(null);
+        setFormData({
+          companyName: '',
+          jobTitle: '',
+          hiringManager: '',
+          jobDescription: '',
+          personalExperience: '',
+          tone: 'professional',
+        });
+        
+        // Clear store state
+        useResumeStore.setState({ 
+          currentCoverLetter: null,
+        });
+      }
+    };
+  }, [isViewingMode]);
+
   React.useEffect(() => {
     if (!isAuthenticated) {
       console.log('CoverLetterGenerator: User not authenticated, redirecting to landing page');

@@ -48,6 +48,28 @@ const ResumeAnalyzer: React.FC = () => {
   const [hasLoadedJobPosting, setHasLoadedJobPosting] = useState(false);
 
   console.log('ResumeAnalyzer: Component mounted');
+  
+  // Cleanup function to reset state when navigating away
+  React.useEffect(() => {
+    return () => {
+      console.log('ResumeAnalyzer: Component unmounting, clearing viewing mode and data');
+      if (isViewingMode) {
+        // Reset local state
+        setIsViewingMode(false);
+        setUploadedFile(null);
+        setJobPosting('');
+        setHasLoadedJobPosting(false);
+        
+        // Clear store state
+        useResumeStore.getState().setCurrentResume(null);
+        useResumeStore.setState({ 
+          currentResumeAnalysis: null,
+          currentJobPosting: null,
+        });
+      }
+    };
+  }, [isViewingMode]);
+  
   React.useEffect(() => {
     if (!isAuthenticated) {
       console.log('ResumeAnalyzer: User not authenticated, redirecting to landing page');
