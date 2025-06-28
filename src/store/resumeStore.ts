@@ -31,6 +31,7 @@ interface Resume {
   originalContent: string;
   jobPosting: string;
   matchScore: number;
+  analysisDetails?: ResumeAnalysisResult;
   createdAt: string;
   lastModified: string;
 }
@@ -130,6 +131,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         originalContent: resume.original_content,
         jobPosting: resume.job_posting,
         matchScore: resume.match_score,
+        analysisDetails: resume.analysis_details || undefined,
         createdAt: resume.created_at,
         lastModified: resume.updated_at,
       }));
@@ -180,6 +182,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         originalContent: resumeContent,
         jobPosting,
         matchScore: analysisResult.matchScore,
+        analysisDetails: analysisResult,
         createdAt: new Date().toISOString(),
         lastModified: new Date().toISOString(),
       };
@@ -264,6 +267,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   
   /**
    * Save resume to database with enhanced error handling
+   * Now includes analysis details for complete data persistence
    */
   saveResume: async (resumeData: Omit<Resume, 'id' | 'createdAt' | 'lastModified'>) => {
     console.log('ResumeStore: Saving new resume');
@@ -284,6 +288,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           original_content: resumeData.originalContent,
           job_posting: resumeData.jobPosting,
           match_score: resumeData.matchScore,
+          analysis_details: resumeData.analysisDetails || null,
         })
         .select()
         .single();
@@ -300,6 +305,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         originalContent: data.original_content,
         jobPosting: data.job_posting,
         matchScore: data.match_score,
+        analysisDetails: data.analysis_details || undefined,
         createdAt: data.created_at,
         lastModified: data.updated_at,
       };
@@ -334,6 +340,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           original_content: updates.originalContent,
           job_posting: updates.jobPosting,
           match_score: updates.matchScore,
+          analysis_details: updates.analysisDetails || null,
         })
         .eq('id', id);
       
@@ -401,7 +408,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   
   /**
    * Load a specific resume for viewing with simulated analysis data
-   * Used when navigating from the Resume Library
+   * Used when navigating from the Resume Library, Dashboard, or Activity History
+   * Now loads actual stored analysis data instead of simulated data
    */
   loadResumeForViewing: async (resumeId: string) => {
     console.log('ResumeStore: Loading resume for viewing:', resumeId);
@@ -422,36 +430,46 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // Set as current resume
       set({ currentResume: resume });
       
-      // Create a simulated analysis result based on stored data
-      const simulatedAnalysis: ResumeAnalysisResult = {
-        tailoredResume: resume.content,
-        matchScore: resume.matchScore,
-        matchBreakdown: {
-          keywords: Math.round(resume.matchScore * 0.9),
-          skills: Math.round(resume.matchScore * 0.85),
-          experience: Math.round(resume.matchScore * 0.95),
-          formatting: Math.round(resume.matchScore * 0.8),
-        },
-        changes: [
-          {
-            section: "Loaded Resume",
-            original: "This is a previously analyzed resume",
-            improved: "Resume loaded from your library",
-            reason: "This resume was previously optimized and saved to your library"
-          }
-        ],
-        keywordMatches: {
-          found: ["Previously analyzed keywords"],
-          missing: [],
-          suggestions: ["This resume was previously optimized"]
-        },
-        atsOptimizations: [
-          "This resume was previously optimized for ATS compatibility",
-          "All formatting and keyword optimizations have been applied"
-        ]
-      };
+      // Load actual analysis data if available, otherwise create fallback
+      let analysisResult: ResumeAnalysisResult;
       
-      set({ currentResumeAnalysis: simulatedAnalysis });
+      if (resume.analysisDetails) {
+        // Use stored analysis details
+        analysisResult = resume.analysisDetails;
+        console.log('ResumeStore: Using stored analysis details');
+      } else {
+        // Create fallback analysis for older resumes without stored details
+        analysisResult = {
+          tailoredResume: resume.content,
+          matchScore: resume.matchScore,
+          matchBreakdown: {
+            keywords: Math.round(resume.matchScore * 0.9),
+            skills: Math.round(resume.matchScore * 0.85),
+            experience: Math.round(resume.matchScore * 0.95),
+            formatting: Math.round(resume.matchScore * 0.8),
+          },
+          changes: [
+            {
+              section: "Legacy Resume",
+              original: "This resume was created before detailed analysis storage was implemented",
+              improved: "Resume loaded from your library",
+              reason: "This resume was previously optimized but detailed changes are not available"
+            }
+          ],
+          keywordMatches: {
+            found: ["Analysis details not available for legacy resumes"],
+            missing: [],
+            suggestions: ["Re-analyze this resume to get detailed keyword insights"]
+          },
+          atsOptimizations: [
+            "This resume was previously optimized for ATS compatibility",
+            "Re-analyze to get current ATS optimization recommendations"
+          ]
+        };
+        console.log('ResumeStore: Using fallback analysis for legacy resume');
+      }
+      
+      set({ currentResumeAnalysis: analysisResult });
       
       console.log('ResumeStore: Resume loaded for viewing successfully');
       
