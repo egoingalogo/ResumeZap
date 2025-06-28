@@ -66,6 +66,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const updateActiveFormats = () => {
     if (!editorRef.current) return;
 
+    // Reset active formats when there's no selection
+    if (!window.getSelection() || window.getSelection()?.rangeCount === 0) {
+      setActiveFormats({
+        bold: false,
+        italic: false,
+        underline: false,
+        justifyLeft: false,
+        justifyCenter: false,
+        justifyRight: false,
+        insertUnorderedList: false
+      });
+      return;
+    }
+
     try {
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
@@ -89,11 +103,31 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   /**
    * Handle content changes with formatting preservation
    */
-  const handleContentChange = () => {
+  const handleContentChange = (e?: Event) => {
     if (editorRef.current) {
       const content = editorRef.current.innerHTML;
       onChange(content);
       updateCounts();
+      updateActiveFormats();
+    }
+  };
+
+  /**
+   * Reset formatting when cursor is at the beginning of a line
+   * This helps prevent formatting from persisting after deletion
+   */
+  const checkAndResetFormatting = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    if (range.startOffset === 0) {
+      // If cursor is at the beginning of a line or element, check formatting
+      const currentFormats = {
+        underline: document.queryCommandState('underline'),
+      };
+      
+      // If underline is active but not shown in UI, update UI
       updateActiveFormats();
     }
   };
@@ -104,6 +138,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleSelectionChange = () => {
     updateActiveFormats();
   };
+
 
   /**
    * Handle paste events to preserve formatting from external sources
@@ -304,6 +339,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     } catch (error) {
       console.error('RichTextEditor: Format command failed:', error);
     }
+  };
+
+  /**
+   * Handle key up events to check for formatting reset opportunities
+   */
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    // Check for backspace/delete key to reset formatting
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      checkAndResetFormatting();
+    }
+    
+    // Update active formats on key up
+    updateActiveFormats();
   };
 
   /**
@@ -534,9 +582,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         contentEditable
         onInput={handleContentChange}
         onPaste={handlePaste}
+        onKeyUp={handleKeyUp}
         onKeyDown={handleKeyDown}
         onMouseUp={handleSelectionChange}
-        onKeyUp={handleSelectionChange}
         className={`w-full px-4 py-3 border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white resize-none overflow-y-auto transition-all duration-200 ${
           isFormatting ? 'opacity-75' : ''
         }`}
