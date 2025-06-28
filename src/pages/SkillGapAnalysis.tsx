@@ -64,6 +64,26 @@ const SkillGapAnalysis: React.FC = () => {
 
   console.log('SkillGapAnalysis: Component mounted');
 
+  // Cleanup function to reset state when navigating away
+  useEffect(() => {
+    return () => {
+      console.log('SkillGapAnalysis: Component unmounting, clearing analysis data');
+      
+      // Check if there's any loaded analysis data to clear
+      const currentState = useResumeStore.getState();
+      if (currentState.currentSkillAnalysis || currentState.currentSkillGapAnalysis || currentState.skillGaps.length > 0) {
+        // Clear all skill analysis related state
+        useResumeStore.setState({
+          currentSkillAnalysis: null,
+          currentSkillGapAnalysis: null,
+          skillGaps: [],
+        });
+        
+        console.log('SkillGapAnalysis: Cleared loaded analysis data on unmount');
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) {
       console.log('SkillGapAnalysis: User not authenticated, redirecting to landing page');
