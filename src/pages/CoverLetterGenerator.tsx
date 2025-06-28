@@ -19,12 +19,14 @@ import {
   FileText,
   Upload,
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
+import { exportResume } from '../lib/exportUtils';
 import toast from 'react-hot-toast';
 import type { CoverLetter } from '../lib/coverLetters';
 
@@ -41,6 +43,7 @@ const CoverLetterGenerator: React.FC = () => {
   // Use drop state for file upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isViewingMode, setIsViewingMode] = useState(false);
+  const [isExporting, setIsExporting] = useState<string | null>(null); // Track which format is being exported
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -253,19 +256,44 @@ const CoverLetterGenerator: React.FC = () => {
     toast.success('Cover letter copied to clipboard!');
   };
 
-  const downloadLetter = () => {
-    if (!currentCoverLetter) return;
+  /**
+   * Handle cover letter export with production-ready functionality
+   * Supports PDF, RTF, and TXT formats with proper error handling
+   */
+  const handleExportCoverLetter = async (format: 'pdf' | 'docx' | 'txt') => {
+    if (!currentCoverLetter?.coverLetter) {
+      toast.error('No cover letter content to export');
+      return;
+    }
     
-    const blob = new Blob([currentCoverLetter.coverLetter], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${formData.companyName}_${formData.jobTitle}_CoverLetter.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Cover letter downloaded!');
+    console.log('CoverLetterGenerator: Starting export as:', format.toUpperCase());
+    setIsExporting(format);
+    
+    try {
+      // Generate filename with company and job title
+      const exportFileName = `cover_letter_${formData.companyName}_${formData.jobTitle}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      
+      const result = await exportResume(
+        currentCoverLetter.coverLetter,
+        format,
+        exportFileName
+      );
+      
+      if (result.success) {
+        toast.success(`Cover letter exported as ${format.toUpperCase()}! File: ${result.fileName}`, {
+          duration: 5000,
+        });
+        console.log('CoverLetterGenerator: Export completed successfully:', result.fileName);
+      } else {
+        toast.error(result.error || `Failed to export ${format.toUpperCase()}`);
+        console.error('CoverLetterGenerator: Export failed:', result.error);
+      }
+    } catch (error) {
+      console.error('CoverLetterGenerator: Unexpected export error:', error);
+      toast.error(`An unexpected error occurred during ${format.toUpperCase()} export`);
+    } finally {
+      setIsExporting(null);
+    }
   };
 
   if (!isAuthenticated || !user) {
@@ -640,13 +668,45 @@ const CoverLetterGenerator: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="space-y-4">
-                    <button
-                      onClick={downloadLetter}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-                    >
-                      <Download className="h-5 w-5" />
-                      <span>Download as TXT</span>
-                    </button>
+                    {/* Export Buttons Row */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => handleExportCoverLetter('pdf')}
+                        disabled={isExporting !== null}
+                        className="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isExporting === 'pdf' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span className="text-sm">{isExporting === 'pdf' ? 'Exporting...' : 'PDF'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleExportCoverLetter('docx')}
+                        disabled={isExporting !== null}
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isExporting === 'docx' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span className="text-sm">{isExporting === 'docx' ? 'Exporting...' : 'RTF'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleExportCoverLetter('txt')}
+                        disabled={isExporting !== null}
+                        className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isExporting === 'txt' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span className="text-sm">{isExporting === 'txt' ? 'Exporting...' : 'TXT'}</span>
+                      </button>
+                    </div>
                     
                     <button
                       onClick={() => navigate('/applications')}
