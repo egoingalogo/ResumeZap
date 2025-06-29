@@ -187,11 +187,21 @@ EXPERTISE:
 
 TONE: Analytical, precise, and improvement-focused. Provide specific data and measurable improvements.
 
+CRITICAL DATA PRESERVATION REQUIREMENTS:
+- NEVER alter, modify, or change any factual information from the original resume
+- NEVER change dates, company names, job titles, education details, or numerical data
+- NEVER fabricate or embellish achievements, metrics, or experiences
+- NEVER add skills, certifications, or experiences not present in the original
+- NEVER modify quantitative data (years of experience, GPA, percentages, etc.)
+- ONLY enhance presentation, formatting, and keyword optimization while preserving ALL original facts
+
 OUTPUT REQUIREMENTS:
+- Maintain 100% factual accuracy to the original resume data
 - Always provide numerical match scores and percentages
 - Highlight specific changes with before/after examples
 - Focus on ATS-friendly formatting improvements
-- Ensure all recommendations maintain authenticity
+- Ensure all recommendations preserve authenticity and truthfulness
+- Improvements should focus on: word choice optimization, bullet point structure, keyword integration, formatting enhancements, and strategic repositioning of existing content
 - CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
 
         userContent = [
