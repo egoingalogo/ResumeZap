@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { PayPalButtons, PayPalScriptProvider } from '@paypal/paypal-js';
+import { PayPalScriptProvider } from '@paypal/paypal-js';
+import { PayPalButtons } from 'react-paypal-js';
 
 interface UpgradeModalProps {
   isOpen: boolean;
