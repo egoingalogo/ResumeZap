@@ -32,6 +32,7 @@ import { Navbar } from '../components/Navbar';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
+import { updateUsage } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 /**
@@ -161,6 +162,9 @@ const SkillGapAnalysis: React.FC = () => {
   const handleAnalyze = async () => {
     console.log('SkillGapAnalysis: Starting analysis with uploadedFile:', uploadedFile ? uploadedFile.name : 'null');
     console.log('SkillGapAnalysis: Job posting length:', jobPosting.trim().length);
+    
+    // Update usage count
+    updateUsage('skillGapAnalysis');
     
     // Validate PDF file upload first
     if (!uploadedFile) {

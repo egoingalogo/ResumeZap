@@ -12,6 +12,7 @@ interface User {
   usageThisMonth: {
     resumeTailoring: number;
     coverLetters: number;
+    skillGapAnalysis: number;
   };
   createdAt: string;
 }
@@ -25,7 +26,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<{ success: boolean; needsVerification: boolean }>;
   logout: () => Promise<void>;
-  updateUsage: (type: 'resumeTailoring' | 'coverLetters') => Promise<void>;
+  updateUsage: (type: 'resumeTailoring' | 'coverLetters' | 'skillGapAnalysis') => Promise<void>;
   upgradePlan: (plan: 'premium' | 'pro' | 'lifetime') => Promise<void>;
   updateProfilePicture: (profilePictureUrl: string | null) => Promise<void>;
   updateUserEmail: (newEmail: string) => Promise<void>;
@@ -196,6 +197,8 @@ export const useAuthStore = create<AuthState>()(
               usage_this_month: {
                 resumeTailoring: 0,
                 coverLetters: 0,
+                skillGapAnalysis: 0,
+                skillGapAnalysis: 0,
               },
             };
             
@@ -478,7 +481,7 @@ export const useAuthStore = create<AuthState>()(
       /**
        * Update usage count for current user
        */
-      updateUsage: async (type: 'resumeTailoring' | 'coverLetters') => {
+      updateUsage: async (type: 'resumeTailoring' | 'coverLetters' | 'skillGapAnalysis') => {
         const { user } = get();
         if (!user) return;
         

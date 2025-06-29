@@ -85,10 +85,10 @@ const Dashboard: React.FC = () => {
   }
 
   const usageLimits = {
-    free: { resumeTailoring: 3, coverLetters: 2 },
-    premium: { resumeTailoring: 40, coverLetters: 30 },
-    pro: { resumeTailoring: Infinity, coverLetters: Infinity },
-    lifetime: { resumeTailoring: Infinity, coverLetters: Infinity },
+    free: { resumeTailoring: 1, coverLetters: 2, skillGapAnalysis: 2 },
+    premium: { resumeTailoring: 20, coverLetters: 25, skillGapAnalysis: 20 },
+    pro: { resumeTailoring: Infinity, coverLetters: Infinity, skillGapAnalysis: Infinity },
+    lifetime: { resumeTailoring: Infinity, coverLetters: Infinity, skillGapAnalysis: Infinity },
   };
 
   const currentLimits = usageLimits[user.plan];
