@@ -406,17 +406,22 @@ export const deleteUserAccount = async (): Promise<void> => {
 /**
  * Get the count of users with lifetime plan
  * Uses graceful fallback to direct database query when Edge Function is unavailable
+ * In WebContainer environments, skips Edge Function and uses fallback directly
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
-    // Check basic Supabase connectivity first to prevent fetch errors
-    console.log('getLifetimeUserCount: Testing Supabase connection before Edge Function call');
-    const isConnected = await testSupabaseConnection();
+    // Skip Edge Function in WebContainer environment or if URL is localhost/webcontainer
+    const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                           window.location.hostname.includes('local-credentialless') ||
+                           window.location.hostname === 'localhost';
     
-    if (!isConnected) {
-      console.warn('getLifetimeUserCount: Basic connectivity test failed, using fallback immediately');
+    if (isWebContainer) {
+      console.log('getLifetimeUserCount: WebContainer environment detected, using fallback directly');
       return await getLifetimeUserCountFallback();
     }
+    
+    // Check basic Supabase connectivity first to prevent fetch errors
+    console.log('getLifetimeUserCount: Testing Supabase connection before Edge Function call');
     
     // Validate supabaseUrl before attempting fetch
     if (!supabaseUrl || !supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
@@ -424,11 +429,18 @@ export const getLifetimeUserCount = async (): Promise<number> => {
       return await getLifetimeUserCountFallback();
     }
     
+    // Quick connectivity test
+    const isConnected = await testSupabaseConnection();
+    if (!isConnected) {
+      console.warn('getLifetimeUserCount: Basic connectivity test failed, using fallback immediately');
+      return await getLifetimeUserCountFallback();
+    }
+    
     console.log('getLifetimeUserCount: Attempting to call Edge Function');
     
     // Try calling the Edge Function with proper error handling
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced timeout for faster fallback
     
     let response: Response;
     try {
@@ -443,7 +455,8 @@ export const getLifetimeUserCount = async (): Promise<number> => {
       clearTimeout(timeoutId);
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      console.warn('getLifetimeUserCount: Fetch failed, using fallback:', fetchError);
+      console.warn('getLifetimeUserCount: Fetch failed (likely WebContainer limitation), using fallback:', 
+                   fetchError instanceof Error ? fetchError.message : fetchError);
       return await getLifetimeUserCountFallback();
     }
     
@@ -474,7 +487,8 @@ export const getLifetimeUserCount = async (): Promise<number> => {
     return data.count;
     
   } catch (error) {
-    console.warn('getLifetimeUserCount: Edge Function call failed, using fallback:', error);
+    console.warn('getLifetimeUserCount: Edge Function call failed (expected in WebContainer), using fallback:', 
+                 error instanceof Error ? error.message : error);
     return await getLifetimeUserCountFallback();
   }
 };
