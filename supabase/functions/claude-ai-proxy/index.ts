@@ -434,101 +434,191 @@ Required JSON Response Format:
       case 'skill_gap':
         systemPrompt = `You are ResumeZap AI's career development analyst specializing in skill gap identification and learning pathway creation. 
 
-EXPERTISE:
-- Technical and soft skill gap analysis with priority ranking
-- Online learning platform course recommendations (Coursera, Udemy, LinkedIn Learning)
-- Free resource curation (YouTube, documentation, tutorials)
-- Certification pathway mapping
-- Time investment estimation for skill development
-- Industry-specific learning resource prioritization
+EXPERTISE AREAS:
+- Technical and soft skill gap analysis with detailed proficiency assessment
+- Comprehensive learning resource recommendations with direct links
+- Industry-standard certification pathway mapping
+- Realistic time investment estimations for skill development
+- Multi-phase learning roadmaps with clear milestones
+- Personalized development plans based on current skill level
 
-APPROACH:
-- Categorize skills by priority (Critical, Important, Nice-to-have)
-- Provide specific course names and platforms
-- Include both paid and free learning options
-- Estimate realistic timeframes for skill acquisition
-- Create step-by-step development roadmaps
-- Focus on practical, applicable learning
+APPROACH METHODOLOGY:
+- Extract all technical and soft skills from both resume and job posting
+- Compare current skills against job requirements with proficiency analysis
+- Categorize skill gaps by priority (Critical, Important, Nice-to-have)
+- Research current, specific learning resources with direct links
+- Provide multiple options across different platforms and price points
+- Create realistic, phased development plan with clear timelines
+- Include practical application recommendations for real-world experience
 
-OUTPUT: Detailed analysis with specific, actionable learning recommendations.
-CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
+CRITICAL QUALITY REQUIREMENTS:
+- All recommended resources must be current (2024-2025)
+- Include multiple learning options for different learning styles
+- Provide realistic time estimates based on skill complexity
+- Ensure roadmap phases build logically on each other
+- Consider both technical skills and soft skills in analysis
+- Focus on resources with highest industry relevance
+- Include budget-conscious options for all skill gaps
+
+OUTPUT FORMAT: Comprehensive skill gap analysis with specific, actionable learning recommendations.
+CRITICAL FORMATTING: Return ONLY valid JSON without any markdown formatting or code blocks`;
 
         if (requestData.resumeFile) {
           userContent = [
             {
               type: "text",
-              text: `Analyze skill gaps between this resume file and job posting, then provide comprehensive learning recommendations:
+              text: `Perform comprehensive skill gap analysis between the uploaded resume and target job posting, then provide detailed learning recommendations with specific resources and actionable development roadmap.
 
-TARGET JOB POSTING:
+Input Data:
+RESUME FILE: [PDF file uploaded by user - extract and analyze all content including skills, experience, education, and certifications]
+
+TARGET JOB POSTING: 
 ${requestData.jobPosting}
 
-Provide detailed JSON response:
+Analysis Requirements:
+
+1. Extract Skills: Identify all technical and soft skills from both resume and job posting
+2. Gap Assessment: Compare current skills against job requirements with proficiency levels
+3. Priority Classification: Categorize gaps by importance (Critical/Important/Nice-to-have)
+4. Learning Research: Search for current, specific learning resources with direct links
+5. Roadmap Creation: Design phased development plan with realistic timelines
+
+Web Search Instructions:
+
+- MANDATORY: Use web search to find current, specific learning resources for each identified skill gap
+- Search for: online courses, certifications, free tutorials, documentation, and practical resources
+- Verify links are active and resources are current (2024-2025)
+- Include multiple options per skill across different platforms and price points
+- Prioritize well-known platforms: Coursera, Udemy, LinkedIn Learning, edX, YouTube, official documentation
+
+Required JSON Response Format:
+
 {
   "skillGapAnalysis": {
     "critical": [
       {
-        "skill": "Skill name",
-        "currentLevel": "Assessment of current proficiency",
-        "requiredLevel": "Level needed for job",
-        "gap": "Specific gap description"
+        "skill": "Specific skill name (e.g., Python Programming, AWS Cloud Architecture)",
+        "currentLevel": "Detailed assessment of current proficiency based on resume evidence",
+        "requiredLevel": "Specific level needed for job success",
+        "gap": "Precise description of what needs to be learned/improved",
+        "impactOnJobSuccess": "How this gap affects job performance"
       }
     ],
-    "important": [Similar structure],
-    "niceToHave": [Similar structure]
+    "important": [
+      "Same structure as critical - skills that would significantly improve candidacy"
+    ],
+    "niceToHave": [
+      "Same structure - skills that would provide competitive advantage"
+    ]
   },
   "learningRecommendations": [
     {
-      "skill": "Skill name",
+      "skill": "Skill name matching gap analysis",
       "priority": "Critical/Important/Nice-to-have",
-      "timeInvestment": "Estimated hours/weeks",
+      "timeInvestment": "Realistic estimate (e.g., 40-60 hours over 8-10 weeks)",
       "courses": [
         {
-          "platform": "Coursera/Udemy/LinkedIn Learning",
-          "courseName": "Specific course title",
-          "cost": "Free/Paid price",
-          "duration": "Course length",
-          "difficulty": "Beginner/Intermediate/Advanced"
+          "platform": "Exact platform name",
+          "courseName": "Exact course title",
+          "instructor": "Course instructor name",
+          "url": "Direct clickable link to course",
+          "cost": "Exact price or 'Free'",
+          "duration": "Course length with specific hours/weeks",
+          "difficulty": "Beginner/Intermediate/Advanced",
+          "rating": "Course rating if available",
+          "description": "Brief description of what the course covers"
         }
       ],
       "freeResources": [
         {
-          "type": "YouTube/Documentation/Tutorial",
-          "resource": "Specific resource name/channel",
-          "description": "What this resource covers"
+          "type": "YouTube Channel/Documentation/Tutorial/GitHub Repository",
+          "resource": "Specific resource name",
+          "url": "Direct clickable link",
+          "description": "Detailed description of content and learning value",
+          "estimatedTime": "Time investment required"
         }
       ],
       "certifications": [
         {
           "name": "Certification name",
-          "provider": "Certification provider",
-          "timeToComplete": "Estimated time",
-          "cost": "Certification cost"
+          "provider": "Certification provider organization",
+          "url": "Direct link to certification page",
+          "timeToComplete": "Realistic preparation time",
+          "cost": "Exact certification cost",
+          "validity": "How long certification is valid",
+          "industryRecognition": "Value in job market"
         }
       ],
-      "practicalApplication": "How to gain hands-on experience"
+      "practicalApplication": "Specific projects or ways to gain hands-on experience",
+      "books": [
+        {
+          "title": "Book title",
+          "author": "Author name",
+          "amazonUrl": "Amazon link if available",
+          "description": "Why this book is recommended"
+        }
+      ]
     }
   ],
   "developmentRoadmap": {
     "phase1": {
-      "duration": "Timeline",
-      "focus": "Priority skills to develop first",
-      "milestones": ["Specific achievements/goals"]
+      "duration": "Specific timeline (e.g., Weeks 1-8)",
+      "focus": "Priority skills to develop first with rationale",
+      "skills": ["List of specific skills to focus on"],
+      "milestones": ["Specific, measurable achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     },
     "phase2": {
-      "duration": "Timeline",
-      "focus": "Secondary skills focus",
-      "milestones": ["Specific achievements/goals"]
+      "duration": "Specific timeline (e.g., Weeks 9-16)",
+      "focus": "Secondary skills development",
+      "skills": ["List of specific skills"],
+      "milestones": ["Specific achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     },
     "phase3": {
-      "duration": "Timeline", 
+      "duration": "Specific timeline (e.g., Weeks 17-24)",
       "focus": "Advanced skills and specialization",
-      "milestones": ["Specific achievements/goals"]
+      "skills": ["List of specific skills"],
+      "milestones": ["Specific achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     }
   },
   "skillsAlreadyStrong": [
-    "Skills user already possesses that match job requirements"
+    {
+      "skill": "Skill name",
+      "evidence": "Specific evidence from resume",
+      "jobRelevance": "How this skill applies to target job"
+    }
+  ],
+  "totalDevelopmentTime": "Overall timeline estimate for becoming job-ready",
+  "budgetEstimate": {
+    "minimum": "Cost for free/low-cost learning path",
+    "recommended": "Cost for optimal learning path",
+    "premium": "Cost for comprehensive certification path"
+  },
+  "nextSteps": [
+    "Immediate actionable steps user should take this week"
   ]
-}`
+}
+
+Critical Requirements:
+
+1. USE WEB SEARCH: Search for current learning resources and include direct, clickable links
+2. Verify Resources: Ensure all recommended courses and resources are currently available
+3. Multiple Options: Provide 2-3 options per skill across different price points and learning styles
+4. Actionable Roadmap: Create realistic, time-bound development phases
+5. Budget Consciousness: Include free and paid options for each skill
+6. Industry Relevance: Focus on skills that directly impact job performance
+
+Search Strategy:
+
+- Search for each identified skill gap individually
+- Look for: "[Skill] online course 2024", "[Skill] certification", "[Skill] free tutorial"
+- Verify platform availability and current pricing
+- Include official documentation and vendor training when applicable
+- Search for hands-on projects and practical application opportunities
+
+Provide comprehensive analysis with specific, actionable learning recommendations that users can immediately act upon.`
             },
             {
               type: "document",
@@ -543,81 +633,152 @@ Provide detailed JSON response:
           userContent = [
             {
               type: "text",
-              text: `Analyze skill gaps between this resume and job posting, then provide comprehensive learning recommendations:
+              text: `Perform comprehensive skill gap analysis between the provided resume and target job posting, then provide detailed learning recommendations with specific resources and actionable development roadmap.
 
-CURRENT RESUME:
+Input Data:
+RESUME CONTENT:
 ${requestData.resumeContent}
 
 TARGET JOB POSTING:
 ${requestData.jobPosting}
 
-Provide detailed JSON response:
+Analysis Requirements:
+
+1. Extract Skills: Identify all technical and soft skills from both resume and job posting
+2. Gap Assessment: Compare current skills against job requirements with proficiency levels
+3. Priority Classification: Categorize gaps by importance (Critical/Important/Nice-to-have)
+4. Learning Research: Search for current, specific learning resources with direct links
+5. Roadmap Creation: Design phased development plan with realistic timelines
+
+Web Search Instructions:
+
+- MANDATORY: Use web search to find current, specific learning resources for each identified skill gap
+- Search for: online courses, certifications, free tutorials, documentation, and practical resources
+- Verify links are active and resources are current (2024-2025)
+- Include multiple options per skill across different platforms and price points
+- Prioritize well-known platforms: Coursera, Udemy, LinkedIn Learning, edX, YouTube, official documentation
+
+Required JSON Response Format:
+
 {
   "skillGapAnalysis": {
     "critical": [
       {
-        "skill": "Skill name",
-        "currentLevel": "Assessment of current proficiency",
-        "requiredLevel": "Level needed for job",
-        "gap": "Specific gap description"
+        "skill": "Specific skill name (e.g., Python Programming, AWS Cloud Architecture)",
+        "currentLevel": "Detailed assessment of current proficiency based on resume evidence",
+        "requiredLevel": "Specific level needed for job success",
+        "gap": "Precise description of what needs to be learned/improved",
+        "impactOnJobSuccess": "How this gap affects job performance"
       }
     ],
-    "important": [Similar structure],
-    "niceToHave": [Similar structure]
+    "important": [
+      "Same structure as critical - skills that would significantly improve candidacy"
+    ],
+    "niceToHave": [
+      "Same structure - skills that would provide competitive advantage"
+    ]
   },
   "learningRecommendations": [
     {
-      "skill": "Skill name",
+      "skill": "Skill name matching gap analysis",
       "priority": "Critical/Important/Nice-to-have",
-      "timeInvestment": "Estimated hours/weeks",
+      "timeInvestment": "Realistic estimate (e.g., 40-60 hours over 8-10 weeks)",
       "courses": [
         {
-          "platform": "Coursera/Udemy/LinkedIn Learning",
-          "courseName": "Specific course title",
-          "cost": "Free/Paid price",
-          "duration": "Course length",
-          "difficulty": "Beginner/Intermediate/Advanced"
+          "platform": "Exact platform name",
+          "courseName": "Exact course title",
+          "instructor": "Course instructor name",
+          "url": "Direct clickable link to course",
+          "cost": "Exact price or 'Free'",
+          "duration": "Course length with specific hours/weeks",
+          "difficulty": "Beginner/Intermediate/Advanced",
+          "rating": "Course rating if available",
+          "description": "Brief description of what the course covers"
         }
       ],
       "freeResources": [
         {
-          "type": "YouTube/Documentation/Tutorial",
-          "resource": "Specific resource name/channel",
-          "description": "What this resource covers"
+          "type": "YouTube Channel/Documentation/Tutorial/GitHub Repository",
+          "resource": "Specific resource name",
+          "url": "Direct clickable link",
+          "description": "Detailed description of content and learning value",
+          "estimatedTime": "Time investment required"
         }
       ],
       "certifications": [
         {
-          "name": "Certification name",
-          "provider": "Certification provider",
-          "timeToComplete": "Estimated time",
-          "cost": "Certification cost"
+          "name": "Exact certification name",
+          "provider": "Certification provider organization",
+          "url": "Direct link to certification page",
+          "timeToComplete": "Realistic preparation time",
+          "cost": "Exact certification cost",
+          "validity": "How long certification is valid",
+          "industryRecognition": "Value in job market"
         }
       ],
-      "practicalApplication": "How to gain hands-on experience"
-    }
-  ],
+      "practicalApplication": "Specific projects or ways to gain hands-on experience",
+      "books": [
+        {
+          "title": "Book title",
   "developmentRoadmap": {
     "phase1": {
-      "duration": "Timeline",
-      "focus": "Priority skills to develop first",
-      "milestones": ["Specific achievements/goals"]
+      "duration": "Specific timeline (e.g., Weeks 1-8)",
+      "focus": "Priority skills to develop first with rationale",
+      "skills": ["List of specific skills to focus on"],
+      "milestones": ["Specific, measurable achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     },
     "phase2": {
-      "duration": "Timeline",
-      "focus": "Secondary skills focus",
-      "milestones": ["Specific achievements/goals"]
+      "duration": "Specific timeline (e.g., Weeks 9-16)",
+      "focus": "Secondary skills development",
+      "skills": ["List of specific skills"],
+      "milestones": ["Specific achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     },
     "phase3": {
-      "duration": "Timeline", 
+      "duration": "Specific timeline (e.g., Weeks 17-24)",
       "focus": "Advanced skills and specialization",
-      "milestones": ["Specific achievements/goals"]
+      "skills": ["List of specific skills"],
+      "milestones": ["Specific achievements"],
+      "weeklyTimeCommitment": "Recommended hours per week"
     }
   },
   "skillsAlreadyStrong": [
-    "Skills user already possesses that match job requirements"
+    {
+      "skill": "Skill name",
+      "evidence": "Specific evidence from resume",
+      "jobRelevance": "How this skill applies to target job"
+    }
+  ],
+  "totalDevelopmentTime": "Overall timeline estimate for becoming job-ready",
+  "budgetEstimate": {
+    "minimum": "Cost for free/low-cost learning path",
+    "recommended": "Cost for optimal learning path",
+    "premium": "Cost for comprehensive certification path"
+  },
+  "nextSteps": [
+    "Immediate actionable steps user should take this week"
   ]
-}`
+}
+
+Critical Requirements:
+
+1. USE WEB SEARCH: Search for current learning resources and include direct, clickable links
+2. Verify Resources: Ensure all recommended courses and resources are currently available
+3. Multiple Options: Provide 2-3 options per skill across different price points and learning styles
+4. Actionable Roadmap: Create realistic, time-bound development phases
+5. Budget Consciousness: Include free and paid options for each skill
+6. Industry Relevance: Focus on skills that directly impact job performance
+
+Search Strategy:
+
+- Search for each identified skill gap individually
+- Look for: "[Skill] online course 2024", "[Skill] certification", "[Skill] free tutorial"
+- Verify platform availability and current pricing
+- Include official documentation and vendor training when applicable
+- Search for hands-on projects and practical application opportunities
+
+Provide comprehensive analysis with specific, actionable learning recommendations that users can immediately act upon.`
             }
           ];
         }
