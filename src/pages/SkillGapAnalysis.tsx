@@ -32,7 +32,6 @@ import { Navbar } from '../components/Navbar';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
-import { updateUsage } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 /**
@@ -42,7 +41,7 @@ import toast from 'react-hot-toast';
  */
 const SkillGapAnalysis: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, updateUsage } = useAuthStore();
   const { 
     analyzeSkillGaps, 
     skillGaps, 
