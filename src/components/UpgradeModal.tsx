@@ -45,6 +45,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen]);
+
   const handleUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
     console.log('UpgradeModal: Upgrading to plan:', plan);
     setIsUpgrading(plan);
