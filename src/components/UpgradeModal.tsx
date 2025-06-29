@@ -325,17 +325,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       </div>
                     )}
                     
-                    {plan.originalPrice && plan.savings && (
-                      <div className="text-center mb-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                          {plan.originalPrice}
-                        </span>
-                        <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
-                          {plan.savings}
-                        </span>
-                      </div>
-                    )}
-                    
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {plan.description}
                     </p>
