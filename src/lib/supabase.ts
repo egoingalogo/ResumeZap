@@ -499,6 +499,16 @@ export const getLifetimeUserCount = async (): Promise<number> => {
  */
 const getLifetimeUserCountFallback = async (): Promise<number> => {
   try {
+    // Check if we're in a WebContainer or localhost environment
+    const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                           window.location.hostname.includes('local-credentialless') ||
+                           window.location.hostname === 'localhost';
+    
+    if (isWebContainer) {
+      console.log('getLifetimeUserCountFallback: WebContainer/localhost environment detected, returning 0 to avoid RLS restrictions');
+      return 0;
+    }
+    
     console.log('getLifetimeUserCountFallback: Using direct database query');
     
     const { count, error } = await supabase
