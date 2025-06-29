@@ -515,7 +515,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   /**
    * Analyze skill gaps using Claude AI and save to database
    */
-  analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
+  analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeFile?: File, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
     console.log('ResumeStore: Received parameters:', {
       hasJobPosting: !!jobPosting,

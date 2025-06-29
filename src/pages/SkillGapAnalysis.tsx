@@ -177,7 +177,7 @@ const SkillGapAnalysis: React.FC = () => {
     
     try {
       console.log('SkillGapAnalysis: Calling analyzeSkillGaps with file:', uploadedFile.name);
-      await analyzeSkillGaps('', jobPosting, uploadedFile);
+      await analyzeSkillGaps('', jobPosting, uploadedFile, undefined);
       toast.success('Skill gap analysis completed and saved!');
       setShowHistory(false); // Hide history when showing new results
     } catch (error) {
