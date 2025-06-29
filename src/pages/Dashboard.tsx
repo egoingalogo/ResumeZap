@@ -516,7 +516,7 @@ const Dashboard: React.FC = () => {
                           });
                       }
                     };
-                  })
+                  }),
                   ...coverLetters.map(coverLetter => ({
                     id: coverLetter.id,
                     type: 'cover_letter' as const,
