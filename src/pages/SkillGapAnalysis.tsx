@@ -159,6 +159,9 @@ const SkillGapAnalysis: React.FC = () => {
   });
 
   const handleAnalyze = async () => {
+    console.log('SkillGapAnalysis: Starting analysis with uploadedFile:', uploadedFile ? uploadedFile.name : 'null');
+    console.log('SkillGapAnalysis: Job posting length:', jobPosting.trim().length);
+    
     if (!uploadedFile) {
       toast.error('Please upload your resume as a PDF file');
       return;
@@ -172,6 +175,7 @@ const SkillGapAnalysis: React.FC = () => {
     console.log('SkillGapAnalysis: Starting new analysis');
     
     try {
+      console.log('SkillGapAnalysis: Calling analyzeSkillGaps with file:', uploadedFile.name);
       await analyzeSkillGaps('', jobPosting, uploadedFile);
       toast.success('Skill gap analysis completed and saved!');
       setShowHistory(false); // Hide history when showing new results

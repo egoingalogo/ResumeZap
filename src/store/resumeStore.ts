@@ -517,10 +517,18 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
    */
   analyzeSkillGaps: async (resumeContent: string, jobPosting: string, resumeId?: string) => {
     console.log('ResumeStore: Analyzing skill gaps');
+    console.log('ResumeStore: Received parameters:', {
+      hasResumeContent: !!resumeContent,
+      hasJobPosting: !!jobPosting,
+      hasResumeFile: !!resumeFile,
+      resumeFileName: resumeFile?.name,
+      resumeId
+    });
     set({ isAnalyzing: true, error: null });
     
     try {
       // Call Claude AI through Edge Function
+      console.log('ResumeStore: Calling AI service with file:', resumeFile?.name || 'no file');
       const skillGapResult = await analyzeSkillGapsAI(resumeContent, jobPosting);
       
       // Convert the new format to legacy format for backward compatibility
