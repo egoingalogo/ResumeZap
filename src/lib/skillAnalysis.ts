@@ -60,8 +60,8 @@ export const createSkillAnalysis = async (
     }
     
     // Validate input data
-    if (!resumeContent?.trim()) {
-      throw new Error('Resume content is required');
+    if (!resumeContent?.trim() && !resumeId) {
+      throw new Error('Resume content or resume ID is required');
     }
     
     if (!jobPosting?.trim()) {
@@ -77,7 +77,7 @@ export const createSkillAnalysis = async (
       user_id: user.id,
       resume_id: resumeId,
       job_posting_content: jobPosting.trim(),
-      resume_content_snapshot: resumeContent.trim(),
+      resume_content_snapshot: resumeContent?.trim() || 'PDF file processed by AI - content extracted during analysis',
       overall_summary: overallSummary?.trim() || null,
     };
     

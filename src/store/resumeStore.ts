@@ -529,6 +529,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       console.log('ResumeStore: Calling AI service with file:', resumeFile?.name || 'no file');
       const skillGapResult = await analyzeSkillGapsAI(resumeContent, jobPosting, resumeFile);
       
+      // Use the uploaded file name as resume content snapshot since we're processing PDF
+      const resumeContentForSaving = resumeFile ? 
+        `PDF Resume File: ${resumeFile.name} (${(resumeFile.size / 1024).toFixed(1)}KB) - Processed by AI` : 
+        resumeContent;
+      
       // Convert the new format to legacy format for backward compatibility
       const legacySkillGaps: SkillGap[] = [];
       
@@ -601,7 +606,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       
       // Save to database
       const savedAnalysis = await createSkillAnalysis(
-        resumeContent,
+        resumeContentForSaving,
         jobPosting,
         legacySkillGaps,
         resumeId || null,
