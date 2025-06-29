@@ -514,7 +514,6 @@ const LandingPage: React.FC = () => {
             )}
           </div>
         </div>
-        </div>
       </section>
 
       {/* CTA Section */}
