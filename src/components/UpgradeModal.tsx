@@ -187,36 +187,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <div className="text-gray-600 dark:text-gray-400 mb-4 max-w-2xl mx-auto">
                 Unlock the full power of AI-driven career acceleration
               </div>
-              
-              {/* Billing Toggle */}
-              <div className="flex items-center justify-center mt-4 mb-8">
-                <span className="text-gray-600 dark:text-gray-400 mr-3">Monthly</span>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    id="billing-toggle"
-                    className="sr-only"
-                    checked={isAnnual}
-                    onChange={(e) => setIsAnnual(e.target.checked)}
-                  />
-                  <label
-                    htmlFor="billing-toggle"
-                    className="flex items-center cursor-pointer"
-                  >
-                    <div className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
-                      isAnnual ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}>
-                      <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
-                        isAnnual ? 'translate-x-6' : 'translate-x-0'
-                      }`}></div>
-                    </div>
-                  </label>
-                </div>
-                <span className="text-gray-600 dark:text-gray-400 ml-3">
-                  Annual 
-                  <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
-                </span>
-              </div>
             </div>
             <button
               onClick={onClose}
@@ -228,7 +198,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
           {/* Lifetime Plan Alert */}
           {showLifetimePlan && (
-            <div className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-b border-amber-200 dark:border-amber-800 p-4">
+            <div className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-b border-amber-200 dark:border-amber-800 p-4 mb-6">
               <div className="flex items-center space-x-3">
                 <Crown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 <div className="flex-1">
@@ -242,6 +212,36 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center mb-6">
+            <span className="text-gray-600 dark:text-gray-400 mr-3">Monthly</span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                id="billing-toggle"
+                className="sr-only"
+                checked={isAnnual}
+                onChange={(e) => setIsAnnual(e.target.checked)}
+              />
+              <label
+                htmlFor="billing-toggle"
+                className="flex items-center cursor-pointer"
+              >
+                <div className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
+                  isAnnual ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}>
+                  <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                    isAnnual ? 'translate-x-6' : 'translate-x-0'
+                  }`}></div>
+                </div>
+              </label>
+            </div>
+            <span className="text-gray-600 dark:text-gray-400 ml-3">
+              Annual 
+              <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
+            </span>
+          </div>
 
           {/* Plans Grid */}
           <div className="flex-1 overflow-y-auto p-6">
