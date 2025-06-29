@@ -149,25 +149,24 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
         />
       ) : (
         <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={tier.onSelect}
-        disabled={tier.disabled}
-        className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-          tier.isPopular
-            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
-            : tier.isLifetime
-            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
-            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={tier.onSelect}
+          disabled={tier.disabled}
+          className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+            tier.isPopular
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+              : tier.isLifetime
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
+              : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
           }${tier.disabled ? ' opacity-50 cursor-not-allowed' : ''}`}
-        }`}
-      >
-        <div className="flex items-center justify-center space-x-2">
-          {tier.isLifetime && <Crown className="h-4 w-4" />}
-          {tier.isPopular && <Zap className="h-4 w-4" />}
-          <span>{tier.buttonText}</span>
-        </div>
-      </motion.button>
+        >
+          <div className="flex items-center justify-center space-x-2">
+            {tier.isLifetime && <Crown className="h-4 w-4" />}
+            {tier.isPopular && <Zap className="h-4 w-4" />}
+            <span>{tier.buttonText}</span>
+          </div>
+        </motion.button>
       )}
 
       {/* Guarantee for lifetime */}
