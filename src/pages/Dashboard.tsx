@@ -463,9 +463,9 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            {resumes.length > 0 || coverLetters.length > 0 ? (
+            {resumes.length > 0 || coverLetters.length > 0 || skillAnalyses.length > 0 ? (
               <div className="space-y-4">
-                {/* Combine and sort recent activities */}
+                {/* Combine and sort recent activities - include skill analyses */}
                 {[
                   ...resumes.map(resume => ({
                     id: resume.id,
@@ -489,6 +489,34 @@ const Dashboard: React.FC = () => {
                         });
                     }
                   })),
+                  ...skillAnalyses.map(analysis => {
+                    const skillsNeedDev = analysis.recommendations.filter(r => !r.hasSkill).length;
+                    const totalSkills = analysis.recommendations.length;
+                    const highPriorityGaps = analysis.recommendations.filter(r => !r.hasSkill && r.importance === 'high').length;
+                    
+                    return {
+                      id: analysis.id,
+                      type: 'skill_analysis' as const,
+                      title: `Skill Gap Analysis - ${new Date(analysis.analysisDate).toLocaleDateString()}`,
+                      subtitle: `${skillsNeedDev} of ${totalSkills} skills to develop${highPriorityGaps > 0 ? ` (${highPriorityGaps} high priority)` : ''}`,
+                      date: analysis.analysisDate,
+                      icon: BarChart3,
+                      color: 'bg-green-100 dark:bg-green-900',
+                      iconColor: 'text-green-600 dark:text-green-400',
+                      onClick: () => {
+                        console.log('Dashboard: Loading skill analysis for viewing:', analysis.id);
+                        useResumeStore.getState().loadSkillAnalysis(analysis.id)
+                          .then(() => {
+                            navigate('/skill-gap-analysis');
+                            toast.success('Skill analysis loaded successfully!');
+                          })
+                          .catch((error) => {
+                            console.error('Dashboard: Failed to load skill analysis:', error);
+                            toast.error('Failed to load skill analysis. Please try again.');
+                          });
+                      }
+                    };
+                  })
                   ...coverLetters.map(coverLetter => ({
                     id: coverLetter.id,
                     type: 'cover_letter' as const,
@@ -553,7 +581,7 @@ const Dashboard: React.FC = () => {
                   No activity yet
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Start by analyzing your first resume or generating a cover letter to see activity here
+                  Start by analyzing your first resume, generating a cover letter, or analyzing skill gaps to see activity here
                 </p>
                 <button
                   onClick={() => navigate('/resume-analyzer')}
