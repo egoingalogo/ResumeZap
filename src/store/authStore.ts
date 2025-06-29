@@ -220,7 +220,11 @@ export const useAuthStore = create<AuthState>()(
                 name: createdProfile.name,
                 plan: createdProfile.plan,
                 profilePictureUrl: createdProfile.profile_picture_url,
-                usageThisMonth: createdProfile.usage_this_month as any,
+                usageThisMonth: {
+                  resumeTailoring: createdProfile.usage_this_month?.resumeTailoring || 0,
+                  coverLetters: createdProfile.usage_this_month?.coverLetters || 0,
+                  skillGapAnalysis: createdProfile.usage_this_month?.skillGapAnalysis || 0,
+                },
                 createdAt: createdProfile.created_at,
               };
               
@@ -242,7 +246,11 @@ export const useAuthStore = create<AuthState>()(
             name: userProfile.name,
             plan: userProfile.plan,
             profilePictureUrl: userProfile.profile_picture_url,
-            usageThisMonth: userProfile.usage_this_month as any,
+            usageThisMonth: {
+              resumeTailoring: userProfile.usage_this_month?.resumeTailoring || 0,
+              coverLetters: userProfile.usage_this_month?.coverLetters || 0,
+              skillGapAnalysis: userProfile.usage_this_month?.skillGapAnalysis || 0,
+            },
             createdAt: userProfile.created_at,
           };
           
@@ -387,6 +395,7 @@ export const useAuthStore = create<AuthState>()(
                 profile_picture_url: null,
                 usage_this_month: {
                   resumeTailoring: 0,
+                  coverLetters: 0,
                   skillGapAnalysis: 0,
                 },
               };
@@ -409,7 +418,11 @@ export const useAuthStore = create<AuthState>()(
                 name: upsertedProfile.name,
                 plan: upsertedProfile.plan,
                 profilePictureUrl: upsertedProfile.profile_picture_url,
-                usageThisMonth: upsertedProfile.usage_this_month as any,
+                usageThisMonth: {
+                  resumeTailoring: upsertedProfile.usage_this_month?.resumeTailoring || 0,
+                  coverLetters: upsertedProfile.usage_this_month?.coverLetters || 0,
+                  skillGapAnalysis: upsertedProfile.usage_this_month?.skillGapAnalysis || 0,
+                },
                 createdAt: upsertedProfile.created_at,
               };
               
