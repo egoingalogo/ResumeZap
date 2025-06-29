@@ -98,16 +98,6 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
             </span>
           </div>
         )}
-        {tier.originalPrice && tier.savings && (
-          <div className="text-center mb-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-              {tier.originalPrice}
-            </span>
-            <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
-              {tier.savings}
-            </span>
-          </div>
-        )}
         <p className="text-gray-600 dark:text-gray-400">
           {tier.description}
         </p>
