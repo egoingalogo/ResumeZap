@@ -413,10 +413,25 @@ export async function analyzeSkillGaps(
   resumeFile?: File
 ): Promise<SkillGapResult> {
   console.log('AIService: Starting skill gap analysis');
+  console.log('AIService: Received parameters:', {
+    hasResumeContent: !!resumeContent?.trim(),
+    hasJobPosting: !!jobPosting?.trim(),
+    hasResumeFile: !!resumeFile,
+    resumeFileName: resumeFile?.name,
+    resumeFileSize: resumeFile?.size
+  });
 
-  // Now requiring PDF file upload in the UI
+  // Check if we have either resume content or file
+  if (!resumeContent?.trim() && !resumeFile) {
+    throw new Error('Either resume content or resume file is required');
+  }
+
+  // For skill gap analysis, prefer file upload but allow fallback to text content
   if (!resumeFile) {
-    throw new Error('Resume file is required');
+    console.log('AIService: No file provided, using text content for analysis');
+    if (!resumeContent?.trim()) {
+      throw new Error('Resume content or file is required for analysis');
+    }
   }
 
   if (!jobPosting.trim()) {
@@ -429,20 +444,26 @@ export async function analyzeSkillGaps(
       jobPosting: jobPosting.trim(),
     };
 
-    // Add resume content or file
-    console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
-    
-    // Validate PDF file if provided
-    const validation = validatePdfFile(resumeFile);
-    if (!validation.isValid) {
-      throw new Error(validation.error);
+    if (resumeFile) {
+      // Add resume file
+      console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
+      
+      // Validate PDF file if provided
+      const validation = validatePdfFile(resumeFile);
+      if (!validation.isValid) {
+        throw new Error(validation.error);
+      }
+      
+      requestData.resumeFile = {
+        data: await fileToBase64(resumeFile),
+        media_type: getMediaType(resumeFile),
+        filename: resumeFile.name,
+      };
+    } else {
+      // Add resume content as fallback
+      console.log('AIService: Using resume content for skill analysis');
+      requestData.resumeContent = resumeContent.trim();
     }
-    
-    requestData.resumeFile = {
-      data: await fileToBase64(resumeFile),
-      media_type: getMediaType(resumeFile),
-      filename: resumeFile.name,
-    };
 
     const result = await callClaudeAPI(requestData);
     
