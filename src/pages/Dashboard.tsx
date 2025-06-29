@@ -98,6 +98,9 @@ const Dashboard: React.FC = () => {
   const coverLetterUsagePercent = currentLimits.coverLetters === Infinity 
     ? 0 
     : (user.usageThisMonth.coverLetters / currentLimits.coverLetters) * 100;
+  const skillGapUsagePercent = currentLimits.skillGapAnalysis === Infinity
+    ? 0
+    : (user.usageThisMonth.skillGapAnalysis / currentLimits.skillGapAnalysis) * 100;
 
   const quickActions = [
     {
@@ -259,7 +262,7 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="grid md:grid-cols-2 gap-6 mb-8"
+              className="grid md:grid-cols-3 gap-6 mb-8"
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
@@ -306,6 +309,31 @@ const Dashboard: React.FC = () => {
                         coverLetterUsagePercent >= 100 ? 'bg-red-500' : 'bg-blue-500'
                       }`}
                       style={{ width: `${Math.min(coverLetterUsagePercent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Skill Gap Analysis</h3>
+                  <BarChart3 className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {user.usageThisMonth.skillGapAnalysis} of {currentLimits.skillGapAnalysis === Infinity ? '∞' : currentLimits.skillGapAnalysis} used
+                    </span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {Math.round(skillGapUsagePercent)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        skillGapUsagePercent >= 100 ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min(skillGapUsagePercent, 100)}%` }}
                     />
                   </div>
                 </div>

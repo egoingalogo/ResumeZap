@@ -387,7 +387,7 @@ export const useAuthStore = create<AuthState>()(
                 profile_picture_url: null,
                 usage_this_month: {
                   resumeTailoring: 0,
-                  coverLetters: 0,
+                  skillGapAnalysis: 0,
                 },
               };
               
