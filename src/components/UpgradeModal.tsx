@@ -76,6 +76,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const showLifetimePlan = lifetimeUserCount !== null && lifetimeUserCount < 1000;
   const lifetimeUsersRemaining = showLifetimePlan ? 1000 - (lifetimeUserCount || 0) : 0;
 
+  // Function to check if a plan is lower than or equal to current plan
+  const isPlanLowerOrEqual = (planId: string) => {
+    const planHierarchy = { 'free': 0, 'premium': 1, 'pro': 2, 'lifetime': 3 };
+    return planHierarchy[planId as keyof typeof planHierarchy] <= planHierarchy[currentPlan as keyof typeof planHierarchy];
+  };
+
   const plans = [
     {
       id: 'free',
@@ -115,6 +121,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         ? 'bg-gray-400 cursor-not-allowed' 
         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
       isPopular: true,
+      disabled: isPlanLowerOrEqual('premium'),
       current: currentPlan === 'premium',
     },
     {
@@ -138,6 +145,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         ? 'bg-gray-400 cursor-not-allowed' 
         : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
       isPopular: false,
+      disabled: isPlanLowerOrEqual('pro'),
       current: currentPlan === 'pro',
     },
   ];
@@ -324,8 +332,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   {/* Action Button */}
                   <button
                     onClick={() => plan.current ? null : handleUpgrade(plan.id as any)}
-                    disabled={plan.current || isUpgrading === plan.id}
-                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${plan.buttonStyle}`}
+                    disabled={plan.current || plan.disabled || isUpgrading === plan.id}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                      isUpgrading === plan.id
+                        ? plan.buttonStyle
+                      : plan.current || plan.disabled
+                        ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                        : plan.buttonStyle
+                    }`}
                   >
                     {isUpgrading === plan.id ? (
                       <>
@@ -333,7 +347,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         <span>Upgrading...</span>
                       </>
                     ) : (
-                      <span>{plan.buttonText}</span>
+                      <span>{plan.current ? 'Current Plan' : plan.disabled ? 'Lower Plan' : plan.buttonText}</span>
                     )}
                   </button>
 

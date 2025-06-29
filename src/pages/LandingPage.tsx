@@ -45,8 +45,10 @@ const LandingPage: React.FC = () => {
   console.log('LandingPage: Component mounted');
 
   useEffect(() => {
-    // Fetch lifetime user count on component mount
-    fetchLifetimeUserCount();
+    if (isAuthenticated) {
+      // Fetch lifetime user count on component mount
+      fetchLifetimeUserCount();
+    }
   }, [fetchLifetimeUserCount]);
 
   useEffect(() => {
@@ -60,6 +62,15 @@ const LandingPage: React.FC = () => {
 
   // Determine if lifetime plan should be shown (only for first 1000 users)
   const showLifetimePlan = lifetimeUserCount !== null && lifetimeUserCount < 1000;
+
+  // Function to check if a plan is lower than or equal to current plan
+  const isPlanLowerOrEqual = (planName: string) => {
+    if (!isAuthenticated || !user) return false;
+    
+    const planHierarchy = { 'free': 0, 'premium': 1, 'pro': 2, 'lifetime': 3 };
+    return planHierarchy[planName.toLowerCase() as keyof typeof planHierarchy] <= 
+           planHierarchy[user.plan as keyof typeof planHierarchy];
+  };
 
   const features = [
     {
@@ -103,6 +114,7 @@ const LandingPage: React.FC = () => {
   // Updated pricing plans to match UpgradeModal
   const pricingPlans = [
     {
+      id: 'free',
       name: 'Free',
       price: isAnnual ? '$0' : '$0',
       period: 'forever',
@@ -115,10 +127,12 @@ const LandingPage: React.FC = () => {
         'Email support (48-72 hours)',
       ],
       buttonText: 'Get Started Free',
-      buttonStyle: 'bg-gray-600 hover:bg-gray-700 text-white',
+      buttonStyle: isAuthenticated && user ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-700 text-white',
+      disabled: isAuthenticated && user ? true : false,
       isPopular: false,
     },
     {
+      id: 'premium',
       name: 'Premium',
       price: isAnnual ? '$79.99' : '$7.99',
       period: isAnnual ? '/year' : '/month',
@@ -133,10 +147,12 @@ const LandingPage: React.FC = () => {
         'Priority email support (24-48 hours)',
       ],
       buttonText: 'Upgrade to Premium',
-      buttonStyle: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
+      buttonStyle: isPlanLowerOrEqual('premium') ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
+      disabled: isPlanLowerOrEqual('premium'),
       isPopular: true,
     },
     {
+      id: 'pro',
       name: 'Pro',
       price: isAnnual ? '$149.99' : '$14.99',
       period: isAnnual ? '/year' : '/month',
@@ -152,7 +168,8 @@ const LandingPage: React.FC = () => {
         'Bulk processing capabilities',
       ],
       buttonText: 'Upgrade to Pro',
-      buttonStyle: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
+      buttonStyle: isPlanLowerOrEqual('pro') ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
+      disabled: isPlanLowerOrEqual('pro'),
       isPopular: false,
     },
   ];
@@ -160,6 +177,7 @@ const LandingPage: React.FC = () => {
   // Add lifetime plan if available
   if (showLifetimePlan) {
     pricingPlans.push({
+      id: 'lifetime',
       name: 'Lifetime',
       price: '$79.99',
       period: 'one-time',
@@ -172,7 +190,8 @@ const LandingPage: React.FC = () => {
         '60-day money-back guarantee',
       ],
       buttonText: 'Get Lifetime Access',
-      buttonStyle: 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
+      buttonStyle: isPlanLowerOrEqual('lifetime') ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
+      disabled: isPlanLowerOrEqual('lifetime'),
       isPopular: true,
     });
   }
@@ -485,9 +504,11 @@ const LandingPage: React.FC = () => {
                 {/* Action Button */}
                 <button
                   onClick={() => handleGetStarted(plan.name)}
+                  disabled={plan.disabled}
                   className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${plan.buttonStyle}`}
                 >
-                  {plan.buttonText}
+                  {isAuthenticated && user && plan.id.toLowerCase() === user.plan ? 'Current Plan' : 
+                   plan.disabled ? 'Lower Plan' : plan.buttonText}
                 </button>
 
                 {/* Lifetime Plan Special Note */}
