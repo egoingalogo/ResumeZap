@@ -405,7 +405,6 @@ const LandingPage: React.FC = () => {
               </span>
             </div>
           </motion.div>
-        </div>
 
           {/* Lifetime Plan Alert */}
           {showLifetimePlan && (
@@ -514,6 +513,7 @@ const LandingPage: React.FC = () => {
               </p>
             )}
           </div>
+        </div>
         </div>
       </section>
 
