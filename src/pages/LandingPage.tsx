@@ -27,7 +27,6 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
-import { PricingCard } from '../components/PricingCard';
 import { useAuthStore } from '../store/authStore';
 import { getLifetimeUserCount } from '../lib/supabase';
 
@@ -105,7 +104,7 @@ const LandingPage: React.FC = () => {
   const pricingPlans = [
     {
       name: 'Free',
-      price: '$0',
+      price: isAnnual ? '$0' : '$0',
       period: 'forever',
       description: 'Perfect for getting started',
       features: [
@@ -121,8 +120,10 @@ const LandingPage: React.FC = () => {
     },
     {
       name: 'Premium',
-      price: '$7.99',
-      period: '/month',
+      price: isAnnual ? '$79.99' : '$7.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$95.88' : null,
+      savings: isAnnual ? 'Save $15.89' : null,
       description: 'For active job seekers',
       features: [
         '20 resume tailoring sessions/month',
@@ -137,8 +138,10 @@ const LandingPage: React.FC = () => {
     },
     {
       name: 'Pro',
-      price: '$14.99',
-      period: '/month',
+      price: isAnnual ? '$149.99' : '$14.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$179.88' : null,
+      savings: isAnnual ? 'Save $29.89' : null,
       description: 'For career professionals',
       features: [
         'Unlimited resume tailoring',
