@@ -481,7 +481,7 @@ const LandingPage: React.FC = () => {
             </p>
             {showLifetimePlan && (
               <p className="text-amber-600 dark:text-amber-400 mt-2">
-                Lifetime plan price will increase after the first 1,000 members.
+                Lifetime plan offer is limited only for the first 1,000 members.
               </p>
             )}
           </div>
