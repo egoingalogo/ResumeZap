@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -42,35 +41,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 }) => {
   const { upgradePlan } = useAuthStore();
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [paymentVisible, setPaymentVisible] = useState<string | null>(null);
-  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
-    }
-    
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  // Show PayPal payment options
-  const initiatePayment = (plan: 'premium' | 'pro' | 'lifetime') => {
-    console.log('UpgradeModal: Initiating payment for plan:', plan);
-    setPaymentVisible(plan);
-  };
-  
-  // Complete upgrade after successful payment
-  const completeUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
+  const handleUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
+    console.log('UpgradeModal: Upgrading to plan:', plan);
     setIsUpgrading(plan);
     
     try {
@@ -82,54 +58,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       toast.error('Upgrade failed. Please try again.');
     } finally {
       setIsUpgrading(null);
-      setPaymentVisible(null);
     }
-  };
-
-  // Get plan amount based on selected plan and billing period
-  const getPlanAmount = (plan: string): string => {
-    if (plan === 'premium') {
-      return isAnnual ? '79.99' : '7.99';
-    } else if (plan === 'pro') {
-      return isAnnual ? '149.99' : '14.99';
-    } else if (plan === 'lifetime') {
-      return '79.99';
-    }
-    return '0.00';
-  };
-
-  // Create PayPal order
-  const createPayPalOrder = (plan: string) => {
-    return async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-paypal-order`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            planType: plan,
-            isAnnual: isAnnual,
-            amount: getPlanAmount(plan),
-            currency: 'USD',
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create order');
-        }
-
-        const order = await response.json();
-        return order.id;
-      } catch (error) {
-        console.error('Failed to create PayPal order:', error);
-        toast.error('Failed to initialize payment. Please try again.');
-        setPaymentVisible(null);
-        return null;
-      }
-    };
   };
 
   // Determine if lifetime plan should be shown (only for first 1000 users)
@@ -138,58 +67,87 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const plans = [
     {
-      name: 'Premium',
-      id: 'premium',
-      icon: Crown,
-      monthlyPrice: 7.99,
-      annualPrice: 79.99,
-      description: 'Perfect for active job seekers',
-      badge: 'Most Popular',
+      id: 'free',
+      name: 'Free',
+      price: '$0',
+      period: 'forever',
+      description: 'Perfect for getting started',
       features: [
-        'Unlimited resume tailoring',
-        'Advanced skill gap analysis',
-        'Priority support',
-        'Export to PDF/Word',
-        'Application tracking',
-        'Cover letter generation'
-      ]
+        { icon: FileText, text: '1 resume tailoring session/month', included: true },
+        { icon: Mail, text: '2 cover letter generations/month', included: true },
+        { icon: BarChart3, text: '2 skill gap analysis/month', included: true },
+        { icon: Download, text: 'Export to PDF only', included: true },
+        { icon: MessageSquare, text: 'Email support (48-72 hours)', included: true },
+      ],
+      buttonText: 'Current Plan',
+      buttonStyle: 'bg-gray-400 cursor-not-allowed',
+      isPopular: false,
+      current: currentPlan === 'free',
     },
     {
-      name: 'Pro',
-      id: 'pro',
-      icon: Zap,
-      monthlyPrice: 14.99,
-      annualPrice: 149.99,
-      description: 'For professionals and recruiters',
-      badge: 'Best Value',
+      id: 'premium',
+      name: 'Premium',
+      price: '$7.99',
+      period: '/month',
+      description: 'For active job seekers',
       features: [
-        'Everything in Premium',
-        'Advanced analytics dashboard',
-        'Team collaboration tools',
-        'Custom branding',
-        'API access',
-        'White-label solutions'
-      ]
-    }
+        { icon: FileText, text: '20 resume tailoring sessions/month', included: true },
+        { icon: Mail, text: '25 cover letter generations/month', included: true },
+        { icon: BarChart3, text: '20 skill gap analysis/month', included: true },
+        { icon: Download, text: 'All export formats (PDF, RTF, TXT)', included: true },
+        { icon: MessageSquare, text: 'Priority email support (24-48 hours)', included: true },
+      ],
+      buttonText: currentPlan === 'premium' ? 'Current Plan' : 'Upgrade to Premium',
+      buttonStyle: currentPlan === 'premium' 
+        ? 'bg-gray-400 cursor-not-allowed' 
+        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
+      isPopular: true,
+      current: currentPlan === 'premium',
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: '$14.99',
+      period: '/month',
+      description: 'For career professionals',
+      features: [
+        { icon: Infinity, text: 'Unlimited resume tailoring', included: true },
+        { icon: Infinity, text: 'Unlimited cover letters', included: true },
+        { icon: Infinity, text: 'Unlimited skill gap analysis', included: true },
+        { icon: Download, text: 'All export formats (PDF, RTF, TXT)', included: true },
+        { icon: MessageSquare, text: 'Priority email support (4 hours)', included: true },
+        { icon: Users, text: 'Bulk processing capabilities', included: true },
+      ],
+      buttonText: currentPlan === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
+      buttonStyle: currentPlan === 'pro' 
+        ? 'bg-gray-400 cursor-not-allowed' 
+        : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
+      isPopular: false,
+      current: currentPlan === 'pro',
+    },
   ];
 
+  // Add lifetime plan if available
   if (showLifetimePlan) {
     plans.push({
-      name: 'Lifetime',
       id: 'lifetime',
-      icon: Infinity,
-      monthlyPrice: 0,
-      annualPrice: 79.99,
-      description: 'Limited time offer',
-      badge: `Only ${lifetimeUsersRemaining} left!`,
+      name: 'Lifetime',
+      price: '$79.99',
+      period: 'one-time',
+      description: 'Limited early adopter offer',
       features: [
-        'Everything in Premium forever',
-        'No monthly fees',
-        'Priority feature access',
-        'Exclusive community access',
-        'Lifetime updates',
-        'VIP support'
-      ]
+        { icon: Infinity, text: 'All Pro features permanently', included: true },
+        { icon: Award, text: 'Exclusive early adopter badge', included: true },
+        { icon: MessageSquare, text: 'Direct feedback channel to development team', included: true },
+        { icon: Calendar, text: '30-day early access to future feature updates before general release', included: true },
+        { icon: Shield, text: '60-day money-back guarantee', included: true },
+      ],
+      buttonText: currentPlan === 'lifetime' ? 'Current Plan' : 'Get Lifetime Access',
+      buttonStyle: currentPlan === 'lifetime' 
+        ? 'bg-gray-400 cursor-not-allowed' 
+        : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
+      isPopular: true,
+      current: currentPlan === 'lifetime',
     });
   }
 
@@ -199,235 +157,157 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     <AnimatePresence>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6 rounded-t-2xl">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  Upgrade Your Plan
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Choose the perfect plan for your career journey
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-500" />
-              </button>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Choose Your Plan
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Unlock the full power of AI-driven career acceleration
+              </p>
             </div>
-
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center mt-6">
-              <span className={`mr-3 ${!isAnnual ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                Monthly
-              </span>
-              <button
-                onClick={() => setIsAnnual(!isAnnual)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isAnnual ? 'bg-blue-600' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isAnnual ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className={`ml-3 ${isAnnual ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                Annual
-              </span>
-              {isAnnual && (
-                <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                  Save 20%
-                </span>
-              )}
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+            >
+              <X className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
 
-          {/* Plans */}
-          <div className="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => {
-              const Icon = plan.icon;
-              const isCurrentPlan = currentPlan === plan.id;
-              const price = plan.id === 'lifetime' ? plan.annualPrice : (isAnnual ? plan.annualPrice : plan.monthlyPrice);
-              const isPaymentActive = paymentVisible === plan.id;
+          {/* Lifetime Plan Alert */}
+          {showLifetimePlan && (
+            <div className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-b border-amber-200 dark:border-amber-800 p-4">
+              <div className="flex items-center space-x-3">
+                <Crown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
+                    🔥 Limited Time: Lifetime Plan Available
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-500">
+                    Only {lifetimeUsersRemaining} lifetime memberships remaining for early adopters
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-              return (
+          {/* Plans Grid */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className={`grid gap-6 ${showLifetimePlan ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+              {plans.map((plan) => (
                 <motion.div
                   key={plan.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`relative p-6 rounded-xl border-2 transition-all duration-300 ${
-                    plan.badge === 'Most Popular' || plan.badge === 'Best Value'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : isCurrentPlan
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
-                  }`}
+                  transition={{ duration: 0.5, delay: plans.indexOf(plan) * 0.1 }}
+                  className={`relative bg-white dark:bg-gray-800 rounded-2xl border-2 p-6 transition-all duration-200 hover:shadow-lg ${
+                    plan.isPopular 
+                      ? 'border-purple-500 shadow-lg ring-2 ring-purple-500/20' 
+                      : 'border-gray-200 dark:border-gray-700'
+                  } ${plan.current ? 'opacity-75' : ''}`}
                 >
-                  {/* Badge */}
-                  {plan.badge && (
-                    <div className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold ${
-                      plan.badge === 'Most Popular' || plan.badge === 'Best Value'
-                        ? 'bg-blue-600 text-white'
-                        : plan.badge.includes('left')
-                        ? 'bg-red-600 text-white'
-                        : 'bg-green-600 text-white'
-                    }`}>
-                      {plan.badge}
-                    </div>
-                  )}
-
-                  {/* Current Plan Badge */}
-                  {isCurrentPlan && (
-                    <div className="absolute -top-3 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      Current Plan
+                  {/* Popular Badge */}
+                  {plan.isPopular && !plan.current && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                        {plan.id === 'lifetime' ? 'Limited Time' : 'Most Popular'}
+                      </span>
                     </div>
                   )}
 
                   {/* Plan Header */}
                   <div className="text-center mb-6">
-                    <Icon className="w-12 h-12 mx-auto mb-4 text-blue-600" />
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                       {plan.name}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    <div className="flex items-baseline justify-center space-x-1">
+                      <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {plan.price}
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {plan.period}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {plan.description}
                     </p>
-                    
-                    {/* Price */}
-                    <div className="mb-4">
-                      <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                        ${price}
-                      </span>
-                      {plan.id !== 'lifetime' && (
-                        <span className="text-gray-600 dark:text-gray-400">
-                          /{isAnnual ? 'year' : 'month'}
-                        </span>
-                      )}
-                      {plan.id === 'lifetime' && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          One-time payment
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Annual Savings */}
-                    {isAnnual && plan.id !== 'lifetime' && (
-                      <div className="text-sm text-green-600 font-semibold">
-                        Save ${(plan.monthlyPrice * 12 - plan.annualPrice).toFixed(2)} per year
-                      </div>
-                    )}
                   </div>
 
-                  {/* Features */}
-                  <ul className="space-y-3 mb-6">
+                  {/* Features List */}
+                  <div className="space-y-3 mb-6">
                     {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700 dark:text-gray-300 text-sm">
-                          {feature}
+                      <div key={index} className="flex items-start space-x-3">
+                        <div className={`flex-shrink-0 p-1 rounded-full ${
+                          feature.included 
+                            ? 'bg-green-100 dark:bg-green-900/20' 
+                            : 'bg-gray-100 dark:bg-gray-800'
+                        }`}>
+                          {feature.included ? (
+                            <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <X className="h-3 w-3 text-gray-400" />
+                          )}
+                        </div>
+                        <span className={`text-sm ${
+                          feature.included 
+                            ? 'text-gray-900 dark:text-white' 
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {feature.text}
                         </span>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
 
-                  {/* Action Button or Payment */}
-                  {!isPaymentActive ? (
-                    <button
-                      onClick={() => initiatePayment(plan.id as 'premium' | 'pro' | 'lifetime')}
-                      disabled={isCurrentPlan || isUpgrading === plan.id}
-                      className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${
-                        isCurrentPlan
-                          ? 'bg-green-100 text-green-800 cursor-not-allowed'
-                          : isUpgrading === plan.id
-                          ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
-                      }`}
-                    >
-                      {isCurrentPlan
-                        ? 'Current Plan'
-                        : isUpgrading === plan.id
-                        ? 'Upgrading...'
-                        : `Upgrade to ${plan.name}`
-                      }
-                    </button>
-                  ) : (
-                    <div className="space-y-4">
-                      <PayPalScriptProvider
-                        options={{
-                          "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "",
-                          currency: "USD",
-                        }}
-                        onLoadScript={() => setPaypalLoaded(true)}
-                      >
-                        {paypalLoaded && (
-                          <PayPalButtons
-                            style={{ layout: "vertical" }}
-                            createOrder={createPayPalOrder(plan.id)}
-                            onApprove={async (data) => {
-                              try {
-                                // Verify payment with backend
-                                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-paypal-payment`, {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                                  },
-                                  body: JSON.stringify({
-                                    orderID: data.orderID,
-                                    planType: plan.id,
-                                  }),
-                                });
+                  {/* Action Button */}
+                  <button
+                    onClick={() => plan.current ? null : handleUpgrade(plan.id as any)}
+                    disabled={plan.current || isUpgrading === plan.id}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${plan.buttonStyle}`}
+                  >
+                    {isUpgrading === plan.id ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Upgrading...</span>
+                      </>
+                    ) : (
+                      <span>{plan.buttonText}</span>
+                    )}
+                  </button>
 
-                                if (response.ok) {
-                                  await completeUpgrade(plan.id as 'premium' | 'pro' | 'lifetime');
-                                } else {
-                                  throw new Error('Payment verification failed');
-                                }
-                              } catch (error) {
-                                console.error('Payment approval failed:', error);
-                                toast.error('Payment failed. Please try again.');
-                                setPaymentVisible(null);
-                              }
-                            }}
-                            onError={(err) => {
-                              console.error('PayPal error:', err);
-                              toast.error('Payment failed. Please try again.');
-                              setPaymentVisible(null);
-                            }}
-                            onCancel={() => {
-                              setPaymentVisible(null);
-                            }}
-                          />
-                        )}
-                      </PayPalScriptProvider>
-                      
-                      <button
-                        onClick={() => setPaymentVisible(null)}
-                        className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
+                  {/* Lifetime Plan Special Note */}
+                  {plan.id === 'lifetime' && !plan.current && (
+                    <div className="mt-4 text-center">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        🎉 Early Adopter Special
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Help shape ResumeZap's future
+                      </p>
                     </div>
                   )}
                 </motion.div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
 
-          {/* Footer */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-6 text-center">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              All plans include a 30-day money-back guarantee. Cancel anytime.
-            </p>
+            {/* Additional Info */}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                All plans include secure data encryption and can be cancelled anytime.
+              </p>
+              {showLifetimePlan && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Lifetime plan price will increase after the first 1,000 members.
+                </p>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
