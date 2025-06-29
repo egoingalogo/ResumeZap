@@ -321,7 +321,10 @@ CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`
           userContent = [
             {
               type: "text",
-              text: `Create a ${coverLetterReq.tone} cover letter based on this resume file:
+              text: `Generate a compelling, personalized cover letter based on the provided resume file and job details.
+
+Input Data:
+RESUME FILE: [PDF file uploaded by user - extract and analyze all content]
 
 JOB POSTING:
 ${coverLetterReq.jobPosting}
@@ -329,17 +332,37 @@ ${coverLetterReq.jobPosting}
 COMPANY NAME: ${coverLetterReq.companyName}
 JOB TITLE: ${coverLetterReq.jobTitle}
 TONE: ${coverLetterReq.tone}
-${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : ''}
-${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : ''}
+${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : 'HIRING MANAGER: [Use appropriate generic salutation]'}
+${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : 'PERSONAL HIGHLIGHTS: [None provided]'}
 
-Provide JSON response:
+CRITICAL REQUIREMENTS:
+- PRESERVE ALL FACTUAL DATA from the resume - never alter dates, positions, companies, or achievements
+- Never fabricate experiences or skills not present in the original resume
+- Only enhance presentation and relevance while maintaining complete authenticity
+
+Cover Letter Requirements:
+1. Length: 3-4 paragraphs, approximately 250-400 words
+2. Structure:
+   - Opening with specific job title and company name
+   - 1-2 body paragraphs highlighting relevant experience and achievements
+   - Strong closing with clear call to action
+3. Personalization: Reference specific company details and job requirements
+4. Tone: ${coverLetterReq.tone === 'professional' 
+     ? 'Formal, respectful, business-appropriate language' 
+     : coverLetterReq.tone === 'enthusiastic'
+     ? 'Energetic, passionate, showing genuine excitement for the role'
+     : 'Direct, brief, focused on key points without unnecessary elaboration'}
+5. Value Proposition: Clearly articulate how candidate's experience benefits the company
+
+Required JSON Response Format:
+
 {
   "coverLetter": "Complete cover letter text",
   "customizations": [
-    "List of company/job-specific elements incorporated"
+    "List of company-specific elements incorporated"
   ],
   "keyStrengths": [
-    "Main value propositions highlighted"
+    "Main value propositions and qualifications highlighted from the resume"
   ],
   "callToAction": "Specific closing statement used"
 }`
@@ -357,9 +380,10 @@ Provide JSON response:
           userContent = [
             {
               type: "text",
-              text: `Create a ${coverLetterReq.tone} cover letter based on:
+              text: `Generate a compelling, personalized cover letter based on the provided resume and job details.
 
-RESUME:
+Input Data:
+RESUME CONTENT:
 ${coverLetterReq.resumeContent}
 
 JOB POSTING:
@@ -368,17 +392,37 @@ ${coverLetterReq.jobPosting}
 COMPANY NAME: ${coverLetterReq.companyName}
 JOB TITLE: ${coverLetterReq.jobTitle}
 TONE: ${coverLetterReq.tone}
-${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : ''}
-${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : ''}
+${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : 'HIRING MANAGER: [Use appropriate generic salutation]'}
+${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : 'PERSONAL HIGHLIGHTS: [None provided]'}
 
-Provide JSON response:
+CRITICAL REQUIREMENTS:
+- PRESERVE ALL FACTUAL DATA from the resume - never alter dates, positions, companies, or achievements
+- Never fabricate experiences or skills not present in the original resume
+- Only enhance presentation and relevance while maintaining complete authenticity
+
+Cover Letter Requirements:
+1. Length: 3-4 paragraphs, approximately 250-400 words
+2. Structure:
+   - Opening with specific job title and company name
+   - 1-2 body paragraphs highlighting relevant experience and achievements
+   - Strong closing with clear call to action
+3. Personalization: Reference specific company details and job requirements
+4. Tone: ${coverLetterReq.tone === 'professional' 
+     ? 'Formal, respectful, business-appropriate language' 
+     : coverLetterReq.tone === 'enthusiastic'
+     ? 'Energetic, passionate, showing genuine excitement for the role'
+     : 'Direct, brief, focused on key points without unnecessary elaboration'}
+5. Value Proposition: Clearly articulate how candidate's experience benefits the company
+
+Required JSON Response Format:
+
 {
   "coverLetter": "Complete cover letter text",
   "customizations": [
-    "List of company/job-specific elements incorporated"
+    "List of company-specific elements incorporated"
   ],
   "keyStrengths": [
-    "Main value propositions highlighted"
+    "Main value propositions and qualifications highlighted from the resume"
   ],
   "callToAction": "Specific closing statement used"
 }`
