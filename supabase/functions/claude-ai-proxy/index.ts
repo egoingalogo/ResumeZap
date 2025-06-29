@@ -317,11 +317,10 @@ STRUCTURE REQUIREMENTS:
 OUTPUT: Provide both the cover letter and customization details used.
 CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks`;
 
-        if (coverLetterReq.resumeFile) {
-          userContent = [
-            {
-              type: "text",
-              text: `Generate a compelling, personalized cover letter based on the provided resume file and job details.
+        userContent = [
+          {
+            type: "text",
+            text: `Generate a compelling, personalized cover letter based on the provided resume file and job details.
 
 Input Data:
 RESUME FILE: [PDF file uploaded by user - extract and analyze all content]
@@ -366,69 +365,16 @@ Required JSON Response Format:
   ],
   "callToAction": "Specific closing statement used"
 }`
-            },
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: coverLetterReq.resumeFile.media_type,
-                data: coverLetterReq.resumeFile.data
-              }
+          },
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: coverLetterReq.resumeFile.media_type,
+              data: coverLetterReq.resumeFile.data
             }
-          ];
-        } else {
-          userContent = [
-            {
-              type: "text",
-              text: `Generate a compelling, personalized cover letter based on the provided resume and job details.
-
-Input Data:
-RESUME CONTENT:
-${coverLetterReq.resumeContent}
-
-JOB POSTING:
-${coverLetterReq.jobPosting}
-
-COMPANY NAME: ${coverLetterReq.companyName}
-JOB TITLE: ${coverLetterReq.jobTitle}
-TONE: ${coverLetterReq.tone}
-${coverLetterReq.hiringManager ? `HIRING MANAGER: ${coverLetterReq.hiringManager}` : 'HIRING MANAGER: [Use appropriate generic salutation]'}
-${coverLetterReq.personalExperience ? `PERSONAL HIGHLIGHTS: ${coverLetterReq.personalExperience}` : 'PERSONAL HIGHLIGHTS: [None provided]'}
-
-CRITICAL REQUIREMENTS:
-- PRESERVE ALL FACTUAL DATA from the resume - never alter dates, positions, companies, or achievements
-- Never fabricate experiences or skills not present in the original resume
-- Only enhance presentation and relevance while maintaining complete authenticity
-
-Cover Letter Requirements:
-1. Length: 3-4 paragraphs, approximately 250-400 words
-2. Structure:
-   - Opening with specific job title and company name
-   - 1-2 body paragraphs highlighting relevant experience and achievements
-   - Strong closing with clear call to action
-3. Personalization: Reference specific company details and job requirements
-4. Tone: ${coverLetterReq.tone === 'professional' 
-     ? 'Formal, respectful, business-appropriate language' 
-     : coverLetterReq.tone === 'enthusiastic'
-     ? 'Energetic, passionate, showing genuine excitement for the role'
-     : 'Direct, brief, focused on key points without unnecessary elaboration'}
-5. Value Proposition: Clearly articulate how candidate's experience benefits the company
-
-Required JSON Response Format:
-
-{
-  "coverLetter": "Complete cover letter text",
-  "customizations": [
-    "List of company-specific elements incorporated"
-  ],
-  "keyStrengths": [
-    "Main value propositions and qualifications highlighted from the resume"
-  ],
-  "callToAction": "Specific closing statement used"
-}`
-            }
-          ];
-        }
+          }
+        ];
         break;
 
       case 'skill_gap':
@@ -463,11 +409,10 @@ CRITICAL QUALITY REQUIREMENTS:
 OUTPUT FORMAT: Comprehensive skill gap analysis with specific, actionable learning recommendations.
 CRITICAL FORMATTING: Return ONLY valid JSON without any markdown formatting or code blocks`;
 
-        if (requestData.resumeFile) {
-          userContent = [
-            {
-              type: "text",
-              text: `Perform comprehensive skill gap analysis between the uploaded resume and target job posting, then provide detailed learning recommendations with specific resources and actionable development roadmap.
+        userContent = [
+          {
+            type: "text",
+            text: `Perform comprehensive skill gap analysis between the uploaded resume and target job posting, then provide detailed learning recommendations with specific resources and actionable development roadmap.
 
 Input Data:
 RESUME FILE: [PDF file uploaded by user - extract and analyze all content including skills, experience, education, and certifications]
@@ -619,169 +564,16 @@ Search Strategy:
 - Search for hands-on projects and practical application opportunities
 
 Provide comprehensive analysis with specific, actionable learning recommendations that users can immediately act upon.`
-            },
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: requestData.resumeFile.media_type,
-                data: requestData.resumeFile.data
-              }
+          },
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: requestData.resumeFile.media_type,
+              data: requestData.resumeFile.data
             }
-          ];
-        } else {
-          userContent = [
-            {
-              type: "text",
-              text: `Perform comprehensive skill gap analysis between the provided resume and target job posting, then provide detailed learning recommendations with specific resources and actionable development roadmap.
-
-Input Data:
-RESUME CONTENT:
-${requestData.resumeContent}
-
-TARGET JOB POSTING:
-${requestData.jobPosting}
-
-Analysis Requirements:
-
-1. Extract Skills: Identify all technical and soft skills from both resume and job posting
-2. Gap Assessment: Compare current skills against job requirements with proficiency levels
-3. Priority Classification: Categorize gaps by importance (Critical/Important/Nice-to-have)
-4. Learning Research: Search for current, specific learning resources with direct links
-5. Roadmap Creation: Design phased development plan with realistic timelines
-
-Web Search Instructions:
-
-- MANDATORY: Use web search to find current, specific learning resources for each identified skill gap
-- Search for: online courses, certifications, free tutorials, documentation, and practical resources
-- Verify links are active and resources are current (2024-2025)
-- Include multiple options per skill across different platforms and price points
-- Prioritize well-known platforms: Coursera, Udemy, LinkedIn Learning, edX, YouTube, official documentation
-
-Required JSON Response Format:
-
-{
-  "skillGapAnalysis": {
-    "critical": [
-      {
-        "skill": "Specific skill name (e.g., Python Programming, AWS Cloud Architecture)",
-        "currentLevel": "Detailed assessment of current proficiency based on resume evidence",
-        "requiredLevel": "Specific level needed for job success",
-        "gap": "Precise description of what needs to be learned/improved",
-        "impactOnJobSuccess": "How this gap affects job performance"
-      }
-    ],
-    "important": [
-      "Same structure as critical - skills that would significantly improve candidacy"
-    ],
-    "niceToHave": [
-      "Same structure - skills that would provide competitive advantage"
-    ]
-  },
-  "learningRecommendations": [
-    {
-      "skill": "Skill name matching gap analysis",
-      "priority": "Critical/Important/Nice-to-have",
-      "timeInvestment": "Realistic estimate (e.g., 40-60 hours over 8-10 weeks)",
-      "courses": [
-        {
-          "platform": "Exact platform name",
-          "courseName": "Exact course title",
-          "instructor": "Course instructor name",
-          "url": "Direct clickable link to course",
-          "cost": "Exact price or 'Free'",
-          "duration": "Course length with specific hours/weeks",
-          "difficulty": "Beginner/Intermediate/Advanced",
-          "rating": "Course rating if available",
-          "description": "Brief description of what the course covers"
-        }
-      ],
-      "freeResources": [
-        {
-          "type": "YouTube Channel/Documentation/Tutorial/GitHub Repository",
-          "resource": "Specific resource name",
-          "url": "Direct clickable link",
-          "description": "Detailed description of content and learning value",
-          "estimatedTime": "Time investment required"
-        }
-      ],
-      "certifications": [
-        {
-          "name": "Exact certification name",
-          "provider": "Certification provider organization",
-          "url": "Direct link to certification page",
-          "timeToComplete": "Realistic preparation time",
-          "cost": "Exact certification cost",
-          "validity": "How long certification is valid",
-          "industryRecognition": "Value in job market"
-        }
-      ],
-      "practicalApplication": "Specific projects or ways to gain hands-on experience",
-      "books": [
-        {
-          "title": "Book title",
-  "developmentRoadmap": {
-    "phase1": {
-      "duration": "Specific timeline (e.g., Weeks 1-8)",
-      "focus": "Priority skills to develop first with rationale",
-      "skills": ["List of specific skills to focus on"],
-      "milestones": ["Specific, measurable achievements"],
-      "weeklyTimeCommitment": "Recommended hours per week"
-    },
-    "phase2": {
-      "duration": "Specific timeline (e.g., Weeks 9-16)",
-      "focus": "Secondary skills development",
-      "skills": ["List of specific skills"],
-      "milestones": ["Specific achievements"],
-      "weeklyTimeCommitment": "Recommended hours per week"
-    },
-    "phase3": {
-      "duration": "Specific timeline (e.g., Weeks 17-24)",
-      "focus": "Advanced skills and specialization",
-      "skills": ["List of specific skills"],
-      "milestones": ["Specific achievements"],
-      "weeklyTimeCommitment": "Recommended hours per week"
-    }
-  },
-  "skillsAlreadyStrong": [
-    {
-      "skill": "Skill name",
-      "evidence": "Specific evidence from resume",
-      "jobRelevance": "How this skill applies to target job"
-    }
-  ],
-  "totalDevelopmentTime": "Overall timeline estimate for becoming job-ready",
-  "budgetEstimate": {
-    "minimum": "Cost for free/low-cost learning path",
-    "recommended": "Cost for optimal learning path",
-    "premium": "Cost for comprehensive certification path"
-  },
-  "nextSteps": [
-    "Immediate actionable steps user should take this week"
-  ]
-}
-
-Critical Requirements:
-
-1. USE WEB SEARCH: Search for current learning resources and include direct, clickable links
-2. Verify Resources: Ensure all recommended courses and resources are currently available
-3. Multiple Options: Provide 2-3 options per skill across different price points and learning styles
-4. Actionable Roadmap: Create realistic, time-bound development phases
-5. Budget Consciousness: Include free and paid options for each skill
-6. Industry Relevance: Focus on skills that directly impact job performance
-
-Search Strategy:
-
-- Search for each identified skill gap individually
-- Look for: "[Skill] online course 2024", "[Skill] certification", "[Skill] free tutorial"
-- Verify platform availability and current pricing
-- Include official documentation and vendor training when applicable
-- Search for hands-on projects and practical application opportunities
-
-Provide comprehensive analysis with specific, actionable learning recommendations that users can immediately act upon.`
-            }
-          ];
-        }
+          }
+        ];
         break;
 
       default:
