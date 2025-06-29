@@ -223,6 +223,24 @@ Analysis Requirements:
 4. Identify specific improvement opportunities while preserving all factual data
 5. Generate ATS-optimized tailored resume version
 
+Critical Guidelines:
+
+- PRESERVE ALL FACTUAL DATA: Never alter dates, company names, job titles, education details, or any numerical information
+- NO FABRICATION: Do not add skills, experiences, or achievements not present in the original resume
+- ENHANCE PRESENTATION ONLY: Focus on keyword optimization, bullet point structure, and formatting improvements
+- QUANTIFIABLE RESULTS: Provide specific percentages and measurable improvements
+- ATS OPTIMIZATION: Ensure all changes improve Applicant Tracking System compatibility
+
+Output Focus Areas:
+
+1. Strategic keyword integration from job posting
+2. Bullet point impact optimization
+3. ATS-friendly formatting enhancements
+4. Skills section alignment with job requirements
+5. Professional summary optimization for relevance
+
+Analyze the resume thoroughly and provide the complete JSON response with all required fields populated.
+
 Required JSON Response Format:
 
 {
