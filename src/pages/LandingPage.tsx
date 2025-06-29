@@ -404,8 +404,8 @@ const LandingPage: React.FC = () => {
                 <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
               </span>
             </div>
-          </div>
           </motion.div>
+        </div>
 
           {/* Lifetime Plan Alert */}
           {showLifetimePlan && (
