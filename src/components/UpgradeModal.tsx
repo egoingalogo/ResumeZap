@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { useEffect, useState } from 'react';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/paypal-js';
 
 interface UpgradeModalProps {
