@@ -405,6 +405,7 @@ const LandingPage: React.FC = () => {
               </span>
             </div>
           </div>
+          </motion.div>
 
           {/* Lifetime Plan Alert */}
           {showLifetimePlan && (
