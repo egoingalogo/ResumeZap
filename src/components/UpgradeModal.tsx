@@ -41,6 +41,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 }) => {
   const { upgradePlan } = useAuthStore();
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
+  const [isAnnual, setIsAnnual] = useState<boolean>(false);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
@@ -79,7 +80,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     {
       id: 'free',
       name: 'Free',
-      price: '$0',
+      price: isAnnual ? '$0' : '$0',
       period: 'forever',
       description: 'Perfect for getting started',
       features: [
@@ -97,8 +98,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     {
       id: 'premium',
       name: 'Premium',
-      price: '$7.99',
-      period: '/month',
+      price: isAnnual ? '$79.99' : '$7.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$95.88' : null,
+      savings: isAnnual ? 'Save $15.89' : null,
       description: 'For active job seekers',
       features: [
         { icon: FileText, text: '20 resume tailoring sessions/month', included: true },
@@ -117,8 +120,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     {
       id: 'pro',
       name: 'Pro',
-      price: '$14.99',
-      period: '/month',
+      price: isAnnual ? '$149.99' : '$14.99',
+      period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$179.88' : null,
+      savings: isAnnual ? 'Save $29.89' : null,
       description: 'For career professionals',
       features: [
         { icon: Infinity, text: 'Unlimited resume tailoring', included: true },
@@ -179,9 +184,39 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Choose Your Plan
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <div className="text-gray-600 dark:text-gray-400 mb-4 max-w-2xl mx-auto">
                 Unlock the full power of AI-driven career acceleration
-              </p>
+              </div>
+              
+              {/* Billing Toggle */}
+              <div className="flex items-center justify-center mt-4 mb-8">
+                <span className="text-gray-600 dark:text-gray-400 mr-3">Monthly</span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="billing-toggle"
+                    className="sr-only"
+                    checked={isAnnual}
+                    onChange={(e) => setIsAnnual(e.target.checked)}
+                  />
+                  <label
+                    htmlFor="billing-toggle"
+                    className="flex items-center cursor-pointer"
+                  >
+                    <div className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
+                      isAnnual ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}>
+                      <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                        isAnnual ? 'translate-x-6' : 'translate-x-0'
+                      }`}></div>
+                    </div>
+                  </label>
+                </div>
+                <span className="text-gray-600 dark:text-gray-400 ml-3">
+                  Annual 
+                  <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -245,6 +280,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         {plan.period}
                       </span>
                     </div>
+                    {plan.originalPrice && plan.savings && (
+                      <div className="text-center mb-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                          {plan.originalPrice}
+                        </span>
+                        <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
+                          {plan.savings}
+                        </span>
+                      </div>
+                    )}
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {plan.description}
                     </p>
