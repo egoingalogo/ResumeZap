@@ -501,18 +501,6 @@ const LandingPage: React.FC = () => {
               </motion.div>
             ))}
           </div>
-
-          {/* Pricing Footer */}
-          <div className="text-center mt-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              All plans include secure data encryption and can be cancelled anytime.
-            </p>
-            {showLifetimePlan && (
-              <p className="text-amber-600 dark:text-amber-400 mt-2">
-                Lifetime plan price will increase after the first 1,000 members.
-              </p>
-            )}
-          </div>
         </div>
       </section>
 
