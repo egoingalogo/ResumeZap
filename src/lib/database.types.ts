@@ -35,7 +35,11 @@ export interface Database {
           email?: string
           name?: string
           plan?: 'free' | 'premium' | 'pro' | 'lifetime'
-          usage_this_month?: Json
+          usage_this_month?: {
+            resumeTailoring?: number;
+            coverLetters?: number;
+            skillGapAnalysis?: number;
+          } | Json
           created_at?: string
           updated_at?: string
           profile_picture_url?: string | null

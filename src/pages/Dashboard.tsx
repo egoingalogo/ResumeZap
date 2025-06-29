@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
     : (user.usageThisMonth.coverLetters / currentLimits.coverLetters) * 100;
   const skillGapUsagePercent = currentLimits.skillGapAnalysis === Infinity
     ? 0
-    : (user.usageThisMonth.skillGapAnalysis / currentLimits.skillGapAnalysis) * 100;
+    : ((user.usageThisMonth.skillGapAnalysis || 0) / currentLimits.skillGapAnalysis) * 100;
 
   const quickActions = [
     {
@@ -322,10 +322,10 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {user.usageThisMonth.skillGapAnalysis} of {currentLimits.skillGapAnalysis === Infinity ? '∞' : currentLimits.skillGapAnalysis} used
+                      {user.usageThisMonth.skillGapAnalysis || 0} of {currentLimits.skillGapAnalysis === Infinity ? '∞' : currentLimits.skillGapAnalysis} used
                     </span>
                     <span className="text-gray-900 dark:text-white font-medium">
-                      {Math.round(skillGapUsagePercent)}%
+                      {isNaN(skillGapUsagePercent) ? 0 : Math.round(skillGapUsagePercent)}%
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -333,7 +333,7 @@ const Dashboard: React.FC = () => {
                       className={`h-2 rounded-full transition-all duration-300 ${
                         skillGapUsagePercent >= 100 ? 'bg-red-500' : 'bg-green-500'
                       }`}
-                      style={{ width: `${Math.min(skillGapUsagePercent, 100)}%` }}
+                      style={{ width: `${isNaN(skillGapUsagePercent) ? 0 : Math.min(skillGapUsagePercent, 100)}%` }}
                     />
                   </div>
                 </div>
