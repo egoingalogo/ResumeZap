@@ -457,7 +457,7 @@ const LandingPage: React.FC = () => {
               </p>
             </motion.div>
           )}
-        className="max-w-7xl mx-auto relative z-10"
+          
           {/* Pricing Cards */}
           <div className={`grid gap-8 ${showLifetimePlan ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
             {pricingPlans.map((plan, index) => (
