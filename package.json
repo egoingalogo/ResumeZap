@@ -15,7 +15,7 @@
     "jspdf": "^2.5.1",
     "lucide-react": "^0.344.0",
     "@paypal/paypal-js": "^5.1.6",
-    "react-paypal-js": "^7.8.2",
+    "@paypal/react-paypal-js": "^7.0.0",
     "pizzip": "^3.1.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
