@@ -409,6 +409,12 @@ export const deleteUserAccount = async (): Promise<void> => {
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
+    // Validate supabaseUrl before attempting fetch
+    if (!supabaseUrl || !supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+      console.warn('getLifetimeUserCount: Invalid or missing VITE_SUPABASE_URL, using fallback. URL:', supabaseUrl);
+      return await getLifetimeUserCountFallback();
+    }
+    
     console.log('getLifetimeUserCount: Attempting to call Edge Function');
     
     // Try calling the Edge Function with proper error handling
