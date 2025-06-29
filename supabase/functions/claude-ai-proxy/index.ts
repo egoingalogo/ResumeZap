@@ -207,36 +207,53 @@ OUTPUT REQUIREMENTS:
         userContent = [
           {
             type: "text",
-            text: `Please analyze this PDF resume against the job posting and provide comprehensive tailoring:
+            text: `Please analyze this PDF resume against the provided job posting and deliver comprehensive tailoring recommendations with quantifiable improvements.
+
+Input Data:
+RESUME FILE: [PDF file uploaded by user - extract and analyze all content]
 
 JOB POSTING:
 ${requestData.jobPosting}
 
-Please provide a JSON response with these exact keys:
+Analysis Requirements:
+
+1. Extract all text content from the uploaded PDF resume
+2. Perform comprehensive ATS optimization analysis
+3. Calculate precise matching scores across all categories
+4. Identify specific improvement opportunities while preserving all factual data
+5. Generate ATS-optimized tailored resume version
+
+Required JSON Response Format:
+
 {
-  "tailoredResume": "Complete optimized resume text with improved bullet points",
-  "matchScore": "Percentage score (0-100)",
+  "tailoredResume": "Complete optimized resume text with improved formatting, bullet points, and keyword integration while preserving all original factual information",
+  "matchScore": "Overall percentage score (0-100) representing resume-job alignment",
   "matchBreakdown": {
-    "keywords": "Percentage of job keywords found in resume",
-    "skills": "Skills alignment percentage", 
-    "experience": "Experience relevance percentage",
-    "formatting": "ATS compatibility score"
+    "keywords": "Percentage of critical job keywords found in resume (0-100)",
+    "skills": "Skills alignment percentage between resume and job requirements (0-100)", 
+    "experience": "Experience relevance percentage to job requirements (0-100)",
+    "formatting": "ATS compatibility and formatting score (0-100)"
   },
   "changes": [
     {
-      "section": "Section name",
-      "original": "Original text",
-      "improved": "Improved text",
-      "reason": "Why this change improves ATS/relevance"
+      "section": "Resume section name (e.g., Professional Experience, Skills, Summary)",
+      "original": "Original text from resume",
+      "improved": "Enhanced version with better keywords/formatting",
+      "reason": "Specific explanation of how this change improves ATS parsing or job relevance"
     }
   ],
   "keywordMatches": {
-    "found": ["list of matched keywords"],
-    "missing": ["list of missing important keywords"],
-    "suggestions": ["keywords to naturally incorporate"]
+    "found": ["Array of job keywords successfully matched in current resume"],
+    "missing": ["Array of important job keywords absent from resume"],
+    "suggestions": ["Array of missing keywords that can be naturally incorporated based on existing experience"]
   },
   "atsOptimizations": [
-    "Specific formatting improvements made for ATS compatibility"
+    "List of specific ATS formatting improvements implemented (e.g., header formatting, bullet point structure, section organization)"
+  ],
+  "improvementSummary": {
+    "totalChanges": "Number of modifications made",
+    "keyAreasImproved": ["List of main resume sections enhanced"],
+    "estimatedATSImprovement": "Percentage improvement in ATS compatibility"
   ]
 }`
           },
@@ -657,4 +674,23 @@ Provide detailed JSON response:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
+}
+
+Critical Guidelines:
+
+- PRESERVE ALL FACTUAL DATA: Never alter dates, company names, job titles, education details, or any numerical information
+- NO FABRICATION: Do not add skills, experiences, or achievements not present in the original resume
+- ENHANCE PRESENTATION ONLY: Focus on keyword optimization, bullet point structure, and formatting improvements
+- QUANTIFIABLE RESULTS: Provide specific percentages and measurable improvements
+- ATS OPTIMIZATION: Ensure all changes improve Applicant Tracking System compatibility
+
+Output Focus Areas:
+
+1. Strategic keyword integration from job posting
+2. Bullet point impact optimization
+3. ATS-friendly formatting enhancements
+4. Skills section alignment with job requirements
+5. Professional summary optimization for relevance
+
+Analyze the resume thoroughly and provide the complete JSON response with all required fields populated.`
 });
