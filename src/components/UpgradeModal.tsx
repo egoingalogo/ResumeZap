@@ -81,7 +81,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         { icon: MessageSquare, text: 'Email support (48-72 hours)', included: true },
       ],
       buttonText: 'Current Plan',
-      buttonStyle: 'bg-gray-400 cursor-not-allowed',
+      buttonStyle: 'bg-gray-400 cursor-not-allowed text-white',
       isPopular: false,
       current: currentPlan === 'free',
     },
@@ -102,7 +102,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       ],
       buttonText: currentPlan === 'premium' ? 'Current Plan' : 'Upgrade to Premium',
       buttonStyle: currentPlan === 'premium' 
-        ? 'bg-gray-400 cursor-not-allowed' 
+        ? 'bg-gray-400 cursor-not-allowed text-white' 
         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
       isPopular: true,
       current: currentPlan === 'premium',
@@ -126,7 +126,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       ],
       buttonText: currentPlan === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
       buttonStyle: currentPlan === 'pro' 
-        ? 'bg-gray-400 cursor-not-allowed' 
+        ? 'bg-gray-400 cursor-not-allowed text-white' 
         : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
       isPopular: false,
       current: currentPlan === 'pro',
@@ -151,7 +151,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       ],
       buttonText: currentPlan === 'lifetime' ? 'Current Plan' : 'Get Lifetime Access',
       buttonStyle: currentPlan === 'lifetime' 
-        ? 'bg-gray-400 cursor-not-allowed' 
+        ? 'bg-gray-400 cursor-not-allowed text-white' 
         : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
       isPopular: true,
       current: currentPlan === 'lifetime',
@@ -317,7 +317,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   <button
                     onClick={() => plan.current ? null : handleUpgrade(plan.id as any)}
                     disabled={plan.current || isUpgrading === plan.id || plan.disabled}
-                      plan.disabled ? 'bg-gray-400 cursor-not-allowed text-white' : 
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${plan.buttonStyle}`}
                     title={plan.disabled ? `You already have a ${currentPlan} plan which includes these features` : ''}
                   >
