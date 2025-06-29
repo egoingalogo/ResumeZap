@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 interface UpgradeModalProps {
@@ -45,12 +46,35 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [isAnnual, setIsAnnual] = useState(false);
   const [paymentVisible, setPaymentVisible] = useState<string | null>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [paymentVisible, setPaymentVisible] = useState<string | null>(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Show PayPal payment options
+  const initiatePayment = (plan: 'premium' | 'pro' | 'lifetime') => {
+    console.log('UpgradeModal: Initiating payment for plan:', plan);
+    setPaymentVisible(plan);
+  };
+  
+  // Complete upgrade after successful payment
+  const completeUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       return () => {
@@ -83,7 +107,54 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     } finally {
       setIsUpgrading(null);
       setPaymentVisible(null);
+      setPaymentVisible(null);
     }
+  };
+  
+  // Get plan amount based on selected plan and billing period
+  const getPlanAmount = (plan: string): string => {
+    if (plan === 'premium') {
+      return isAnnual ? '79.99' : '7.99';
+    } else if (plan === 'pro') {
+      return isAnnual ? '149.99' : '14.99';
+    } else if (plan === 'lifetime') {
+      return '79.99';
+    }
+    return '0.00';
+  };
+
+  // Create PayPal order
+  const createPayPalOrder = (plan: string) => {
+    return async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-paypal-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            planType: plan,
+            isAnnual: isAnnual,
+            amount: getPlanAmount(plan),
+            currency: 'USD',
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create order');
+        }
+
+        const order = await response.json();
+        return order.id;
+      } catch (error) {
+        console.error('Failed to create PayPal order:', error);
+        toast.error('Failed to initialize payment. Please try again.');
+        setPaymentVisible(null);
+        return null;
+      }
+    };
   };
   
   // Get plan amount based on selected plan and billing period
@@ -162,6 +233,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       period: isAnnual ? '/year' : '/month',
       originalPrice: isAnnual ? '$95.88' : null,
       savings: isAnnual ? 'Save $15.89' : null,
+      originalPrice: isAnnual ? '$95.88' : null,
+      savings: isAnnual ? 'Save $15.89' : null,
       description: 'For active job seekers',
       features: [
         { icon: FileText, text: '20 resume tailoring sessions/month', included: true },
@@ -177,12 +250,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       isPopular: true,
       current: currentPlan === 'premium',
       disabled: currentPlan === 'pro' || currentPlan === 'lifetime',
+      disabled: currentPlan === 'pro' || currentPlan === 'lifetime',
     },
     {
       id: 'pro',
       name: 'Pro',
       price: isAnnual ? '$149.99' : '$14.99',
       period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$179.88' : null,
+      savings: isAnnual ? 'Save $29.89' : null,
       originalPrice: isAnnual ? '$179.88' : null,
       savings: isAnnual ? 'Save $29.89' : null,
       description: 'For career professionals',
@@ -200,6 +276,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
       isPopular: false,
       current: currentPlan === 'pro',
+      disabled: currentPlan === 'lifetime',
       disabled: currentPlan === 'lifetime',
     },
   ];
@@ -352,6 +429,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         </span>
                       </div>
                     )}
+                    {plan.originalPrice && plan.savings && (
+                      <div className="text-center mt-1 mb-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                          {plan.originalPrice}
+                        </span>
+                        <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
+                          {plan.savings}
+                        </span>
+                      </div>
+                    )}
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {plan.description}
                     </p>
@@ -389,6 +476,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                     disabled={plan.current || isUpgrading === plan.id || plan.disabled}
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${plan.buttonStyle}`}
                     title={plan.disabled ? `You already have a ${currentPlan} plan which includes these features` : ''}
+                    title={plan.disabled ? `You already have a ${currentPlan} plan which includes these features` : ''}
                   >
                     {isUpgrading === plan.id ? (
                       <>
@@ -397,6 +485,100 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       </>
                     ) : (
                       <span>{plan.disabled ? `Included in ${currentPlan}` : plan.buttonText}</span>
+                    )}
+
+                    {paymentVisible === plan.id && (
+                      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-gray-200 dark:border-gray-700">
+                          <h3 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+                            Upgrade to {plan.name} Plan
+                          </h3>
+                          
+                          <div className="mb-6 text-center">
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {plan.price} {plan.period}
+                            </div>
+                            
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                              {plan.id === 'lifetime' ? 'One-time payment' : isAnnual ? 'Annual billing' : 'Monthly billing'}
+                            </p>
+                          </div>
+                          
+                          <div className="mb-6">
+                            <PayPalScriptProvider
+                              options={{
+                                clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'sb',
+                                currency: 'USD',
+                                intent: 'capture',
+                                components: 'buttons',
+                                onLoad: () => setPaypalLoaded(true),
+                              }}
+                            >
+                              {!paypalLoaded && (
+                                <div className="flex items-center justify-center h-12">
+                                  <div className="w-5 h-5 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                                  <span className="ml-2 text-gray-600 dark:text-gray-400">Loading payment options...</span>
+                                </div>
+                              )}
+
+                              <PayPalButtons
+                                style={{
+                                  layout: 'vertical',
+                                  shape: 'rect',
+                                  color: 'blue',
+                                }}
+                                createOrder={createPayPalOrder(plan.id)}
+                                onApprove={async (data) => {
+                                  try {
+                                    // Verify payment on server
+                                    const verifyResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-paypal-payment`, {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                                      },
+                                      body: JSON.stringify({
+                                        orderID: data.orderID,
+                                        planType: plan.id,
+                                      }),
+                                    });
+                                    
+                                    if (!verifyResponse.ok) {
+                                      const errorData = await verifyResponse.json();
+                                      throw new Error(errorData.error || 'Payment verification failed');
+                                    }
+                                    
+                                    // Payment successful - upgrade plan
+                                    await completeUpgrade(plan.id as any);
+                                    toast.success(`Successfully upgraded to ${plan.name} plan!`);
+                                  } catch (error) {
+                                    console.error('Payment verification failed:', error);
+                                    toast.error('Payment verification failed. Please contact support.');
+                                  }
+                                }}
+                                onCancel={() => {
+                                  toast.info('Payment cancelled');
+                                  setPaymentVisible(null);
+                                }}
+                                onError={(err) => {
+                                  console.error('PayPal error:', err);
+                                  toast.error('Payment failed. Please try again.');
+                                  setPaymentVisible(null);
+                                }}
+                              />
+                            </PayPalScriptProvider>
+                          </div>
+                          
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setPaymentVisible(null)}
+                              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {paymentVisible === plan.id && (
@@ -519,9 +701,44 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   Lifetime plan price will increase after the first 1,000 members.
                 </p>
               )}
+              {showLifetimePlan && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Lifetime plan price will increase after the first 1,000 members.
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center mt-6">
+            <span className={`text-gray-600 dark:text-gray-400 mr-3 ${!isAnnual ? 'font-medium' : ''}`}>Monthly</span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                id="modal-billing-toggle"
+                className="sr-only"
+                checked={isAnnual}
+                onChange={(e) => setIsAnnual(e.target.checked)}
+              />
+              <label
+                htmlFor="modal-billing-toggle"
+                className="flex items-center cursor-pointer"
+              >
+                <div className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
+                  isAnnual ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}>
+                  <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                    isAnnual ? 'translate-x-6' : 'translate-x-0'
+                  }`}></div>
+                </div>
+              </label>
+            </div>
+            <span className={`text-gray-600 dark:text-gray-400 ml-3 ${isAnnual ? 'font-medium' : ''}`}>
+              Annual 
+              <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
+            </span>
+          </div>
+
       </div>
     </AnimatePresence>
   );

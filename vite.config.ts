@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     include: ['@paypal/paypal-js'],
+    include: ['@paypal/paypal-js'],
     exclude: ['lucide-react'],
   },
 });
