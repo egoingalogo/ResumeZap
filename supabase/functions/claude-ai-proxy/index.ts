@@ -254,7 +254,7 @@ Required JSON Response Format:
     "totalChanges": "Number of modifications made",
     "keyAreasImproved": ["List of main resume sections enhanced"],
     "estimatedATSImprovement": "Percentage improvement in ATS compatibility"
-  ]
+  }
 }`
           },
           {
@@ -674,11 +674,4 @@ Provide detailed JSON response:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
-}
-
-
-
-
-
-);
 });
