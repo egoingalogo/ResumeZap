@@ -109,7 +109,7 @@ const clearAllAuthStorage = () => {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      user: null,
+      user: null, // Initialize user as null
       isAuthenticated: false,
       isLoading: false,
       isLoggingOut: false,
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>()(
        */
       initializeAuth: async () => {
         console.log('AuthStore: Initializing authentication');
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         
         try {
           // Fetch lifetime user count first (doesn't require authentication)
@@ -166,7 +166,9 @@ export const useAuthStore = create<AuthState>()(
       refreshUser: async () => {
         try {
           const supabaseUser = await getCurrentUser();
+          
           if (!supabaseUser) {
+            console.log('AuthStore: No authenticated user found during refresh');
             set({ user: null, isAuthenticated: false });
             return;
           }
@@ -185,7 +187,7 @@ export const useAuthStore = create<AuthState>()(
           
           // Check if profile exists
           if (!userProfiles || userProfiles.length === 0) {
-            console.warn('AuthStore: User profile not found, attempting to create profile');
+            console.warn('AuthStore: User profile not found during refreshUser, attempting to create profile');
             
             // Try to create the missing profile
             const userProfileData = {
@@ -237,9 +239,17 @@ export const useAuthStore = create<AuthState>()(
           if (userProfiles.length > 1) {
             console.warn('AuthStore: Multiple user profiles found, using the first one');
           }
-          
+         
+          // Safely extract user profile
           const userProfile = userProfiles[0];
-          
+         
+          if (!userProfile) {
+            console.error('AuthStore: User profile is undefined');
+            set({ user: null, isAuthenticated: false });
+            return;
+          }
+
+          // Create user object with proper defaults for null values
           const user: User = {
             id: userProfile.id,
             email: userProfile.email,
@@ -247,14 +257,19 @@ export const useAuthStore = create<AuthState>()(
             plan: userProfile.plan,
             profilePictureUrl: userProfile.profile_picture_url,
             usageThisMonth: {
-              resumeTailoring: userProfile.usage_this_month?.resumeTailoring || 0,
-              coverLetters: userProfile.usage_this_month?.coverLetters || 0,
-              skillGapAnalysis: userProfile.usage_this_month?.skillGapAnalysis || 0,
+              resumeTailoring: (userProfile.usage_this_month && 
+                userProfile.usage_this_month.resumeTailoring) || 0,
+              coverLetters: (userProfile.usage_this_month && 
+                userProfile.usage_this_month.coverLetters) || 0,
+              skillGapAnalysis: (userProfile.usage_this_month && 
+                userProfile.usage_this_month.skillGapAnalysis) || 0,
             },
             createdAt: userProfile.created_at,
           };
           
-          set({ user, isAuthenticated: true });
+          // Set user state with proper safeguards
+          set({ user, isAuthenticated: true, isLoading: false });
+          console.log('AuthStore: User refreshed successfully:', user.email);
         } catch (error) {
           console.error('AuthStore: Failed to refresh user:', error);
           

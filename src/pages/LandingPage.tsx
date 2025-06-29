@@ -37,7 +37,7 @@ import { getLifetimeUserCount } from '../lib/supabase';
  */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, lifetimeUserCount, fetchLifetimeUserCount } = useAuthStore();
+  const { isAuthenticated = false, user = null, lifetimeUserCount = null, fetchLifetimeUserCount } = useAuthStore();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isAnnual, setIsAnnual] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -45,8 +45,10 @@ const LandingPage: React.FC = () => {
   console.log('LandingPage: Component mounted');
 
   useEffect(() => {
+    // Only fetch lifetime user count if authenticated
     if (isAuthenticated) {
-      // Fetch lifetime user count on component mount
+      fetchLifetimeUserCount();
+    }
       fetchLifetimeUserCount();
     }
   }, [fetchLifetimeUserCount]);

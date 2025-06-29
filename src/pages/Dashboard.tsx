@@ -27,12 +27,12 @@ import toast from 'react-hot-toast';
 const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, upgradePlan, isLoading, lifetimeUserCount } = useAuthStore();
+  const { user = null, isAuthenticated = false, upgradePlan, isLoading = false, lifetimeUserCount = null } = useAuthStore();
   const { resumes, skillAnalyses, coverLetters, fetchResumes, fetchSkillAnalyses, fetchCoverLetters } = useResumeStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  console.log('Dashboard: Component mounted for user:', user?.email);
-  console.log('Dashboard: Lifetime user count:', lifetimeUserCount);
+  console.log('Dashboard: Component mounted, authenticated:', isAuthenticated);
+  console.log('Dashboard: Lifetime user count:', lifetimeUserCount || 'Not loaded');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -41,7 +41,8 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user !== null) {
+      console.log('Dashboard: Loading user data for:', user.email);
       // Fetch user's resumes
       fetchResumes().catch(error => {
         console.error('Dashboard: Failed to fetch resumes:', error);
@@ -84,23 +85,32 @@ const Dashboard: React.FC = () => {
     return null; // Will redirect in useEffect
   }
 
-  const usageLimits = {
+  // Define usage limits with proper null/undefined handling
+  const usageLimits: Record<string, {
+    resumeTailoring: number,
+    coverLetters: number,
+    skillGapAnalysis: number
+  }> = {
     free: { resumeTailoring: 1, coverLetters: 2, skillGapAnalysis: 2 },
     premium: { resumeTailoring: 20, coverLetters: 25, skillGapAnalysis: 20 },
     pro: { resumeTailoring: Infinity, coverLetters: Infinity, skillGapAnalysis: Infinity },
     lifetime: { resumeTailoring: Infinity, coverLetters: Infinity, skillGapAnalysis: Infinity },
   };
 
-  const currentLimits = usageLimits[user.plan];
-  const resumeUsagePercent = currentLimits.resumeTailoring === Infinity 
+  // Safely access usage limits based on user plan
+  const currentLimits = user ? usageLimits[user.plan] : usageLimits.free;
+  
+  // Safely calculate usage percentages with proper defaults
+  const resumeUsagePercent = !user || currentLimits.resumeTailoring === Infinity 
     ? 0 
-    : (user.usageThisMonth.resumeTailoring / currentLimits.resumeTailoring) * 100;
-  const coverLetterUsagePercent = currentLimits.coverLetters === Infinity 
+    : ((user.usageThisMonth?.resumeTailoring || 0) / currentLimits.resumeTailoring) * 100;
+  const coverLetterUsagePercent = !user || currentLimits.coverLetters === Infinity 
     ? 0 
-    : (user.usageThisMonth.coverLetters / currentLimits.coverLetters) * 100;
+    : ((user.usageThisMonth?.coverLetters || 0) / currentLimits.coverLetters) * 100;
+    
   const skillGapUsagePercent = currentLimits.skillGapAnalysis === Infinity
     ? 0
-    : ((user.usageThisMonth.skillGapAnalysis || 0) / currentLimits.skillGapAnalysis) * 100;
+    : (((user?.usageThisMonth?.skillGapAnalysis || 0) / currentLimits.skillGapAnalysis) * 100);
 
   const quickActions = [
     {
@@ -211,7 +221,7 @@ const Dashboard: React.FC = () => {
 
   // Determine if upgrade button should be shown
   // Show for all plans except lifetime
-  const shouldShowUpgradeButton = user.plan !== 'lifetime';
+  const shouldShowUpgradeButton = user && user.plan !== 'lifetime';
 
   return (
     <div>
@@ -229,7 +239,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Welcome back, {user.name}!
+                  Welcome back, {user?.name || 'User'}!
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
                   Ready to accelerate your job search with AI-powered tools
@@ -240,7 +250,7 @@ const Dashboard: React.FC = () => {
                 <div className="text-right">
                   <div className="text-sm text-gray-500 dark:text-gray-400">Current Plan</div>
                   <div className="font-semibold text-purple-600 dark:text-purple-400 capitalize">
-                    {user.plan}
+                    {user?.plan || 'free'}
                   </div>
                 </div>
                 
@@ -272,7 +282,7 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {user.usageThisMonth.resumeTailoring} of {currentLimits.resumeTailoring} used
+                      {user?.usageThisMonth?.resumeTailoring || 0} of {currentLimits.resumeTailoring === Infinity ? '∞' : currentLimits.resumeTailoring} used
                     </span>
                     <span className="text-gray-900 dark:text-white font-medium">
                       {Math.round(resumeUsagePercent)}%
@@ -297,7 +307,7 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {user.usageThisMonth.coverLetters} of {currentLimits.coverLetters} used
+                      {user?.usageThisMonth?.coverLetters || 0} of {currentLimits.coverLetters === Infinity ? '∞' : currentLimits.coverLetters} used
                     </span>
                     <span className="text-gray-900 dark:text-white font-medium">
                       {Math.round(coverLetterUsagePercent)}%
@@ -322,7 +332,7 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {user.usageThisMonth.skillGapAnalysis || 0} of {currentLimits.skillGapAnalysis === Infinity ? '∞' : currentLimits.skillGapAnalysis} used
+                      {user?.usageThisMonth?.skillGapAnalysis || 0} of {currentLimits.skillGapAnalysis === Infinity ? '∞' : currentLimits.skillGapAnalysis} used
                     </span>
                     <span className="text-gray-900 dark:text-white font-medium">
                       {isNaN(skillGapUsagePercent) ? 0 : Math.round(skillGapUsagePercent)}%
@@ -628,7 +638,7 @@ const Dashboard: React.FC = () => {
       <UpgradeModal 
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        currentPlan={user.plan}
+        currentPlan={user?.plan || 'free'}
         lifetimeUserCount={lifetimeUserCount}
       />
     </div>

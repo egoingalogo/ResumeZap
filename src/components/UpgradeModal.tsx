@@ -36,8 +36,8 @@ interface UpgradeModalProps {
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   isOpen,
   onClose,
-  currentPlan,
-  lifetimeUserCount
+  currentPlan = 'free',
+  lifetimeUserCount = null
 }) => {
   const { upgradePlan } = useAuthStore();
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);

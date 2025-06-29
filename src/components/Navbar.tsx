@@ -33,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
-  const { user, isAuthenticated, logout, isLoggingOut } = useAuthStore();
+  const { user = null, isAuthenticated = false, logout, isLoggingOut = false } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = React.useState(false);
@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
   const libraryDropdownRef = React.useRef<HTMLDivElement>(null);
   
   console.log('Navbar: Rendering with authentication state:', isAuthenticated);
-  console.log('Navbar: User profile picture URL:', user?.profilePictureUrl);
+  console.log('Navbar: User profile picture URL:', user ? user.profilePictureUrl : 'none');
 
   // Handle click outside to close profile dropdown
   React.useEffect(() => {
@@ -79,9 +79,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isScrolled = false }) => {
 
   const getPlanBadgeColor = (plan: string) => {
     switch (plan) {
-      case 'premium': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'pro': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'lifetime': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+      case 'premium': 
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'pro': 
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'lifetime': 
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
