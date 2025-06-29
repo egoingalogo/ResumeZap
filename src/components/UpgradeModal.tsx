@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { PayPalButton } from './PayPalButton';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -42,6 +43,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const { upgradePlan } = useAuthStore();
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
+  const [showPayPal, setShowPayPal] = useState<Record<string, boolean>>({
+    premium: false,
+    pro: false,
+    lifetime: false
+  });
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
@@ -56,8 +62,17 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   }, [isOpen]);
 
-  const handleUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
-    console.log('UpgradeModal: Upgrading to plan:', plan);
+  // Function to initiate PayPal payment flow
+  const handleShowPayPal = (plan: 'premium' | 'pro' | 'lifetime') => {
+    setShowPayPal(prev => ({
+      ...prev,
+      [plan]: true
+    }));
+  };
+
+  // Legacy direct upgrade function (for development/testing only)
+  const handleDirectUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
+    console.log('UpgradeModal: DIRECT Upgrading to plan:', plan);
     setIsUpgrading(plan);
     
     try {
@@ -70,6 +85,13 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     } finally {
       setIsUpgrading(null);
     }
+  };
+
+  // Function to handle successful PayPal payment
+  const handlePaymentSuccess = async (plan: string) => {
+    console.log(`UpgradeModal: Payment successful for ${plan} plan`);
+    toast.success(`Successfully upgraded to ${plan} plan!`);
+    onClose();
   };
 
   // Determine if lifetime plan should be shown (only for first 1000 users)
@@ -108,6 +130,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       period: isAnnual ? '/year' : '/month',
       originalPrice: isAnnual ? '$95.88' : null,
       savings: isAnnual ? 'Save $15.89' : null,
+      originalPrice: isAnnual ? '$95.88' : null,
+      savings: isAnnual ? 'Save $15.89' : null,
       description: 'For active job seekers',
       features: [
         { icon: FileText, text: '20 resume tailoring sessions/month', included: true },
@@ -129,6 +153,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       name: 'Pro',
       price: isAnnual ? '$149.99' : '$14.99',
       period: isAnnual ? '/year' : '/month',
+      originalPrice: isAnnual ? '$179.88' : null,
+      savings: isAnnual ? 'Save $29.89' : null,
       originalPrice: isAnnual ? '$179.88' : null,
       savings: isAnnual ? 'Save $29.89' : null,
       description: 'For career professionals',
@@ -295,9 +321,21 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         </span>
                         <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
                           {plan.savings}
+                        </span> 
+                      </div>
+                    )}
+                    
+                    {plan.originalPrice && plan.savings && (
+                      <div className="text-center mb-2">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+                          {plan.originalPrice}
+                        </span>
+                        <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
+                          {plan.savings}
                         </span>
                       </div>
                     )}
+                    
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {plan.description}
                     </p>
@@ -330,26 +368,43 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   </div>
 
                   {/* Action Button */}
-                  <button
-                    onClick={() => plan.current ? null : handleUpgrade(plan.id as any)}
-                    disabled={plan.current || plan.disabled || isUpgrading === plan.id}
-                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                      isUpgrading === plan.id
-                        ? plan.buttonStyle
-                      : plan.current || plan.disabled
-                        ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
-                        : plan.buttonStyle
-                    }`}
-                  >
-                    {isUpgrading === plan.id ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Upgrading...</span>
-                      </>
-                    ) : (
-                      <span>{plan.current ? 'Current Plan' : plan.disabled ? 'Lower Plan' : plan.buttonText}</span>
-                    )}
-                  </button>
+                  {showPayPal[plan.id] ? (
+                    <PayPalButton
+                      planType={plan.id as 'premium' | 'pro' | 'lifetime'}
+                      isAnnual={isAnnual && plan.id !== 'lifetime'}
+                      onSuccess={(planType) => handlePaymentSuccess(planType)}
+                      onCancel={() => {
+                        setShowPayPal(prev => ({ ...prev, [plan.id]: false }));
+                        toast.info('Payment cancelled');
+                      }}
+                      onError={(error) => {
+                        setShowPayPal(prev => ({ ...prev, [plan.id]: false }));
+                        toast.error(`Payment error: ${error.message}`);
+                      }}
+                      disabled={plan.current || plan.disabled}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => handleShowPayPal(plan.id as 'premium' | 'pro' | 'lifetime')}
+                      disabled={plan.current || plan.disabled || isUpgrading === plan.id}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                        isUpgrading === plan.id
+                          ? plan.buttonStyle
+                        : plan.current || plan.disabled
+                          ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                          : plan.buttonStyle
+                      }`}
+                    >
+                      {isUpgrading === plan.id ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <span>{plan.current ? 'Current Plan' : plan.disabled ? 'Lower Plan' : plan.buttonText}</span>
+                      )}
+                    </button>
+                  )}
 
                   {/* Lifetime Plan Special Note */}
                   {plan.id === 'lifetime' && !plan.current && (

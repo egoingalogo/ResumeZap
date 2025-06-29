@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Crown, Zap } from 'lucide-react';
+import { PayPalButton } from './PayPalButton';
 
 interface PricingTier {
   name: string;
   price: string;
   period?: string;
+  originalPrice?: string | null;
+  savings?: string | null;
   originalPrice?: string | null;
   savings?: string | null;
   description: string;
@@ -14,6 +17,10 @@ interface PricingTier {
   isLifetime?: boolean;
   buttonText: string;
   onSelect: () => void;
+  planId?: string;
+  isAnnual?: boolean;
+  showPayPalButton?: boolean;
+  disabled?: boolean;
 }
 
 interface PricingCardProps {
@@ -27,6 +34,14 @@ interface PricingCardProps {
  */
 export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
   console.log('PricingCard: Rendering tier:', tier.name);
+
+  // Determine plan type for PayPal integration
+  const getPlanType = (name: string): 'premium' | 'pro' | 'lifetime' => {
+    if (name.toLowerCase() === 'premium') return 'premium';
+    if (name.toLowerCase() === 'pro') return 'pro';
+    if (name.toLowerCase() === 'lifetime') return 'lifetime';
+    return 'premium'; // Default fallback
+  };
 
   return (
     <motion.div
@@ -67,12 +82,22 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
           <span className="text-5xl font-bold text-gray-900 dark:text-white">
             {tier.price}
           </span>
-          {tier.period && (
+          {tier.period && !tier.isLifetime && (
             <span className="text-gray-500 dark:text-gray-400 ml-2">
               {tier.period}
             </span>
           )}
         </div>
+        {tier.originalPrice && tier.savings && (
+          <div className="text-center mb-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
+              {tier.originalPrice}
+            </span>
+            <span className="text-sm text-green-600 dark:text-green-400 ml-2 font-medium">
+              {tier.savings}
+            </span>
+          </div>
+        )}
         {tier.originalPrice && tier.savings && (
           <div className="text-center mb-2">
             <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
@@ -111,16 +136,30 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
       </div>
 
       {/* CTA Button */}
-      <motion.button
+      {tier.showPayPalButton ? (
+        <PayPalButton
+          planType={getPlanType(tier.name)}
+          isAnnual={tier.isAnnual}
+          onSuccess={(planType) => {
+            console.log(`PricingCard: PayPal payment successful for ${planType} plan`);
+            tier.onSelect();
+          }}
+          disabled={tier.disabled}
+          className="w-full"
+        />
+      ) : (
+        <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={tier.onSelect}
+        disabled={tier.disabled}
         className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
           tier.isPopular
             ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
             : tier.isLifetime
             ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
             : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
+          }${tier.disabled ? ' opacity-50 cursor-not-allowed' : ''}`}
         }`}
       >
         <div className="flex items-center justify-center space-x-2">
@@ -129,6 +168,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
           <span>{tier.buttonText}</span>
         </div>
       </motion.button>
+      )}
 
       {/* Guarantee for lifetime */}
       {tier.isLifetime && (

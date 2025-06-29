@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { 
   Zap, 
   Target, 
@@ -27,8 +28,9 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { PricingCard } from '../components/PricingCard';
 import { useAuthStore } from '../store/authStore';
-import { getLifetimeUserCount } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 /**
  * Landing page component with hero section, features, pricing, and testimonials
@@ -180,8 +182,8 @@ const LandingPage: React.FC = () => {
     pricingPlans.push({
       id: 'lifetime',
       name: 'Lifetime',
-      price: '$79.99',
-      period: 'one-time',
+      price: isAnnual ? '$79.99' : '$79.99', // Same price regardless of isAnnual
+      period: 'one-time payment',
       description: 'Limited early adopter offer',
       features: [
         'All Pro features permanently',
@@ -198,11 +200,18 @@ const LandingPage: React.FC = () => {
   }
 
   const handleGetStarted = (planName: string) => {
+    console.log('LandingPage: GetStarted clicked for plan:', planName);
+    
     if (isAuthenticated) {
-      // If user is authenticated, go to dashboard
-      navigate('/dashboard');
+      // If user is authenticated and trying to upgrade, show toast
+      if (planName.toLowerCase() !== 'free') {
+        toast.info('Please use the upgrade button on your dashboard to change plans');
+        setTimeout(() => navigate('/dashboard'), 1500);
+      } else {
+        navigate('/dashboard');
+      }
     } else {
-      // If not authenticated, go to auth page
+      // If not authenticated, go to auth page with plan info
       navigate('/auth');
     }
   };
@@ -448,83 +457,33 @@ const LandingPage: React.FC = () => {
               </p>
             </motion.div>
           )}
-
+        className="max-w-7xl mx-auto relative z-10"
           {/* Pricing Cards */}
           <div className={`grid gap-8 ${showLifetimePlan ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
             {pricingPlans.map((plan, index) => (
-              <motion.div
+              <PricingCard
                 key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-                className={`relative bg-white dark:bg-gray-800 rounded-2xl border-2 p-8 transition-all duration-200 hover:shadow-xl ${
-                  plan.isPopular 
-                    ? 'border-purple-500 shadow-lg ring-2 ring-purple-500/20' 
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {/* Popular Badge */}
-                {plan.isPopular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                      {plan.name === 'Lifetime' ? 'Limited Time' : 'Most Popular'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Plan Header */}
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    {plan.name}
-                  </h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                      {plan.price}
-                    </span>
-                    <span className="text-gray-600 dark:text-gray-400 ml-1">
-                      {plan.period}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {plan.description}
-                  </p>
-                </div>
-
-                {/* Features List */}
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300 text-sm">
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Action Button */}
-                <button
-                  onClick={() => handleGetStarted(plan.name)}
-                  disabled={plan.disabled}
-                  className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${plan.buttonStyle}`}
-                >
-                  {isAuthenticated && user && plan.id.toLowerCase() === user.plan ? 'Current Plan' : 
-                   plan.disabled ? 'Lower Plan' : plan.buttonText}
-                </button>
-
-                {/* Lifetime Plan Special Note */}
-                {plan.name === 'Lifetime' && (
-                  <div className="mt-4 text-center">
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                      🎉 Early Adopter Special
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Help shape ResumeZap's future
-                    </p>
-                  </div>
-                )}
-              </motion.div>
+                tier={{
+                  ...plan,
+                  isAnnual: isAnnual,
+                  showPayPalButton: false,
+                  onSelect: () => handleGetStarted(plan.name),
+                }}
+                index={index}
+              />
             ))}
+          </div>
+
+          {/* Pricing Footer */}
+          <div className="text-center mt-12">
+            <p className="text-gray-600 dark:text-gray-400">
+              All plans include secure data encryption and can be cancelled anytime.
+            </p>
+            {showLifetimePlan && (
+              <p className="text-amber-600 dark:text-amber-400 mt-2">
+                Lifetime plan price will increase after the first 1,000 members.
+              </p>
+            )}
           </div>
         </div>
       </section>
