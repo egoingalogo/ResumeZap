@@ -32,8 +32,9 @@ interface AuthState {
   updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserName: (newName: string) => Promise<void>;
   initializeAuth: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   fetchLifetimeUserCount: () => Promise<void>;
+  setupPaymentListeners: () => void;
 }
 
 /**
@@ -162,6 +163,7 @@ export const useAuthStore = create<AuthState>()(
       /**
        * Refresh user data from database
        * Handles cases where user profile might not exist yet (race conditions during registration)
+       * Returns the refreshed user or null if not found
        */
       refreshUser: async () => {
         try {
@@ -170,7 +172,7 @@ export const useAuthStore = create<AuthState>()(
           if (!supabaseUser) {
             console.log('AuthStore: No authenticated user found during refresh');
             set({ user: null, isAuthenticated: false });
-            return;
+            return null;
           }
           
           // Get user profile from database with better error handling
@@ -231,7 +233,8 @@ export const useAuthStore = create<AuthState>()(
               };
               
               set({ user, isAuthenticated: true });
-              return;
+              
+              return user;
             }
           }
           
@@ -246,7 +249,7 @@ export const useAuthStore = create<AuthState>()(
           if (!userProfile) {
             console.error('AuthStore: User profile is undefined');
             set({ user: null, isAuthenticated: false });
-            return;
+            return null;
           }
 
           // Create user object with proper defaults for null values
@@ -270,6 +273,8 @@ export const useAuthStore = create<AuthState>()(
           // Set user state with proper safeguards
           set({ user, isAuthenticated: true, isLoading: false });
           console.log('AuthStore: User refreshed successfully:', user.email);
+          
+          return user;
         } catch (error) {
           console.error('AuthStore: Failed to refresh user:', error);
           
@@ -279,9 +284,11 @@ export const useAuthStore = create<AuthState>()(
             console.log('AuthStore: Auth-related error, clearing session');
             set({ user: null, isAuthenticated: false });
           } else {
-            console.log('AuthStore: Non-auth error, keeping current state');
+            console.log('AuthStore: Non-auth error, keeping current user state');
             // Don't clear the auth state for network/database errors
           }
+          
+          return null;
         }
       },
       
@@ -663,6 +670,58 @@ export const useAuthStore = create<AuthState>()(
           console.error('AuthStore: Failed to update email:', error);
           throw error;
         }
+      },
+
+      /**
+       * Configure window listeners for PayPal redirects
+       * This allows successful payments to update the UI state
+       */
+      setupPaymentListeners: () => {
+        console.log('AuthStore: Setting up payment event listeners');
+        
+        // Set up window event listeners for payment status changes
+        const handleUrlChange = async () => {
+          const url = new URL(window.location.href);
+          
+          // Check for PayPal success parameters
+          if (url.searchParams.has('subscription_success') || 
+              url.searchParams.has('upgrade_success')) {
+            // Refresh the user data to get the updated plan
+            await get().refreshUser();
+            
+            // Show success toast
+            // We use setTimeout to ensure the toast appears after page renders
+            setTimeout(() => {
+              window.history.replaceState({}, document.title, window.location.pathname);
+              
+              if (url.searchParams.has('subscription_success')) {
+                console.log('AuthStore: Detected subscription success redirect');
+                // We don't need to show a toast here as the PayPal component will handle it
+              } else if (url.searchParams.has('upgrade_success')) {
+                console.log('AuthStore: Detected order success redirect');
+                // We don't need to show a toast here as the PayPal component will handle it
+              }
+            }, 500);
+          }
+          
+          // Check for PayPal cancel parameters
+          if (url.searchParams.has('subscription_cancelled') || 
+              url.searchParams.has('upgrade_cancelled')) {
+            // Clear the parameters from the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        };
+        
+        // Call once on setup
+        handleUrlChange();
+        
+        // Listen for future changes (like when returning from PayPal)
+        window.addEventListener('popstate', handleUrlChange);
+        
+        // Return cleanup function
+        return () => {
+          window.removeEventListener('popstate', handleUrlChange);
+        };
       },
     }),
     {
