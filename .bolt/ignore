@@ -1,9 +1,4 @@
-src/components/PricingCard.tsx
 src/components/ProfilePictureUploader.tsx
-src/components/UpgradeModal.tsx
 src/lib/profilePicture.ts
-src/lib/support.ts
 src/pages/AuthPage.tsx
 src/pages/EmailSupport.tsx
-src/pages/LandingPage.tsx
-src/pages/Settings.tsx
