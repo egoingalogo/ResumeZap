@@ -19,7 +19,12 @@ import {
   Sparkles,
   Crown,
   Heart,
-  Briefcase
+  Briefcase,
+  Download,
+  MessageSquare,
+  Calendar,
+  Infinity,
+  ExternalLink
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { PricingCard } from '../components/PricingCard';
@@ -36,6 +41,7 @@ const LandingPage: React.FC = () => {
   const { isAuthenticated, lifetimeUserCount, fetchLifetimeUserCount } = useAuthStore();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isAnnual, setIsAnnual] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   console.log('LandingPage: Component mounted');
 
@@ -43,6 +49,18 @@ const LandingPage: React.FC = () => {
     // Fetch lifetime user count on component mount
     fetchLifetimeUserCount();
   }, [fetchLifetimeUserCount]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Determine if lifetime plan should be shown (only for first 1000 users)
+  const showLifetimePlan = lifetimeUserCount !== null && lifetimeUserCount < 1000;
 
   const features = [
     {
@@ -83,30 +101,113 @@ const LandingPage: React.FC = () => {
     },
   ];
 
+  // Updated pricing plans to match UpgradeModal
+  const pricingPlans = [
+    {
+      name: 'Free',
+      price: '$0',
+      period: 'forever',
+      description: 'Perfect for getting started',
+      features: [
+        '1 resume tailoring session/month',
+        '2 cover letter generations/month',
+        '2 skill gap analysis/month',
+        'Export to PDF only',
+        'Email support (48-72 hours)',
+      ],
+      buttonText: 'Get Started Free',
+      buttonStyle: 'bg-gray-600 hover:bg-gray-700 text-white',
+      isPopular: false,
+    },
+    {
+      name: 'Premium',
+      price: '$7.99',
+      period: '/month',
+      description: 'For active job seekers',
+      features: [
+        '20 resume tailoring sessions/month',
+        '25 cover letter generations/month',
+        '20 skill gap analysis/month',
+        'All export formats (PDF, RTF, TXT)',
+        'Priority email support (24-48 hours)',
+      ],
+      buttonText: 'Upgrade to Premium',
+      buttonStyle: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white',
+      isPopular: true,
+    },
+    {
+      name: 'Pro',
+      price: '$14.99',
+      period: '/month',
+      description: 'For career professionals',
+      features: [
+        'Unlimited resume tailoring',
+        'Unlimited cover letters',
+        'Unlimited skill gap analysis',
+        'All export formats (PDF, RTF, TXT)',
+        'Priority email support (4 hours)',
+        'Bulk processing capabilities',
+      ],
+      buttonText: 'Upgrade to Pro',
+      buttonStyle: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white',
+      isPopular: false,
+    },
+  ];
+
+  // Add lifetime plan if available
+  if (showLifetimePlan) {
+    pricingPlans.push({
+      name: 'Lifetime',
+      price: '$79.99',
+      period: 'one-time',
+      description: 'Limited early adopter offer',
+      features: [
+        'All Pro features permanently',
+        'Exclusive early adopter badge',
+        'Direct feedback channel to development team',
+        '30-day early access to future feature updates before general release',
+        '60-day money-back guarantee',
+      ],
+      buttonText: 'Get Lifetime Access',
+      buttonStyle: 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
+      isPopular: true,
+    });
+  }
+
+  const handleGetStarted = (planName: string) => {
+    if (isAuthenticated) {
+      // If user is authenticated, go to dashboard
+      navigate('/dashboard');
+    } else {
+      // If not authenticated, go to auth page
+      navigate('/auth');
+    }
+  };
+
   const testimonials = [
     {
       name: 'Sarah Chen',
       role: 'Software Engineer',
       company: 'Google',
-      content: 'ResumeZap helped me land my dream job at Google! The AI suggestions were spot-on and improved my resume significantly.',
+      content: 'ResumeZap helped me land my dream job at Google. The AI optimization increased my interview rate by 300%!',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
     },
     {
-      name: 'Michael Rodriguez',
+      name: 'Marcus Johnson',
       role: 'Product Manager',
       company: 'Microsoft',
-      content: 'The skill gap analysis feature is incredible. It showed me exactly what I needed to learn to advance my career.',
+      content: 'The skill gap analysis feature is incredible. It showed me exactly what to learn to advance my career.',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
     },
     {
-      name: 'Emily Johnson',
+      name: 'Emily Rodriguez',
       role: 'Data Scientist',
-      company: 'Amazon',
-      content: 'I got 3x more interview calls after using ResumeZap. The ATS optimization really works!',
+      company: 'Netflix',
+      content: 'I got 5 interviews in 2 weeks after using ResumeZap. The cover letter generator is pure magic!',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
     },
   ];
 
@@ -124,14 +225,6 @@ const LandingPage: React.FC = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [testimonials.length]);
-
-  const handleGetStarted = () => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/auth');
-    }
-  };
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -198,7 +291,7 @@ const LandingPage: React.FC = () => {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
             >
               <button
-                onClick={handleGetStarted}
+                onClick={() => handleGetStarted('Free')}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 Get Started Free
@@ -311,117 +404,114 @@ const LandingPage: React.FC = () => {
                 <span className="text-green-600 dark:text-green-400 font-medium ml-1">(Save 17%)</span>
               </span>
             </div>
-          </motion.div>
+          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          {/* Lifetime Plan Alert */}
+          {showLifetimePlan && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-            >
-              <PricingCard
-                tier={{
-                  name: "Free",
-                  price: "$0",
-                  period: "forever",
-                  description: "Perfect for getting started with AI resume optimization",
-                  features: [
-                    '3 resume tailoring sessions/month',
-                    '2 cover letter generations/month',
-                    'Basic skill gap analysis',
-                    'Email support (48-72 hours)',
-                    'Export to PDF, DOCX, TXT'
-                  ],
-                  buttonText: "Get Started Free"
-                }}
-                onSelect={() => handleGetStarted()}
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
+              className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 mb-12 text-center"
             >
-              <PricingCard
-                tier={{
-                  name: "Premium",
-                  price: isAnnual ? "$79.99" : "$7.99",
-                  period: isAnnual ? "/year" : "/month",
-                  description: "Enhanced features for active job seekers",
-                  features: [
-                    '40 resume tailoring sessions/month',
-                    '30 cover letter generations/month',
-                    'Enhanced skill gap analysis',
-                    'Priority email support (24-48 hours)',
-                    'Usage analytics dashboard',
-                    'All export formats',
-                    ...(isAnnual ? ['Save $16/year vs monthly'] : [])
-                  ],
-                  buttonText: "Upgrade to Premium",
-                  isPopular: true
-                }}
-                onSelect={() => handleGetStarted()}
-              />
+              <div className="flex items-center justify-center space-x-3 mb-2">
+                <Crown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
+                  🔥 Limited Time: Lifetime Plan Available
+                </h3>
+              </div>
+              <p className="text-amber-700 dark:text-amber-500">
+                Only {1000 - (lifetimeUserCount || 0)} lifetime memberships remaining for early adopters
+              </p>
             </motion.div>
+          )}
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
-              <PricingCard
-                tier={{
-                  name: "Pro",
-                  price: isAnnual ? "$149.99" : "$14.99",
-                  period: isAnnual ? "/year" : "/month",
-                  description: "Advanced tools for career professionals",
-                  features: [
-                    'Unlimited resume tailoring',
-                    'Unlimited cover letters',
-                    'Advanced skill gap analysis',
-                    'Priority email support (4 hours)',
-                    'Advanced analytics & tracking',
-                    'Custom templates',
-                    'Bulk processing',
-                    ...(isAnnual ? ['Save $30/year vs monthly'] : [])
-                  ],
-                  buttonText: "Go Pro"
-                }}
-                onSelect={() => handleGetStarted()}
-              />
-            </motion.div>
+          {/* Pricing Cards */}
+          <div className={`grid gap-8 ${showLifetimePlan ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+            {pricingPlans.map((plan, index) => (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+                className={`relative bg-white dark:bg-gray-800 rounded-2xl border-2 p-8 transition-all duration-200 hover:shadow-xl ${
+                  plan.isPopular 
+                    ? 'border-purple-500 shadow-lg ring-2 ring-purple-500/20' 
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                {/* Popular Badge */}
+                {plan.isPopular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                      {plan.name === 'Lifetime' ? 'Limited Time' : 'Most Popular'}
+                    </span>
+                  </div>
+                )}
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              viewport={{ once: true }}
-            >
-              <PricingCard
-                tier={{
-                  name: "Lifetime",
-                  price: "$79.99",
-                  period: "one-time",
-                  description: "All Pro features forever - limited time offer",
-                  features: [
-                    'All Pro features permanently',
-                    'Unlimited everything forever',
-                    'VIP support & early access',
-                    'Future feature updates included',
-                    '60-day money-back guarantee',
-                    `Limited to first 1,000 customers`,
-                    lifetimeUserCount !== null ? `${Math.max(0, 1000 - lifetimeUserCount)} spots remaining` : 'Limited availability'
-                  ],
-                  buttonText: "Get Lifetime Access",
-                  isLifetime: true
-                }}
-                onSelect={() => handleGetStarted()}
-              />
-            </motion.div>
+                {/* Plan Header */}
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    {plan.name}
+                  </h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                      {plan.price}
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-400 ml-1">
+                      {plan.period}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {plan.description}
+                  </p>
+                </div>
+
+                {/* Features List */}
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300 text-sm">
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Action Button */}
+                <button
+                  onClick={() => handleGetStarted(plan.name)}
+                  className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${plan.buttonStyle}`}
+                >
+                  {plan.buttonText}
+                </button>
+
+                {/* Lifetime Plan Special Note */}
+                {plan.name === 'Lifetime' && (
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      🎉 Early Adopter Special
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Help shape ResumeZap's future
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Pricing Footer */}
+          <div className="text-center mt-12">
+            <p className="text-gray-600 dark:text-gray-400">
+              All plans include secure data encryption and can be cancelled anytime.
+            </p>
+            {showLifetimePlan && (
+              <p className="text-amber-600 dark:text-amber-400 mt-2">
+                Lifetime plan price will increase after the first 1,000 members.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -442,7 +532,7 @@ const LandingPage: React.FC = () => {
               Join thousands of professionals who have accelerated their careers with AI-powered resume optimization.
             </p>
             <button
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted('Free')}
               className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               Start Your Success Story
