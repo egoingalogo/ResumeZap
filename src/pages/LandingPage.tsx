@@ -49,8 +49,7 @@ const LandingPage: React.FC = () => {
     if (isAuthenticated) {
       fetchLifetimeUserCount();
     }
-      fetchLifetimeUserCount();
-    }
+    fetchLifetimeUserCount();
   }, [fetchLifetimeUserCount]);
 
   useEffect(() => {
