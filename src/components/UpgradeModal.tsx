@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { PayPalButtons, PayPalScriptProvider } from '@paypal/paypal-js';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -43,6 +44,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const { upgradePlan } = useAuthStore();
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
+  const [paymentVisible, setPaymentVisible] = useState<string | null>(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   console.log('UpgradeModal: Rendered with current plan:', currentPlan);
   console.log('UpgradeModal: Lifetime user count:', lifetimeUserCount);
@@ -61,8 +64,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     };
   }, [isOpen]);
 
-  const handleUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
-    console.log('UpgradeModal: Upgrading to plan:', plan);
+  // Show PayPal payment options
+  const initiatePayment = (plan: 'premium' | 'pro' | 'lifetime') => {
+    console.log('UpgradeModal: Initiating payment for plan:', plan);
+    setPaymentVisible(plan);
+  };
+  
+  // Complete upgrade after successful payment
+  const completeUpgrade = async (plan: 'premium' | 'pro' | 'lifetime') => {
     setIsUpgrading(plan);
     
     try {
@@ -74,7 +83,54 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       toast.error('Upgrade failed. Please try again.');
     } finally {
       setIsUpgrading(null);
+      setPaymentVisible(null);
     }
+  };
+  
+  // Get plan amount based on selected plan and billing period
+  const getPlanAmount = (plan: string): string => {
+    if (plan === 'premium') {
+      return isAnnual ? '79.99' : '7.99';
+    } else if (plan === 'pro') {
+      return isAnnual ? '149.99' : '14.99';
+    } else if (plan === 'lifetime') {
+      return '79.99';
+    }
+    return '0.00';
+  };
+
+  // Create PayPal order
+  const createPayPalOrder = (plan: string) => {
+    return async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-paypal-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            planType: plan,
+            isAnnual: isAnnual,
+            amount: getPlanAmount(plan),
+            currency: 'USD',
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create order');
+        }
+
+        const order = await response.json();
+        return order.id;
+      } catch (error) {
+        console.error('Failed to create PayPal order:', error);
+        toast.error('Failed to initialize payment. Please try again.');
+        setPaymentVisible(null);
+        return null;
+      }
+    };
   };
 
   // Determine if lifetime plan should be shown (only for first 1000 users)
@@ -330,7 +386,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
                   {/* Action Button */}
                   <button
-                    onClick={() => plan.current ? null : handleUpgrade(plan.id as any)}
+                    onClick={() => plan.current || plan.disabled ? null : initiatePayment(plan.id as any)}
                     disabled={plan.current || isUpgrading === plan.id || plan.disabled}
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${plan.buttonStyle}`}
                     title={plan.disabled ? `You already have a ${currentPlan} plan which includes these features` : ''}
@@ -342,6 +398,100 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       </>
                     ) : (
                       <span>{plan.disabled ? `Included in ${currentPlan}` : plan.buttonText}</span>
+                    )}
+
+                    {paymentVisible === plan.id && (
+                      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-gray-200 dark:border-gray-700">
+                          <h3 className="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+                            Upgrade to {plan.name} Plan
+                          </h3>
+                          
+                          <div className="mb-6 text-center">
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {plan.price} {plan.period}
+                            </div>
+                            
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                              {plan.id === 'lifetime' ? 'One-time payment' : isAnnual ? 'Annual billing' : 'Monthly billing'}
+                            </p>
+                          </div>
+                          
+                          <div className="mb-6">
+                            <PayPalScriptProvider
+                              options={{
+                                clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'sb',
+                                currency: 'USD',
+                                intent: 'capture',
+                                components: 'buttons',
+                                onLoad: () => setPaypalLoaded(true),
+                              }}
+                            >
+                              {!paypalLoaded && (
+                                <div className="flex items-center justify-center h-12">
+                                  <div className="w-5 h-5 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                                  <span className="ml-2 text-gray-600 dark:text-gray-400">Loading payment options...</span>
+                                </div>
+                              )}
+
+                              <PayPalButtons
+                                style={{
+                                  layout: 'vertical',
+                                  shape: 'rect',
+                                  color: 'blue',
+                                }}
+                                createOrder={createPayPalOrder(plan.id)}
+                                onApprove={async (data) => {
+                                  try {
+                                    // Verify payment on server
+                                    const verifyResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-paypal-payment`, {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                                      },
+                                      body: JSON.stringify({
+                                        orderID: data.orderID,
+                                        planType: plan.id,
+                                      }),
+                                    });
+                                    
+                                    if (!verifyResponse.ok) {
+                                      const errorData = await verifyResponse.json();
+                                      throw new Error(errorData.error || 'Payment verification failed');
+                                    }
+                                    
+                                    // Payment successful - upgrade plan
+                                    await completeUpgrade(plan.id as any);
+                                    toast.success(`Successfully upgraded to ${plan.name} plan!`);
+                                  } catch (error) {
+                                    console.error('Payment verification failed:', error);
+                                    toast.error('Payment verification failed. Please contact support.');
+                                  }
+                                }}
+                                onCancel={() => {
+                                  toast.info('Payment cancelled');
+                                  setPaymentVisible(null);
+                                }}
+                                onError={(err) => {
+                                  console.error('PayPal error:', err);
+                                  toast.error('Payment failed. Please try again.');
+                                  setPaymentVisible(null);
+                                }}
+                              />
+                            </PayPalScriptProvider>
+                          </div>
+                          
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setPaymentVisible(null)}
+                              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </button>
 
