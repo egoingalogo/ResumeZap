@@ -159,7 +159,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
               : tier.isLifetime
               ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
               : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
-          }${tier.disabled ? ' opacity-50 cursor-not-allowed' : ''}`}
+          }${tier.disabled ? ' opacity-50 cursor-not-allowed' : ''}`}>
           <div className="flex items-center justify-center space-x-2">
             {tier.isLifetime && <Crown className="h-4 w-4" />}
             {tier.isPopular && <Zap className="h-4 w-4" />}
