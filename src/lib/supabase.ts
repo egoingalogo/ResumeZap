@@ -409,6 +409,15 @@ export const deleteUserAccount = async (): Promise<void> => {
  */
 export const getLifetimeUserCount = async (): Promise<number> => {
   try {
+    // Check basic Supabase connectivity first to prevent fetch errors
+    console.log('getLifetimeUserCount: Testing Supabase connection before Edge Function call');
+    const isConnected = await testSupabaseConnection();
+    
+    if (!isConnected) {
+      console.warn('getLifetimeUserCount: Basic connectivity test failed, using fallback immediately');
+      return await getLifetimeUserCountFallback();
+    }
+    
     // Validate supabaseUrl before attempting fetch
     if (!supabaseUrl || !supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
       console.warn('getLifetimeUserCount: Invalid or missing VITE_SUPABASE_URL, using fallback. URL:', supabaseUrl);
