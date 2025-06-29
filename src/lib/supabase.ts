@@ -411,28 +411,39 @@ export const getLifetimeUserCount = async (): Promise<number> => {
   try {
     console.log('getLifetimeUserCount: Attempting to call Edge Function');
     
-    // Set a timeout for the Edge Function call to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Edge Function timeout')), 5000);
-    });
+    // Try calling the Edge Function with proper error handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    // Try calling the Edge Function with timeout and explicit GET method
-    const edgeFunctionPromise = fetch(`${supabaseUrl}/functions/v1/get-lifetime-user-count`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    const response = await Promise.race([edgeFunctionPromise, timeoutPromise]) as Response;
+    let response: Response;
+    try {
+      response = await fetch(`${supabaseUrl}/functions/v1/get-lifetime-user-count`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.warn('getLifetimeUserCount: Fetch failed, using fallback:', fetchError);
+      return await getLifetimeUserCountFallback();
+    }
     
     if (!response.ok) {
       console.warn(`getLifetimeUserCount: Edge function returned ${response.status}, using fallback`);
       return await getLifetimeUserCountFallback();
     }
     
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.warn('getLifetimeUserCount: Failed to parse Edge function response, using fallback:', jsonError);
+      return await getLifetimeUserCountFallback();
+    }
     
     if (data?.error) {
       console.warn('getLifetimeUserCount: Edge function returned error, using fallback:', data.error);
@@ -449,16 +460,6 @@ export const getLifetimeUserCount = async (): Promise<number> => {
     
   } catch (error) {
     console.warn('getLifetimeUserCount: Edge Function call failed, using fallback:', error);
-    
-    // Check if it's a network error specifically
-    if (error instanceof Error && (
-      error.message.includes('Failed to fetch') || 
-      error.message.includes('timeout') ||
-      error.name === 'TypeError'
-    )) {
-      console.warn('getLifetimeUserCount: Network/timeout error detected, using fallback immediately');
-    }
-    
     return await getLifetimeUserCountFallback();
   }
 };
