@@ -118,9 +118,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         { icon: Download, text: 'Export to PDF only', included: true },
         { icon: MessageSquare, text: 'Email support (48-72 hours)', included: true },
       ],
-      buttonText: 'Current Plan',
-      buttonStyle: 'bg-gray-400 cursor-not-allowed',
+      buttonText: 'Get Started Free',
+      buttonStyle: 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white',
       isPopular: false,
+      disabled: isPlanLowerOrEqual('free'),
       current: currentPlan === 'free',
     },
     {
@@ -196,6 +197,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         ? 'bg-gray-400 cursor-not-allowed' 
         : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white',
       isPopular: true,
+      disabled: isPlanLowerOrEqual('lifetime'),
       current: currentPlan === 'lifetime',
     });
   }
@@ -370,7 +372,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         setShowPayPal(prev => ({ ...prev, [plan.id]: false }));
                         toast.error(`Payment error: ${error.message}`);
                       }}
-                      disabled={plan.current || plan.disabled}
+                      disabled={plan.disabled || isUpgrading === plan.id}
                     />
                   ) : (
                     <button
@@ -379,7 +381,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
                         isUpgrading === plan.id
                           ? plan.buttonStyle
-                        : plan.current || plan.disabled
+                        : plan.disabled
                           ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
                           : plan.buttonStyle
                       }`}
