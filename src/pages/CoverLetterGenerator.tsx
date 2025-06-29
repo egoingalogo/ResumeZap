@@ -207,13 +207,14 @@ const CoverLetterGenerator: React.FC = () => {
    * Handle cover letter generation with file upload support
    */
   const handleGenerateCoverLetter = async () => {
-    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription) {
-      toast.error('Please fill in company name, job title, and job description');
+    // Validate PDF file upload first
+    if (!uploadedFile) {
+      toast.error('Please upload your resume as a PDF file before generating the cover letter');
       return;
     }
     
-    if (!uploadedFile) {
-      toast.error('Please upload your resume as a PDF file');
+    if (!formData.companyName || !formData.jobTitle || !formData.jobDescription) {
+      toast.error('Please fill in company name, job title, and job description');
       return;
     }
     

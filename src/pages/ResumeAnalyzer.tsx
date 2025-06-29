@@ -154,8 +154,9 @@ const ResumeAnalyzer: React.FC = () => {
   });
 
   const handleAnalyze = async () => {
+    // Validate PDF file upload first
     if (!uploadedFile) {
-      toast.error('Please upload a resume file');
+      toast.error('Please upload your resume as a PDF file before analyzing');
       return;
     }
 

@@ -162,8 +162,9 @@ const SkillGapAnalysis: React.FC = () => {
     console.log('SkillGapAnalysis: Starting analysis with uploadedFile:', uploadedFile ? uploadedFile.name : 'null');
     console.log('SkillGapAnalysis: Job posting length:', jobPosting.trim().length);
     
+    // Validate PDF file upload first
     if (!uploadedFile) {
-      toast.error('Please upload your resume as a PDF file');
+      toast.error('Please upload your resume as a PDF file before analyzing skill gaps');
       return;
     }
 

@@ -257,7 +257,7 @@ export async function analyzeResume(
 
   // For resume analysis, require PDF file - this is now enforced in the UI
   if (!resumeFile) {
-    throw new Error('PDF resume file is required for analysis');
+    throw new Error('Resume file is required for analysis');
   }
 
   // Validate PDF file
@@ -347,7 +347,7 @@ export async function generateCoverLetter(
 
   // Now requiring PDF file upload in the UI
   if (!resumeFile) {
-    throw new Error('Resume file is required');
+    throw new Error('Resume file is required for cover letter generation');
   }
 
   if (!jobPosting.trim() || !companyName.trim() || !jobTitle.trim()) {
@@ -371,10 +371,6 @@ export async function generateCoverLetter(
       requestData.personalExperience = personalExperience.trim();
     }
 
-    // Add resume content or file
-    console.log('AIService: Processing resume file for cover letter:', resumeFile.name);
-    
-    // Validate PDF file if provided
     const validation = validatePdfFile(resumeFile);
     if (!validation.isValid) {
       throw new Error(validation.error);
@@ -414,24 +410,15 @@ export async function analyzeSkillGaps(
 ): Promise<SkillGapResult> {
   console.log('AIService: Starting skill gap analysis');
   console.log('AIService: Received parameters:', {
-    hasResumeContent: !!resumeContent?.trim(),
     hasJobPosting: !!jobPosting?.trim(),
     hasResumeFile: !!resumeFile,
     resumeFileName: resumeFile?.name,
     resumeFileSize: resumeFile?.size
   });
 
-  // Check if we have either resume content or file
-  if (!resumeContent?.trim() && !resumeFile) {
-    throw new Error('Either resume content or resume file is required');
-  }
-
-  // For skill gap analysis, prefer file upload but allow fallback to text content
+  // Require PDF file for skill gap analysis
   if (!resumeFile) {
-    console.log('AIService: No file provided, using text content for analysis');
-    if (!resumeContent?.trim()) {
-      throw new Error('Resume content or file is required for analysis');
-    }
+    throw new Error('Resume file is required for skill gap analysis');
   }
 
   if (!jobPosting.trim()) {
@@ -444,26 +431,17 @@ export async function analyzeSkillGaps(
       jobPosting: jobPosting.trim(),
     };
 
-    if (resumeFile) {
-      // Add resume file
-      console.log('AIService: Processing resume file for skill analysis:', resumeFile.name);
-      
-      // Validate PDF file if provided
-      const validation = validatePdfFile(resumeFile);
-      if (!validation.isValid) {
-        throw new Error(validation.error);
-      }
-      
-      requestData.resumeFile = {
-        data: await fileToBase64(resumeFile),
-        media_type: getMediaType(resumeFile),
-        filename: resumeFile.name,
-      };
-    } else {
-      // Add resume content as fallback
-      console.log('AIService: Using resume content for skill analysis');
-      requestData.resumeContent = resumeContent.trim();
+    // Validate PDF file
+    const validation = validatePdfFile(resumeFile);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
     }
+    
+    requestData.resumeFile = {
+      data: await fileToBase64(resumeFile),
+      media_type: getMediaType(resumeFile),
+      filename: resumeFile.name,
+    };
 
     const result = await callClaudeAPI(requestData);
     
