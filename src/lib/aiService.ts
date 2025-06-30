@@ -89,6 +89,11 @@ export interface ResumeAnalysisResult {
     suggestions: string[];
   };
   atsOptimizations: string[];
+  improvementSummary?: {
+    totalChanges: number;
+    keyAreasImproved: string[];
+    estimatedATSImprovement: string;
+  };
 }
 
 export interface CoverLetterResult {
@@ -96,6 +101,8 @@ export interface CoverLetterResult {
   customizations: string[];
   keyStrengths: string[];
   callToAction: string;
+  toneAnalysis?: string;
+  matchingElements?: string[];
 }
 
 export interface SkillGapResult {
@@ -105,18 +112,21 @@ export interface SkillGapResult {
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
     important: Array<{
       skill: string;
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
     niceToHave: Array<{
       skill: string;
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
   };
   learningRecommendations: Array<{
@@ -129,38 +139,66 @@ export interface SkillGapResult {
       cost: string;
       duration: string;
       difficulty: string;
+      instructor?: string;
+      url?: string;
+      rating?: string;
+      description?: string;
     }>;
     freeResources: Array<{
       type: string;
       resource: string;
       description: string;
+      url?: string;
+      estimatedTime?: string;
     }>;
     certifications: Array<{
       name: string;
       provider: string;
       timeToComplete: string;
       cost: string;
+      url?: string;
+      validity?: string;
+      industryRecognition?: string;
     }>;
     practicalApplication: string;
+    books?: Array<{
+      title: string;
+      author: string;
+      amazonUrl?: string;
+      description: string;
+    }>;
   }>;
   developmentRoadmap: {
     phase1: {
       duration: string;
       focus: string;
       milestones: string[];
+      skills?: string[];
+      weeklyTimeCommitment?: string;
     };
     phase2: {
       duration: string;
       focus: string;
       milestones: string[];
+      skills?: string[];
+      weeklyTimeCommitment?: string;
     };
     phase3: {
       duration: string;
       focus: string;
       milestones: string[];
+      skills?: string[];
+      weeklyTimeCommitment?: string;
     };
   };
   skillsAlreadyStrong: string[];
+  totalDevelopmentTime?: string;
+  budgetEstimate?: {
+    minimum: string;
+    recommended: string;
+    premium: string;
+  };
+  nextSteps?: string[];
 }
 
 /**
