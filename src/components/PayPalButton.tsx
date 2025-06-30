@@ -25,7 +25,7 @@ const PLAN_PRICES = {
 const PAYPAL_PLAN_IDS = {
   premium: {
     monthly: 'P-43T78580KT298912NNBQWC2Q',
-    annual: 'P-PREMIUM_ANNUAL'     // Replace with actual ID
+    annual: 'P-1HA64172F2382503FNBQ6PEI'
   },
   pro: {
     monthly: 'P-PRO_MONTHLY',      // Replace with actual ID
