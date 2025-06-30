@@ -91,10 +91,15 @@ const ActivityHistory: React.FC = () => {
 
     // Add resume activities
     resumes.forEach(resume => {
+      // Extract filename without extension
+      const resumeTitle = resume.title.includes(' - ') ? 
+        resume.title : 
+        `AI-Optimized Resume - ${resume.title.replace(/\.[^/.]+$/, '')}`;
+        
       allActivities.push({
         id: resume.id,
         type: 'resume',
-        title: resume.title,
+        title: resumeTitle,
         subtitle: `Match Score: ${resume.matchScore}%`,
         date: resume.createdAt,
         score: resume.matchScore,
@@ -109,10 +114,32 @@ const ActivityHistory: React.FC = () => {
       const skillsNeedDev = analysis.recommendations.filter(r => !r.hasSkill).length;
       const totalSkills = analysis.recommendations.length;
       
+      // Format title with resume filename (if available) and job title
+      let title = "Skill Gap Analysis";
+      
+      if (analysis.resumeContentSnapshot) {
+        // Extract filename without extension if possible
+        const resumeFile = analysis.resumeContentSnapshot.split('/').pop() || '';
+        const resumeFileName = resumeFile.replace(/\.[^/.]+$/, '');
+        
+        // Add resume filename
+        if (resumeFileName) {
+          title = `Skill Gap Analysis - ${resumeFileName}`;
+        }
+        
+        // Add job title if available
+        if (analysis.extractedJobTitle) {
+          title += ` - ${analysis.extractedJobTitle}`;
+        }
+      } else {
+        // Fall back to date-based title
+        title = `Skill Gap Analysis - ${new Date(analysis.analysisDate).toLocaleDateString()}`;
+      }
+      
       allActivities.push({
         id: analysis.id,
         type: 'skill_analysis',
-        title: `Skill Gap Analysis - ${new Date(analysis.analysisDate).toLocaleDateString()}`,
+        title: title,
         subtitle: `${skillsNeedDev} of ${totalSkills} skills need development`,
         date: analysis.analysisDate,
         icon: BarChart3,
@@ -123,10 +150,30 @@ const ActivityHistory: React.FC = () => {
 
     // Add cover letter activities
     coverLetters.forEach(coverLetter => {
+      // Create title with format: Cover Letter - {resume file} - {company} - {job title}
+      let title = `Cover Letter - ${coverLetter.companyName} - ${coverLetter.jobTitle}`;
+      
+      // If resume content snapshot is available (contains filename)
+      if (coverLetter.resumeContentSnapshot) {
+        // Extract just the filename if it looks like one
+        const isFilePath = coverLetter.resumeContentSnapshot.includes('.') && 
+                          !coverLetter.resumeContentSnapshot.includes(' ') &&
+                          coverLetter.resumeContentSnapshot.length < 100;
+                          
+        if (isFilePath) {
+          const resumeFile = coverLetter.resumeContentSnapshot.split('/').pop() || '';
+          const resumeFileName = resumeFile.replace(/\.[^/.]+$/, '');
+          
+          if (resumeFileName) {
+            title = `Cover Letter - ${resumeFileName} - ${coverLetter.companyName} - ${coverLetter.jobTitle}`;
+          }
+        }
+      }
+      
       allActivities.push({
         id: coverLetter.id,
         type: 'cover_letter',
-        title: coverLetter.title,
+        title: title,
         subtitle: `${coverLetter.companyName} - ${coverLetter.jobTitle} (${coverLetter.tone})`,
         date: coverLetter.createdAt,
         icon: Mail,

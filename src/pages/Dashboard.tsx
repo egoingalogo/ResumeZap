@@ -531,11 +531,33 @@ const Dashboard: React.FC = () => {
                     const skillsNeedDev = analysis.recommendations.filter(r => !r.hasSkill).length;
                     const totalSkills = analysis.recommendations.length;
                     const highPriorityGaps = analysis.recommendations.filter(r => !r.hasSkill && r.importance === 'high').length;
+                
+                    // Format title with resume filename (if available) and job title
+                    let title = "Skill Gap Analysis";
+                    
+                    if (analysis.resumeContentSnapshot) {
+                      // Extract filename without extension if possible
+                      const resumeFile = analysis.resumeContentSnapshot.split('/').pop() || '';
+                      const resumeFileName = resumeFile.replace(/\.[^/.]+$/, '');
+                      
+                      // Add resume filename
+                      if (resumeFileName) {
+                        title = `Skill Gap Analysis - ${resumeFileName}`;
+                      }
+                      
+                      // Add job title if available
+                      if (analysis.extractedJobTitle) {
+                        title += ` - ${analysis.extractedJobTitle}`;
+                      }
+                    } else {
+                      // Fall back to date-based title
+                      title = `Skill Gap Analysis - ${new Date(analysis.analysisDate).toLocaleDateString()}`;
+                    }
                     
                     return {
                       id: analysis.id,
                       type: 'skill_analysis' as const,
-                      title: `Skill Gap Analysis - ${new Date(analysis.analysisDate).toLocaleDateString()}`,
+                      title: title,
                       subtitle: `${skillsNeedDev} of ${totalSkills} skills to develop${highPriorityGaps > 0 ? ` (${highPriorityGaps} high priority)` : ''}`,
                       date: analysis.analysisDate,
                       icon: BarChart3,
@@ -557,8 +579,30 @@ const Dashboard: React.FC = () => {
                   }),
                   ...coverLetters.map(coverLetter => ({
                     id: coverLetter.id,
-                    type: 'cover_letter' as const,
-                    title: coverLetter.title,
+                    type: 'cover_letter' as const, 
+                    title: (() => {
+                      // Create title with format: Cover Letter - {resume file} - {company} - {job title}
+                      let title = `Cover Letter - ${coverLetter.companyName} - ${coverLetter.jobTitle}`;
+                      
+                      // If resume content snapshot is available (contains filename)
+                      if (coverLetter.resumeContentSnapshot) {
+                        // Extract just the filename if it looks like one
+                        const isFilePath = coverLetter.resumeContentSnapshot.includes('.') && 
+                                          !coverLetter.resumeContentSnapshot.includes(' ') &&
+                                          coverLetter.resumeContentSnapshot.length < 100;
+                                          
+                        if (isFilePath) {
+                          const resumeFile = coverLetter.resumeContentSnapshot.split('/').pop() || '';
+                          const resumeFileName = resumeFile.replace(/\.[^/.]+$/, '');
+                          
+                          if (resumeFileName) {
+                            title = `Cover Letter - ${resumeFileName} - ${coverLetter.companyName} - ${coverLetter.jobTitle}`;
+                          }
+                        }
+                      }
+                      
+                      return title;
+                    })(),
                     subtitle: `${coverLetter.companyName} - ${coverLetter.jobTitle}`,
                     date: coverLetter.createdAt,
                     icon: Mail,

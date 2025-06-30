@@ -164,6 +164,7 @@ export interface Database {
           id: string
           user_id: string
           resume_id: string | null
+          extracted_job_title: string | null
           job_posting_content: string
           resume_content_snapshot: string
           analysis_date: string
@@ -175,6 +176,7 @@ export interface Database {
           id?: string
           user_id: string
           resume_id?: string | null
+          extracted_job_title?: string | null
           job_posting_content: string
           resume_content_snapshot: string
           analysis_date?: string
@@ -193,6 +195,7 @@ export interface Database {
           id?: string
           user_id?: string
           resume_id?: string | null
+          extracted_job_title?: string | null
           job_posting_content?: string
           resume_content_snapshot?: string
           analysis_date?: string

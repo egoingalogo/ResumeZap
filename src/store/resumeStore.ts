@@ -166,13 +166,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // Call Claude AI through Edge Function
       const analysisResult = await analyzeResumeAI(resumeContent, jobPosting, resumeFile);
       
-      // Generate title with original file name if available
+      // Extract file name without extension for resume title if available
       const originalFileName = resumeFile ? 
         resumeFile.name.replace(/\.[^/.]+$/, '') : // Remove extension
-        'Unknown';
-      const resumeTitle = resumeFile ? 
-        `AI-Optimized Resume - ${new Date().toLocaleDateString()} - ${originalFileName}` :
-        `AI-Optimized Resume - ${new Date().toLocaleDateString()}`;
+        'Resume';
+      const resumeTitle = `AI-Optimized Resume - ${originalFileName}`;
       
       // Create a resume object from the analysis
       const analyzedResume: Resume = {
@@ -609,6 +607,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // Save to database
       const savedAnalysis = await createSkillAnalysis(
         resumeContentForSaving,
+        extractedJobTitle,
         jobPosting,
         legacySkillGaps,
         skillGapResult,

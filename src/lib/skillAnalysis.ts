@@ -4,6 +4,7 @@ interface SkillAnalysis {
   id: string;
   userId: string;
   resumeId?: string | null;
+  extractedJobTitle?: string | null;
   jobPostingContent: string;
   resumeContentSnapshot: string;
   analysisDate: string;
@@ -28,6 +29,7 @@ interface SkillRecommendation {
   recommendedCourses: string[];
   recommendedResources: string[];
   timeEstimate?: string | null;
+  extractedJobTitle?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +56,7 @@ export interface SkillAnalysisWithRecommendations extends SkillAnalysis {
 export const createSkillAnalysis = async (
   resumeContent: string,
   jobPosting: string,
+  extractedJobTitle?: string | null,
   skillGaps: SkillGap[],
   fullSkillGapAnalysis?: any,
   resumeId?: string | null,
@@ -85,6 +88,7 @@ export const createSkillAnalysis = async (
       user_id: user.id,
       resume_id: resumeId,
       job_posting_content: jobPosting.trim(),
+      extracted_job_title: extractedJobTitle?.trim() || null,
       resume_content_snapshot: resumeContent?.trim() || 'PDF file processed by AI - content extracted during analysis',
       overall_summary: overallSummary?.trim() || null,
       detailed_skill_gap_analysis: fullSkillGapAnalysis?.skillGapAnalysis || null,
@@ -152,6 +156,7 @@ export const createSkillAnalysis = async (
       id: analysisRecord.id,
       userId: analysisRecord.user_id,
       resumeId: analysisRecord.resume_id,
+      extractedJobTitle: analysisRecord.extracted_job_title,
       jobPostingContent: analysisRecord.job_posting_content,
       resumeContentSnapshot: analysisRecord.resume_content_snapshot,
       analysisDate: analysisRecord.analysis_date,
@@ -226,6 +231,7 @@ export const fetchSkillAnalyses = async (): Promise<SkillAnalysisWithRecommendat
       id: analysis.id,
       userId: analysis.user_id,
       resumeId: analysis.resume_id,
+      extractedJobTitle: analysis.extracted_job_title,
       jobPostingContent: analysis.job_posting_content,
       resumeContentSnapshot: analysis.resume_content_snapshot,
       analysisDate: analysis.analysis_date,
@@ -307,6 +313,7 @@ export const fetchSkillAnalysisById = async (analysisId: string): Promise<SkillA
       id: analysis.id,
       userId: analysis.user_id,
       resumeId: analysis.resume_id,
+      extractedJobTitle: analysis.extracted_job_title,
       jobPostingContent: analysis.job_posting_content,
       resumeContentSnapshot: analysis.resume_content_snapshot,
       analysisDate: analysis.analysis_date,
