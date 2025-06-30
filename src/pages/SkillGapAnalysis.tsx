@@ -600,6 +600,71 @@ const SkillGapAnalysis: React.FC = () => {
                           </div>
                         </div>
 
+                        {/* Development Summary */}
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Development Overview</h3>
+                          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {currentSkillGapAnalysis.totalDevelopmentTime && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Total Time Needed
+                                </h4>
+                                <p className="text-purple-600 dark:text-purple-400 font-semibold">
+                                  {currentSkillGapAnalysis.totalDevelopmentTime}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {currentSkillGapAnalysis.budgetEstimate && (
+                              <>
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Minimum Budget
+                                  </h4>
+                                  <p className="text-green-600 dark:text-green-400 font-semibold">
+                                    {currentSkillGapAnalysis.budgetEstimate.minimum}
+                                  </p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Recommended Budget
+                                  </h4>
+                                  <p className="text-blue-600 dark:text-blue-400 font-semibold">
+                                    {currentSkillGapAnalysis.budgetEstimate.recommended}
+                                  </p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Premium Budget
+                                  </h4>
+                                  <p className="text-purple-600 dark:text-purple-400 font-semibold">
+                                    {currentSkillGapAnalysis.budgetEstimate.premium}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Next Steps */}
+                        {currentSkillGapAnalysis.nextSteps && currentSkillGapAnalysis.nextSteps.length > 0 && (
+                          <div className="mt-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Next Steps</h3>
+                            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                              <div className="space-y-3">
+                                {currentSkillGapAnalysis.nextSteps.map((step, index) => (
+                                  <div key={index} className="flex items-start space-x-3">
+                                    <div className="bg-purple-100 dark:bg-purple-900/30 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <span className="text-sm font-semibold text-purple-800 dark:text-purple-400">{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-700 dark:text-gray-300">{step}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Skill Gaps by Priority */}
                         <div className="grid md:grid-cols-3 gap-6">
                           <div>
@@ -612,6 +677,11 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                   <h5 className="font-medium text-red-800 dark:text-red-400">{skill.skill}</h5>
                                   <p className="text-xs text-red-600 dark:text-red-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-red-700 dark:text-red-400 mt-2 bg-red-100 dark:bg-red-900/30 p-1.5 rounded">
+                                      <strong>Impact:</strong> {skill.impactOnJobSuccess}
+                                    </p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -627,6 +697,11 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                                   <h5 className="font-medium text-yellow-800 dark:text-yellow-400">{skill.skill}</h5>
                                   <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-2 bg-yellow-100 dark:bg-yellow-900/30 p-1.5 rounded">
+                                      <strong>Impact:</strong> {skill.impactOnJobSuccess}
+                                    </p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -642,6 +717,11 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                   <h5 className="font-medium text-green-800 dark:text-green-400">{skill.skill}</h5>
                                   <p className="text-xs text-green-600 dark:text-green-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-green-700 dark:text-green-400 mt-2 bg-green-100 dark:bg-green-900/30 p-1.5 rounded">
+                                      <strong>Impact:</strong> {skill.impactOnJobSuccess}
+                                    </p>
+                                  )}
                                 </div>
                               ))}
                             </div>
