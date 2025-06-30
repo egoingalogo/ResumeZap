@@ -734,6 +734,11 @@ const SkillGapAnalysis: React.FC = () => {
                       <div className="space-y-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           Your Learning Roadmap
+                          {currentSkillGapAnalysis.totalDevelopmentTime && (
+                            <span className="ml-2 text-sm font-normal text-purple-600 dark:text-purple-400">
+                              {currentSkillGapAnalysis.totalDevelopmentTime}
+                            </span>
+                          )}
                         </h3>
                         
                         <div className="space-y-6">
@@ -777,6 +782,50 @@ const SkillGapAnalysis: React.FC = () => {
                               </div>
                             </div>
                           ))}
+                          
+                          {/* Budget Estimate */}
+                          {currentSkillGapAnalysis.budgetEstimate && (
+                            <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-5 border border-blue-200 dark:border-blue-800">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-400 mb-3">Budget Estimate</h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div className="text-center">
+                                  <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">Minimum</div>
+                                  <div className="font-medium text-blue-900 dark:text-blue-100">
+                                    {currentSkillGapAnalysis.budgetEstimate.minimum}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">Recommended</div>
+                                  <div className="font-medium text-blue-900 dark:text-blue-100">
+                                    {currentSkillGapAnalysis.budgetEstimate.recommended}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">Premium</div>
+                                  <div className="font-medium text-blue-900 dark:text-blue-100">
+                                    {currentSkillGapAnalysis.budgetEstimate.premium}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Next Steps */}
+                          {currentSkillGapAnalysis.nextSteps && currentSkillGapAnalysis.nextSteps.length > 0 && (
+                            <div className="mt-6 bg-green-50 dark:bg-green-900/20 rounded-lg p-5 border border-green-200 dark:border-green-800">
+                              <h4 className="font-semibold text-green-900 dark:text-green-400 mb-3">Next Steps</h4>
+                              <ul className="space-y-2">
+                                {currentSkillGapAnalysis.nextSteps.map((step, index) => (
+                                  <li key={index} className="flex items-start space-x-2">
+                                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-xs mt-0.5">
+                                      {index + 1}
+                                    </div>
+                                    <span className="text-sm text-green-800 dark:text-green-300">{step}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -827,6 +876,12 @@ const SkillGapAnalysis: React.FC = () => {
                                           <Users className="h-3 w-3" />
                                           <span>{course.platform}</span>
                                         </span>
+                                        {course.instructor && (
+                                          <span className="flex items-center space-x-1">
+                                            <Users className="h-3 w-3" />
+                                            <span>{course.instructor}</span>
+                                          </span>
+                                        )}
                                         <span className="flex items-center space-x-1">
                                           <Clock className="h-3 w-3" />
                                           <span>{course.duration}</span>
@@ -835,7 +890,30 @@ const SkillGapAnalysis: React.FC = () => {
                                           <DollarSign className="h-3 w-3" />
                                           <span>{course.cost}</span>
                                         </span>
+                                        {course.rating && (
+                                          <span className="flex items-center space-x-1">
+                                            <Star className="h-3 w-3" />
+                                            <span>{course.rating}</span>
+                                          </span>
+                                        )}
                                       </div>
+                                      {course.description && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 border-t border-gray-100 dark:border-gray-600 pt-2">
+                                          {course.description}
+                                        </p>
+                                      )}
+                                      {course.url && (
+                                        <div className="mt-2">
+                                          <a
+                                            href={course.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                                          >
+                                            View Course <ExternalLink className="h-3 w-3 ml-1" />
+                                          </a>
+                                        </div>
+                                      )}
                                     </div>
                                   ))}
                                 </div>
@@ -859,6 +937,24 @@ const SkillGapAnalysis: React.FC = () => {
                                       <p className="text-sm text-gray-600 dark:text-gray-400">
                                         {resource.description}
                                       </p>
+                                      {resource.estimatedTime && (
+                                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-500 flex items-center">
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          <span>{resource.estimatedTime}</span>
+                                        </div>
+                                      )}
+                                      {resource.url && (
+                                        <div className="mt-2">
+                                          <a
+                                            href={resource.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                                          >
+                                            Access Resource <ExternalLink className="h-3 w-3 ml-1" />
+                                          </a>
+                                        </div>
+                                      )}
                                     </div>
                                   ))}
                                 </div>
@@ -879,8 +975,29 @@ const SkillGapAnalysis: React.FC = () => {
                                       <div className="flex items-center space-x-4 mt-2 text-sm text-blue-700 dark:text-blue-500">
                                         <span>{cert.provider}</span>
                                         <span>{cert.timeToComplete}</span>
-                                        <span>{cert.cost}</span>
+                                        <span className="flex items-center">
+                                          <DollarSign className="h-3 w-3 mr-1" />
+                                          {cert.cost}
+                                        </span>
+                                        {cert.validity && <span>{cert.validity}</span>}
                                       </div>
+                                      {cert.industryRecognition && (
+                                        <div className="mt-2 text-xs bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded text-blue-800 dark:text-blue-300">
+                                          {cert.industryRecognition}
+                                        </div>
+                                      )}
+                                      {cert.url && (
+                                        <div className="mt-2">
+                                          <a
+                                            href={cert.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                                          >
+                                            View Certification <ExternalLink className="h-3 w-3 ml-1" />
+                                          </a>
+                                        </div>
+                                      )}
                                     </div>
                                   ))}
                                 </div>
@@ -891,12 +1008,67 @@ const SkillGapAnalysis: React.FC = () => {
                             <div className="mt-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                               <h5 className="font-medium text-purple-900 dark:text-purple-400 mb-2 flex items-center space-x-2">
                                 <Zap className="h-4 w-4" />
-                                <span>Practical Application</span>
+                                <span>Practical Application{recommendation.timeInvestment ? ` (${recommendation.timeInvestment})` : ''}</span>
                               </h5>
                               <p className="text-sm text-purple-800 dark:text-purple-300">
                                 {recommendation.practicalApplication}
                               </p>
+                              
+                              {/* Books section */}
+                              {recommendation.books && recommendation.books.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+                                  <h6 className="text-sm font-medium text-purple-900 dark:text-purple-400 mb-2">
+                                    Recommended Books:
+                                  </h6>
+                                  <ul className="space-y-2">
+                                    {recommendation.books.map((book, idx) => (
+                                      <li key={idx} className="text-sm text-purple-800 dark:text-purple-300">
+                                        "{book.title}" by {book.author}
+                                        {book.amazonUrl && (
+                                          <a
+                                            href={book.amazonUrl}
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="ml-2 inline-flex items-center text-blue-600 dark:text-blue-400 text-xs hover:underline"
+                                          >
+                                            View <ExternalLink className="h-2 w-2 ml-0.5" />
+                                          </a>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
+                            
+                            {/* Books section */}
+                            {recommendation.books && recommendation.books.length > 0 && (
+                              <div className="mt-6">
+                                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>Recommended Books</span>
+                                </h5>
+                                <div className="space-y-3">
+                                  {recommendation.books.map((book, bookIndex) => (
+                                    <div key={bookIndex} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                                      <h6 className="font-medium text-gray-900 dark:text-white">{book.title}</h6>
+                                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">by {book.author}</p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{book.description}</p>
+                                      {book.amazonUrl && (
+                                        <a 
+                                          href={book.amazonUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center mt-2 text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                                        >
+                                          View on Amazon <ExternalLink className="h-3 w-3 ml-1" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

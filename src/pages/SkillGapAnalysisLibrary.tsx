@@ -305,6 +305,11 @@ const SkillGapAnalysisLibrary: React.FC = () => {
                           <div className="flex-1 min-w-0">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                               {formatAnalysisTitle(analysis)}
+                              {analysis.totalDevelopmentTime && (
+                                <span className="ml-2 text-sm font-normal text-purple-600 dark:text-purple-400">
+                                  ({analysis.totalDevelopmentTime})
+                                </span>
+                              )}
                             </h3>
                             <div className="flex items-center space-x-4 mt-1">
                               <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
@@ -318,6 +323,30 @@ const SkillGapAnalysisLibrary: React.FC = () => {
                             </div>
                           </div>
                         </div>
+
+                        {/* Budget Estimate */}
+                        {analysis.budgetEstimateDetails && (
+                          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+                            <div className="text-center text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                              <div className="text-gray-500 dark:text-gray-400">Minimum</div>
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {analysis.budgetEstimateDetails.minimum}
+                              </div>
+                            </div>
+                            <div className="text-center text-xs p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+                              <div className="text-purple-600 dark:text-purple-400">Recommended</div>
+                              <div className="font-medium text-purple-800 dark:text-purple-300">
+                                {analysis.budgetEstimateDetails.recommended}
+                              </div>
+                            </div>
+                            <div className="text-center text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                              <div className="text-gray-500 dark:text-gray-400">Premium</div>
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {analysis.budgetEstimateDetails.premium}
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Statistics */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
