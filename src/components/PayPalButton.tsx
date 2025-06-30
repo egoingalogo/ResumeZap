@@ -29,7 +29,7 @@ const PAYPAL_PLAN_IDS = {
   },
   pro: {
     monthly: 'P-5DY60256B82666818NBQ6RDQ',
-    annual: 'P-PRO_ANNUAL'         // Replace with actual ID
+    annual: 'P-455591011M953661UNBQ6S3Q'
   }
 };
 
