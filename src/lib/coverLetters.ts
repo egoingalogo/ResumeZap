@@ -14,6 +14,18 @@ export interface CoverLetter {
   callToAction?: string;
   hiringManager?: string;
   personalHighlights?: string;
+  toneAnalysis?: {
+    formality: string;
+    enthusiasm: string;
+    persuasiveness: string;
+    clarity: string;
+    notes: string;
+  };
+  matchingElements?: {
+    jobRequirements: string[];
+    candidateQualifications: string[];
+    alignmentScore?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +73,8 @@ export const fetchCoverLetters = async (): Promise<CoverLetter[]> => {
       callToAction: cl.call_to_action,
       hiringManager: cl.hiring_manager,
       personalHighlights: cl.personal_highlights,
+      toneAnalysis: cl.tone_analysis as any,
+      matchingElements: cl.matching_elements as any,
       createdAt: cl.created_at,
       updatedAt: cl.updated_at,
     }));
@@ -124,6 +138,8 @@ export const createCoverLetter = async (coverLetterData: Omit<CoverLetter, 'id' 
       call_to_action: coverLetterData.callToAction?.trim() || null,
       hiring_manager: coverLetterData.hiringManager?.trim() || null,
       personal_highlights: coverLetterData.personalHighlights?.trim() || null,
+      tone_analysis: coverLetterData.toneAnalysis || null,
+      matching_elements: coverLetterData.matchingElements || null,
     };
     
     const { data, error } = await supabase
@@ -155,6 +171,8 @@ export const createCoverLetter = async (coverLetterData: Omit<CoverLetter, 'id' 
       callToAction: data.call_to_action,
       hiringManager: data.hiring_manager,
       personalHighlights: data.personal_highlights,
+      toneAnalysis: data.tone_analysis as any,
+      matchingElements: data.matching_elements as any,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -224,6 +242,8 @@ export const updateCoverLetter = async (id: string, updates: Partial<CoverLetter
     if (updates.callToAction !== undefined) updateData.call_to_action = updates.callToAction?.trim() || null;
     if (updates.hiringManager !== undefined) updateData.hiring_manager = updates.hiringManager?.trim() || null;
     if (updates.personalHighlights !== undefined) updateData.personal_highlights = updates.personalHighlights?.trim() || null;
+    if (updates.toneAnalysis !== undefined) updateData.tone_analysis = updates.toneAnalysis || null;
+    if (updates.matchingElements !== undefined) updateData.matching_elements = updates.matchingElements || null;
     
     // Only proceed if there are actual updates
     if (Object.keys(updateData).length === 0) {
@@ -392,6 +412,8 @@ export const searchCoverLetters = async (searchTerm: string): Promise<CoverLette
       callToAction: cl.call_to_action,
       hiringManager: cl.hiring_manager,
       personalHighlights: cl.personal_highlights,
+      toneAnalysis: cl.tone_analysis as any,
+      matchingElements: cl.matching_elements as any,
       createdAt: cl.created_at,
       updatedAt: cl.updated_at,
     }));

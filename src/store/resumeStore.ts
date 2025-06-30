@@ -245,6 +245,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           callToAction: coverLetterResult.callToAction,
           hiringManager: hiringManager?.trim() || undefined,
           personalHighlights: personalExperience?.trim() || undefined,
+          toneAnalysis: coverLetterResult.toneAnalysis || undefined,
+          matchingElements: coverLetterResult.matchingElements || undefined,
         };
         
         await get().saveCoverLetter(coverLetterData);
@@ -832,6 +834,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         customizations: coverLetter.customizations,
         keyStrengths: coverLetter.keyStrengths,
         callToAction: coverLetter.callToAction || 'Thank you for your consideration.',
+        toneAnalysis: coverLetter.toneAnalysis,
+        matchingElements: coverLetter.matchingElements,
       };
       
       // Set as current cover letter result
