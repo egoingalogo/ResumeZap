@@ -219,8 +219,6 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         jobTitle,
         tone as 'professional' | 'enthusiastic' | 'concise',
         resumeFile,
-        hiringManager,
-        personalExperience
       );
       
       set({ 
@@ -241,8 +239,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           customizations: coverLetterResult.customizations || [],
           keyStrengths: coverLetterResult.keyStrengths || [],
           callToAction: coverLetterResult.callToAction,
-          hiringManager: hiringManager?.trim() || undefined,
-          personalHighlights: personalExperience?.trim() || undefined,
+          hiringManager: undefined,
+          personalHighlights: undefined,
           toneAnalysis: coverLetterResult.toneAnalysis || undefined,
           matchingElements: coverLetterResult.matchingElements || undefined,
         };
