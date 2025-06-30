@@ -14,6 +14,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { CustomSelect } from '../components/CustomSelect';
 import { useAuthStore } from '../store/authStore';
 import { createSupportTicket } from '../lib/support';
 import toast from 'react-hot-toast';
@@ -82,6 +83,11 @@ const EmailSupport: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle custom select changes
+  const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -241,19 +247,19 @@ const EmailSupport: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Category *
                         </label>
-                        <select
+                        <CustomSelect
+                          options={[
+                            { value: "General Inquiry", label: "General Inquiry" },
+                            { value: "Technical Issue", label: "Technical Issue" },
+                            { value: "Billing & Subscription", label: "Billing & Subscription" },
+                            { value: "Feature Request", label: "Feature Request" },
+                            { value: "Account Management", label: "Account Management" },
+                            { value: "Feedback", label: "Feedback" }
+                          ]}
                           name="category"
                           value={formData.category}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                        >
-                          {categories.map((category) => (
-                            <option key={category.value} value={category.value}>
-                              {category.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleSelectChange("category", value)}
+                        />
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {categories.find(c => c.value === formData.category)?.description}
                         </p>
@@ -263,19 +269,16 @@ const EmailSupport: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Priority *
                         </label>
-                        <select
+                        <CustomSelect
+                          options={[
+                            { value: "low", label: "Low" },
+                            { value: "medium", label: "Medium" },
+                            { value: "high", label: "High" }
+                          ]}
                           name="priority"
                           value={formData.priority}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                        >
-                          {priorities.map((priority) => (
-                            <option key={priority.value} value={priority.value}>
-                              {priority.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleSelectChange("priority", value)}
+                        />
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {priorities.find(p => p.value === formData.priority)?.description}
                         </p>
