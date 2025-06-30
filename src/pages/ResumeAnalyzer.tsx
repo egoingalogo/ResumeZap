@@ -549,6 +549,34 @@ const ResumeAnalyzer: React.FC = () => {
                               {currentResumeAnalysis.tailoredResume}
                             </pre>
                           </div>
+                          
+                          {currentResumeAnalysis.improvementSummary && (
+                            <div className="mt-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                              <h4 className="font-medium text-purple-900 dark:text-purple-400 mb-3">
+                                Improvement Summary
+                              </h4>
+                              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+                                  <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Total Changes</div>
+                                  <div className="text-purple-600 dark:text-purple-400 font-medium">
+                                    {currentResumeAnalysis.improvementSummary.totalChanges}
+                                  </div>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+                                  <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">ATS Improvement</div>
+                                  <div className="text-purple-600 dark:text-purple-400 font-medium">
+                                    {currentResumeAnalysis.improvementSummary.estimatedATSImprovement}
+                                  </div>
+                                </div>
+                                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+                                  <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Key Areas Improved</div>
+                                  <div className="text-purple-600 dark:text-purple-400 font-medium">
+                                    {currentResumeAnalysis.improvementSummary.keyAreasImproved.join(', ')}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 

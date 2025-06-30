@@ -598,6 +598,7 @@ const CoverLetterGenerator: React.FC = () => {
                           { id: 'letter', label: 'Cover Letter', icon: Mail },
                           { id: 'customizations', label: 'Customizations', icon: Target },
                           { id: 'strengths', label: 'Key Strengths', icon: CheckCircle },
+                          { id: 'analysis', label: 'Tone Analysis', icon: MessageSquare }
                         ].map((tab) => (
                           <button
                             key={tab.id}
@@ -690,6 +691,95 @@ const CoverLetterGenerator: React.FC = () => {
                               </div>
                             ))}
                           </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'analysis' && (
+                        <div className="space-y-6">
+                          {currentCoverLetter.toneAnalysis ? (
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Tone Analysis
+                              </h3>
+                              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-purple-800 dark:text-purple-400">Formality</h4>
+                                  <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+                                    {currentCoverLetter.toneAnalysis.formality}
+                                  </p>
+                                </div>
+                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">Enthusiasm</h4>
+                                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                    {currentCoverLetter.toneAnalysis.enthusiasm}
+                                  </p>
+                                </div>
+                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-green-800 dark:text-green-400">Persuasiveness</h4>
+                                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                                    {currentCoverLetter.toneAnalysis.persuasiveness}
+                                  </p>
+                                </div>
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-400">Clarity</h4>
+                                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                    {currentCoverLetter.toneAnalysis.clarity}
+                                  </p>
+                                </div>
+                              </div>
+                              {currentCoverLetter.toneAnalysis.notes && (
+                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Tone Notes</h4>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    {currentCoverLetter.toneAnalysis.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                          
+                          {currentCoverLetter.matchingElements && (
+                            <div className="space-y-4 mt-6">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Matching Elements
+                              </h3>
+                              <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Job Requirements</h4>
+                                  <div className="space-y-2">
+                                    {currentCoverLetter.matchingElements.jobRequirements.map((req, idx) => (
+                                      <div key={idx} className="flex items-start space-x-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                        <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-blue-800 dark:text-blue-400">{req}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="space-y-3">
+                                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Your Qualifications</h4>
+                                  <div className="space-y-2">
+                                    {currentCoverLetter.matchingElements.candidateQualifications.map((qual, idx) => (
+                                      <div key={idx} className="flex items-start space-x-2 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-green-800 dark:text-green-400">{qual}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {currentCoverLetter.matchingElements.alignmentScore && (
+                                <div className="mt-4 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium text-purple-900 dark:text-purple-400">Alignment Score</h4>
+                                    <div className="text-lg font-semibold text-purple-700 dark:text-purple-300">
+                                      {currentCoverLetter.matchingElements.alignmentScore}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

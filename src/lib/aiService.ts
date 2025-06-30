@@ -89,6 +89,11 @@ export interface ResumeAnalysisResult {
     suggestions: string[];
   };
   atsOptimizations: string[];
+  improvementSummary?: {
+    totalChanges: string;
+    keyAreasImproved: string[];
+    estimatedATSImprovement: string;
+  };
 }
 
 export interface CoverLetterResult {
@@ -96,6 +101,18 @@ export interface CoverLetterResult {
   customizations: string[];
   keyStrengths: string[];
   callToAction: string;
+  toneAnalysis?: {
+    formality: string;
+    enthusiasm: string;
+    persuasiveness: string;
+    clarity: string;
+    notes: string;
+  };
+  matchingElements?: {
+    jobRequirements: string[];
+    candidateQualifications: string[];
+    alignmentScore?: string;
+  };
 }
 
 export interface SkillGapResult {
@@ -105,18 +122,21 @@ export interface SkillGapResult {
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
     important: Array<{
       skill: string;
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
     niceToHave: Array<{
       skill: string;
       currentLevel: string;
       requiredLevel: string;
       gap: string;
+      impactOnJobSuccess?: string;
     }>;
   };
   learningRecommendations: Array<{
@@ -126,41 +146,69 @@ export interface SkillGapResult {
     courses: Array<{
       platform: string;
       courseName: string;
+      instructor?: string;
+      url?: string;
       cost: string;
       duration: string;
       difficulty: string;
+      rating?: string;
+      description?: string;
     }>;
     freeResources: Array<{
       type: string;
       resource: string;
+      url?: string;
       description: string;
+      estimatedTime?: string;
     }>;
     certifications: Array<{
       name: string;
       provider: string;
       timeToComplete: string;
       cost: string;
+      validity?: string;
+      industryRecognition?: string;
+      url?: string;
     }>;
     practicalApplication: string;
+    books?: Array<{
+      title: string;
+      author: string;
+      amazonUrl?: string;
+      description: string;
+    }>;
   }>;
   developmentRoadmap: {
     phase1: {
       duration: string;
       focus: string;
+      skills?: string[];
+      weeklyTimeCommitment?: string;
       milestones: string[];
     };
     phase2: {
       duration: string;
       focus: string;
+      skills?: string[];
+      weeklyTimeCommitment?: string;
       milestones: string[];
     };
     phase3: {
       duration: string;
       focus: string;
+      skills?: string[];
+      weeklyTimeCommitment?: string;
       milestones: string[];
     };
   };
   skillsAlreadyStrong: string[];
+  totalDevelopmentTime?: string;
+  budgetEstimate?: {
+    minimum: string;
+    recommended: string;
+    premium: string;
+  };
+  nextSteps?: string[];
 }
 
 /**
