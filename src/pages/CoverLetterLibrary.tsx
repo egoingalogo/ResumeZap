@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   Clock,
   Plus,
-  FileText
+  FileText,
+  Target
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
@@ -335,6 +336,12 @@ const CoverLetterLibrary: React.FC = () => {
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {coverLetter.jobTitle}
                         </span>
+                        {coverLetter.matchingElements?.alignmentScore && (
+                          <span className="text-sm text-purple-600 dark:text-purple-400 flex items-center">
+                            <Target className="h-3.5 w-3.5 mr-1" />
+                            {coverLetter.matchingElements.alignmentScore} match
+                          </span>
+                        )}
                       </div>
 
                       {/* Content Preview */}
@@ -343,6 +350,17 @@ const CoverLetterLibrary: React.FC = () => {
                           {coverLetter.content.substring(0, 200)}...
                         </p>
                       </div>
+                      
+                      {coverLetter.toneAnalysis && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded">
+                            {coverLetter.toneAnalysis.formality}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-1 text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded">
+                            {coverLetter.toneAnalysis.enthusiasm}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
