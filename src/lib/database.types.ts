@@ -266,6 +266,8 @@ export interface Database {
           call_to_action?: string | null
           hiring_manager?: string | null
           personal_highlights?: string | null
+          tone_analysis?: Json | null
+          matching_elements?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -284,6 +286,8 @@ export interface Database {
           call_to_action?: string | null
           hiring_manager?: string | null
           personal_highlights?: string | null
+          tone_analysis?: Json | null
+          matching_elements?: Json | null
           created_at?: string
           updated_at?: string
         }
