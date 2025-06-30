@@ -399,7 +399,7 @@ const CoverLetterGenerator: React.FC = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Hiring Manager Name (enter "-" for empty name) *
+                      Hiring Manager Name (Optional)
                     </label>
                     <input
                       type="text"
