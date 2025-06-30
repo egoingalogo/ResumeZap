@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, signUp, signIn, getCurrentUser, handleSupabaseError, getLifetimeUserCount, updateEmail, updateUserName } from '../lib/supabase';
+import { loadAppSettings } from '../lib/appSettings';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -35,6 +36,7 @@ interface AuthState {
   refreshUser: () => Promise<User | null>;
   fetchLifetimeUserCount: () => Promise<void>;
   setupPaymentListeners: () => void;
+  loadAppSettings: () => Promise<void>;
 }
 
 /**
@@ -149,6 +151,9 @@ export const useAuthStore = create<AuthState>()(
        */
       fetchLifetimeUserCount: async () => {
         try {
+          // Also load app settings while we're fetching lifetime count
+          await get().loadAppSettings();
+          
           console.log('AuthStore: Fetching lifetime user count');
           const count = await getLifetimeUserCount();
           set({ lifetimeUserCount: count });
@@ -723,6 +728,21 @@ export const useAuthStore = create<AuthState>()(
           window.removeEventListener('popstate', handleUrlChange);
         };
       },
+      
+      /**
+       * Load application settings from the database
+       * This includes the lifetime plan price and other global settings
+       */
+      loadAppSettings: async () => {
+        try {
+          console.log('AuthStore: Loading application settings');
+          await loadAppSettings();
+          console.log('AuthStore: Application settings loaded successfully');
+        } catch (error) {
+          console.error('AuthStore: Failed to load application settings:', error);
+          // Non-critical error, continue without settings
+        }
+      }
     }),
     {
       name: 'resumezap-auth',
@@ -744,6 +764,11 @@ export const useAuthStore = create<AuthState>()(
 // Set up auth state listener with improved error handling and race condition prevention
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('AuthStore: Auth state changed:', event);
+  
+  // Load app settings regardless of auth state to ensure they're available
+  useAuthStore.getState().loadAppSettings().catch(error => {
+    console.error('AuthStore: Failed to load app settings during auth change:', error);
+  });
   
   if (event === 'SIGNED_IN' && session?.user) {
     // Handle email verification completion

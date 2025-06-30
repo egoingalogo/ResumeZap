@@ -7,6 +7,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { Loader2 } from 'lucide-react';
+import { getLifetimePlanPrice } from '../lib/appSettings';
 
 // Define plan pricing information
 const PLAN_PRICES = {
@@ -62,6 +63,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [lifetimePrice, setLifetimePrice] = useState<string>(PLAN_PRICES.lifetime); // Default to constant
   const { upgradePlan } = useAuthStore();
   
   // Get client ID from environment
@@ -71,6 +73,26 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
   useEffect(() => {
     setError(null);
   }, [planType, isAnnual]);
+  
+  // Fetch lifetime price from database if this is a lifetime plan
+  useEffect(() => {
+    if (planType === 'lifetime') {
+      const fetchLifetimePrice = async () => {
+        try {
+          console.log('PayPalButton: Fetching lifetime plan price from database');
+          const price = await getLifetimePlanPrice();
+          setLifetimePrice(price);
+          console.log('PayPalButton: Using dynamic lifetime plan price:', price);
+        } catch (error) {
+          console.error('PayPalButton: Error fetching lifetime price:', error);
+          // Fallback to default price from constants
+          console.log('PayPalButton: Using fallback lifetime plan price:', PLAN_PRICES.lifetime);
+        }
+      };
+      
+      fetchLifetimePrice();
+    }
+  }, [planType]);
 
   // Function to create PayPal order for one-time payments (Lifetime plan)
   const createOrder = async () => {
@@ -78,7 +100,10 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
     setError(null);
     
     try {
-      console.log(`Creating PayPal order for ${planType} plan`);
+      // Use dynamic price for lifetime plan
+      const priceToUse = planType === 'lifetime' ? lifetimePrice : PLAN_PRICES.lifetime;
+      
+      console.log(`Creating PayPal order for ${planType} plan with price $${priceToUse}`);
       
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-paypal-transaction`, {
         method: 'POST',
@@ -89,7 +114,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
         body: JSON.stringify({
           type: 'order',
           planType: planType,
-          amount: PLAN_PRICES.lifetime,
+          amount: priceToUse,
           currency: 'USD'
         })
       });
@@ -223,6 +248,13 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
     toast.info('Payment canceled');
     if (onCancel) onCancel();
   };
+  
+  // Log the current price being used for diagnostic purposes
+  useEffect(() => {
+    if (planType === 'lifetime') {
+      console.log(`PayPalButton: Lifetime plan price: $${lifetimePrice}`);
+    }
+  }, [planType, lifetimePrice]);
   
   // Function to handle errors
   const handleError = (err: Record<string, unknown>) => {

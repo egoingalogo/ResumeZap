@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Crown, Zap } from 'lucide-react';
 import { PayPalButton } from './PayPalButton';
+import { useAppSettings } from '../lib/AppSettingsContext';
 
 interface PricingTier {
   name: string;
@@ -34,6 +35,7 @@ interface PricingCardProps {
  */
 export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
   console.log('PricingCard: Rendering tier:', tier.name);
+  const { lifetimePlanPrice } = useAppSettings();
 
   // Determine plan type for PayPal integration
   const getPlanType = (name: string): 'premium' | 'pro' | 'lifetime' => {
@@ -42,6 +44,12 @@ export const PricingCard: React.FC<PricingCardProps> = ({ tier, index }) => {
     if (name.toLowerCase() === 'lifetime') return 'lifetime';
     return 'premium'; // Default fallback
   };
+  
+  // If this is a lifetime plan, use the dynamic price
+  let displayPrice = tier.price;
+  if (tier.name.toLowerCase() === 'lifetime' && tier.price.startsWith('$')) {
+    displayPrice = `$${lifetimePlanPrice}`;
+  }
 
   return (
     <motion.div
