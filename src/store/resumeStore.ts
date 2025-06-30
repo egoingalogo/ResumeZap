@@ -607,7 +607,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // Save to database
       const savedAnalysis = await createSkillAnalysis(
         resumeContentForSaving,
-        extractedJobTitle,
+        jobPosting.split('\n')[0] || 'Job Position', // Use first line as job title
         jobPosting,
         legacySkillGaps,
         skillGapResult,
