@@ -18,6 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { CustomSelect } from '../components/CustomSelect';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import toast from 'react-hot-toast';
@@ -239,29 +240,31 @@ const SkillGapAnalysisLibrary: React.FC = () => {
 
               {/* Sort By */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'date', label: 'Sort by Date' },
+                    { value: 'skills', label: 'Sort by Total Skills' },
+                    { value: 'gaps', label: 'Sort by Skill Gaps' },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'skills' | 'gaps')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="date">Sort by Date</option>
-                  <option value="skills">Sort by Total Skills</option>
-                  <option value="gaps">Sort by Skill Gaps</option>
-                </select>
+                  onChange={(value) => setSortBy(value as 'date' | 'skills' | 'gaps')}
+                  className="w-full"
+                />
               </div>
 
               {/* Filter by Priority */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'all', label: 'All Priorities' },
+                    { value: 'high', label: 'High Priority Gaps' },
+                    { value: 'medium', label: 'Medium Priority Gaps' },
+                    { value: 'low', label: 'Low Priority Gaps' },
+                  ]}
                   value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value as 'all' | 'high' | 'medium' | 'low')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="high">High Priority Gaps</option>
-                  <option value="medium">Medium Priority Gaps</option>
-                  <option value="low">Low Priority Gaps</option>
-                </select>
+                  onChange={(value) => setFilterPriority(value as 'all' | 'high' | 'medium' | 'low')}
+                  className="w-full"
+                />
               </div>
 
               {/* Results Count */}

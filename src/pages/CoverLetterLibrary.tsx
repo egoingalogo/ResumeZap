@@ -13,10 +13,12 @@ import {
   ArrowLeft,
   Clock,
   Plus,
+  FileText
   FileText,
   Target
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { CustomSelect } from '../components/CustomSelect';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { exportResume } from '../lib/exportUtils';
@@ -247,29 +249,31 @@ const CoverLetterLibrary: React.FC = () => {
 
               {/* Sort By */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'date', label: 'Sort by Date' },
+                    { value: 'company', label: 'Sort by Company' },
+                    { value: 'title', label: 'Sort by Title' },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'company' | 'title')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="date">Sort by Date</option>
-                  <option value="company">Sort by Company</option>
-                  <option value="title">Sort by Title</option>
-                </select>
+                  onChange={(value) => setSortBy(value as 'date' | 'company' | 'title')}
+                  className="w-full"
+                />
               </div>
 
               {/* Filter by Tone */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'all', label: 'All Tones' },
+                    { value: 'professional', label: 'Professional' },
+                    { value: 'enthusiastic', label: 'Enthusiastic' },
+                    { value: 'concise', label: 'Concise' },
+                  ]}
                   value={filterTone}
-                  onChange={(e) => setFilterTone(e.target.value as 'all' | 'professional' | 'enthusiastic' | 'concise')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="all">All Tones</option>
-                  <option value="professional">Professional</option>
-                  <option value="enthusiastic">Enthusiastic</option>
-                  <option value="concise">Concise</option>
-                </select>
+                  onChange={(value) => setFilterTone(value as 'all' | 'professional' | 'enthusiastic' | 'concise')}
+                  className="w-full"
+                />
               </div>
 
               {/* Results Count */}

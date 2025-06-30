@@ -16,6 +16,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { CustomSelect } from '../components/CustomSelect';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { exportResume } from '../lib/exportUtils';
@@ -243,29 +244,31 @@ const ResumeLibrary: React.FC = () => {
 
               {/* Sort By */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'date', label: 'Sort by Date' },
+                    { value: 'score', label: 'Sort by Score' },
+                    { value: 'title', label: 'Sort by Title' },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'score' | 'title')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="date">Sort by Date</option>
-                  <option value="score">Sort by Score</option>
-                  <option value="title">Sort by Title</option>
-                </select>
+                  onChange={(value) => setSortBy(value as 'date' | 'score' | 'title')}
+                  className="w-full"
+                />
               </div>
 
               {/* Filter by Score */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'all', label: 'All Scores' },
+                    { value: 'high', label: 'High (80%+)' },
+                    { value: 'medium', label: 'Medium (60-79%)' },
+                    { value: 'low', label: 'Low (Below 60%)' },
+                  ]}
                   value={filterScore}
-                  onChange={(e) => setFilterScore(e.target.value as 'all' | 'high' | 'medium' | 'low')}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="all">All Scores</option>
-                  <option value="high">High (80%+)</option>
-                  <option value="medium">Medium (60-79%)</option>
-                  <option value="low">Low (Below 60%)</option>
-                </select>
+                  onChange={(value) => setFilterScore(value as 'all' | 'high' | 'medium' | 'low')}
+                  className="w-full"
+                />
               </div>
 
               {/* Results Count */}

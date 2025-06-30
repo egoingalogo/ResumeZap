@@ -10,6 +10,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react';
+import { CustomSelect } from './CustomSelect';
 
 interface Application {
   id: string;
@@ -59,6 +60,7 @@ export const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
   // Initialize form data when modal opens or application changes
   useEffect(() => {
     if (application) {
+      console.log('ApplicationFormModal: Setting data from application', application);
       setFormData({
         company: application.company,
         position: application.position,
@@ -133,13 +135,27 @@ export const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { name: string, value: string }
+  ) => {
+    if ('target' in e) {
+      // Handle regular input events
+      const { name, value } = e.target;
+      setFormData(prev => ({ ...prev, [name]: value }));
+      
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+    } else {
+      // Handle direct name/value pairs from CustomSelect
+      const { name, value } = e;
+      setFormData(prev => ({ ...prev, [name]: value }));
+      
+      // Clear error when user makes a selection
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
     }
   };
 
@@ -283,18 +299,18 @@ export const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status
-                  </label>
-                  <select
-                    name="status"
+                   </label>
+                  <CustomSelect
                     value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="applied">Applied</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
+                    onChange={(value) => handleInputChange({ name: "status", value })}
+                    options={[
+                      { value: "applied", label: "Applied" },
+                      { value: "interview", label: "Interview" },
+                      { value: "offer", label: "Offer" },
+                      { value: "rejected", label: "Rejected" }
+                    ]}
+                    className="w-full"
+                  />
                 </div>
               </div>
 

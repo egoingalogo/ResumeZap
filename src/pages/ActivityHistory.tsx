@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Users
 } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
 import { Navbar } from '../components/Navbar';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
@@ -415,30 +416,32 @@ const ActivityHistory: React.FC = () => {
 
               {/* Filter by Type */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'all', label: 'All Activities' },
+                    { value: 'resume', label: 'Resume Analysis' },
+                    { value: 'skill_analysis', label: 'Skill Analysis' },
+                    { value: 'cover_letter', label: 'Cover Letters' },
+                    { value: 'application', label: 'Applications' },
+                  ]}
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="all">All Activities</option>
-                  <option value="resume">Resume Analysis</option>
-                  <option value="skill_analysis">Skill Analysis</option>
-                  <option value="cover_letter">Cover Letters</option>
-                  <option value="application">Applications</option>
-                </select>
+                  onChange={(value) => setFilterType(value as any)}
+                  className="w-full"
+                />
               </div>
 
               {/* Sort By */}
               <div>
-                <select
+                <CustomSelect
+                  options={[
+                    { value: 'date', label: 'Sort by Date' },
+                    { value: 'type', label: 'Sort by Type' },
+                    { value: 'score', label: 'Sort by Score' },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="date">Sort by Date</option>
-                  <option value="type">Sort by Type</option>
-                  <option value="score">Sort by Score</option>
-                </select>
+                  onChange={(value) => setSortBy(value as any)}
+                  className="w-full"
+                />
               </div>
 
               {/* Results Count */}
