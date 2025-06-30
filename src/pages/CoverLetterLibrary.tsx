@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   Clock,
   Plus,
-  FileText
   FileText,
   Target
 } from 'lucide-react';
