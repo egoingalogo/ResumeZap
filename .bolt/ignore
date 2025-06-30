@@ -1,4 +1,3 @@
 src/components/ProfilePictureUploader.tsx
 src/lib/profilePicture.ts
 src/pages/AuthPage.tsx
-src/pages/EmailSupport.tsx
