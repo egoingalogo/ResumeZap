@@ -219,8 +219,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         jobTitle,
         tone as 'professional' | 'enthusiastic' | 'concise',
         resumeFile,
-        hiringManager?: string,
-        personalExperience?: string
+        hiringManager: undefined,
+        personalExperience: undefined
       );
       
       set({ 
