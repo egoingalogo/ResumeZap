@@ -2,7 +2,7 @@
 
 **AI-Powered Resume Tailoring Platform**
 
-ResumeZap is a modern web application that leverages artificial intelligence to help job seekers optimize their resumes, analyze skill gaps, and accelerate their career growth. Built with React, TypeScript, and Supabase, it provides a comprehensive suite of tools for job search optimization.
+ResumeZap is a B2C SaaS tool that uses AI to help job seekers instantly tailor their resume and cover letter to a specific job posting, analyze their skill gaps, and receive comprehensive AI learning recommendations. Built with React, TypeScript, and Supabase, it provides a comprehensive suite of tools for job applications optimization.
 
 ## 🚀 Features
 
