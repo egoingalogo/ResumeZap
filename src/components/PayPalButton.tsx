@@ -24,7 +24,7 @@ const PLAN_PRICES = {
 // Define PayPal plan IDs (replace these with your actual PayPal plan IDs)
 const PAYPAL_PLAN_IDS = {
   premium: {
-    monthly: 'P-PREMIUM_MONTHLY',  // Replace with actual ID
+    monthly: 'P-43T78580KT298912NNBQWC2Q',
     annual: 'P-PREMIUM_ANNUAL'     // Replace with actual ID
   },
   pro: {
