@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
 import { Navbar } from '../components/Navbar';
 import { ApplicationFormModal } from '../components/ApplicationFormModal';
 import { useAuthStore } from '../store/authStore';
@@ -226,17 +227,18 @@ const ApplicationTracker: React.FC = () => {
               
               <div className="flex items-center space-x-2">
                 <Filter className="h-5 w-5 text-gray-400" />
-                <select
+                <CustomSelect
+                  options={[
+                    { value: "all", label: "All Status" },
+                    { value: "applied", label: "Applied" },
+                    { value: "interview", label: "Interview" },
+                    { value: "offer", label: "Offer" },
+                    { value: "rejected", label: "Rejected" }
+                  ]}
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="all">All Status</option>
-                  <option value="applied">Applied</option>
-                  <option value="interview">Interview</option>
-                  <option value="offer">Offer</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                  onChange={(value) => setStatusFilter(value)}
+                  className=""
+                />
               </div>
             </div>
           </motion.div>
