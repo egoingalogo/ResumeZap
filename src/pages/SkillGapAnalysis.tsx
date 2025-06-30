@@ -48,7 +48,6 @@ const SkillGapAnalysis: React.FC = () => {
                             )}
 
                             {/* ... (rest of the component remains the same) ... */}
-
                           </div>
                         ))}
                       </div>
