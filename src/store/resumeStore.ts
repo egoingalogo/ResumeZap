@@ -701,20 +701,6 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         set({ 
           currentSkillAnalysis: analysis,
           skillGaps,
-          // Reconstruct full SkillGapResult if available
-          currentSkillGapAnalysis: analysis.detailedSkillGapAnalysis ? {
-            skillGapAnalysis: analysis.detailedSkillGapAnalysis,
-            learningRecommendations: analysis.learningRecommendationsDetails || [],
-            developmentRoadmap: analysis.developmentRoadmapDetails || {
-              phase1: { duration: '', focus: '', milestones: [] },
-              phase2: { duration: '', focus: '', milestones: [] },
-              phase3: { duration: '', focus: '', milestones: [] }
-            },
-            skillsAlreadyStrong: analysis.skillsAlreadyStrongDetails || [],
-            totalDevelopmentTime: analysis.totalDevelopmentTime || undefined,
-            budgetEstimate: analysis.budgetEstimateDetails || undefined,
-            nextSteps: analysis.nextStepsDetails || undefined
-          } : null,
           currentSkillGapAnalysis: skillGapResult,
           error: null,
         });
