@@ -639,6 +639,30 @@ const CoverLetterGenerator: React.FC = () => {
                               </button>
                             </div>
                           </div>
+
+                          {currentCoverLetter.toneAnalysis && (
+                            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                              <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2 flex items-center space-x-2">
+                                <Info className="h-4 w-4" />
+                                <span>Tone Analysis</span>
+                              </h4>
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                {currentCoverLetter.toneAnalysis}
+                              </p>
+                            </div>
+                          )}
+
+                          {currentCoverLetter.matchingElements && currentCoverLetter.matchingElements.length > 0 && (
+                            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                              <h4 className="font-medium text-green-800 dark:text-green-400 mb-2 flex items-center space-x-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Matching Elements</span>
+                              </h4>
+                              <ul className="list-disc list-inside text-sm text-green-700 dark:text-green-300">
+                                {currentCoverLetter.matchingElements.map((item, idx) => <li key={idx}>{item}</li>)}
+                              </ul>
+                            </div>
+                          )}
                           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 max-h-96 overflow-y-auto">
                             <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
                               {currentCoverLetter.coverLetter}

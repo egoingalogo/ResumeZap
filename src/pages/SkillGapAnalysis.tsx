@@ -612,6 +612,9 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                                   <h5 className="font-medium text-red-800 dark:text-red-400">{skill.skill}</h5>
                                   <p className="text-xs text-red-600 dark:text-red-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-red-700 dark:text-red-500 mt-1">Impact: {skill.impactOnJobSuccess}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -627,6 +630,9 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                                   <h5 className="font-medium text-yellow-800 dark:text-yellow-400">{skill.skill}</h5>
                                   <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">Impact: {skill.impactOnJobSuccess}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -642,6 +648,9 @@ const SkillGapAnalysis: React.FC = () => {
                                 <div key={index} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                   <h5 className="font-medium text-green-800 dark:text-green-400">{skill.skill}</h5>
                                   <p className="text-xs text-green-600 dark:text-green-500 mt-1">{skill.gap}</p>
+                                  {skill.impactOnJobSuccess && (
+                                    <p className="text-xs text-green-700 dark:text-green-500 mt-1">Impact: {skill.impactOnJobSuccess}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -681,7 +690,10 @@ const SkillGapAnalysis: React.FC = () => {
                                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                                     <strong>Focus:</strong> {details.focus}
                                   </p>
-                                  
+                                  {details.skills && details.skills.length > 0 && (
+                                    <p className="text-gray-600 dark:text-gray-400 mb-4"><strong>Skills:</strong> {details.skills.join(', ')}</p>
+                                  )}
+
                                   <div>
                                     <h5 className="font-medium text-gray-900 dark:text-white mb-2">Milestones:</h5>
                                     <ul className="space-y-2">
@@ -693,6 +705,9 @@ const SkillGapAnalysis: React.FC = () => {
                                       ))}
                                     </ul>
                                   </div>
+                                  {details.weeklyTimeCommitment && (
+                                    <p className="text-gray-600 dark:text-gray-400 mt-4"><strong>Weekly Commitment:</strong> {details.weeklyTimeCommitment}</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -742,11 +757,18 @@ const SkillGapAnalysis: React.FC = () => {
                                           {course.difficulty}
                                         </span>
                                       </div>
-                                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                                      <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                         <span className="flex items-center space-x-1">
                                           <Users className="h-3 w-3" />
                                           <span>{course.platform}</span>
+                                          {course.instructor && <span> ({course.instructor})</span>}
                                         </span>
+                                        {course.rating && (
+                                          <span className="flex items-center space-x-1">
+                                            <Star className="h-3 w-3 text-yellow-500" />
+                                            <span>{course.rating}</span>
+                                          </span>
+                                        )}
                                         <span className="flex items-center space-x-1">
                                           <Clock className="h-3 w-3" />
                                           <span>{course.duration}</span>
@@ -755,6 +777,12 @@ const SkillGapAnalysis: React.FC = () => {
                                           <DollarSign className="h-3 w-3" />
                                           <span>{course.cost}</span>
                                         </span>
+                                        {course.description && (
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{course.description}</p>
+                                        )}
+                                        {course.url && (
+                                          <a href={course.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-purple-600 dark:text-purple-400 hover:underline text-xs">Learn More <ExternalLink className="h-3 w-3" /></a>
+                                        )}
                                       </div>
                                     </div>
                                   ))}
@@ -779,6 +807,12 @@ const SkillGapAnalysis: React.FC = () => {
                                       <p className="text-sm text-gray-600 dark:text-gray-400">
                                         {resource.description}
                                       </p>
+                                      {resource.estimatedTime && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Est. Time: {resource.estimatedTime}</p>
+                                      )}
+                                      {resource.url && (
+                                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-purple-600 dark:text-purple-400 hover:underline text-xs">Access Resource <ExternalLink className="h-3 w-3" /></a>
+                                      </p>
                                     </div>
                                   ))}
                                 </div>
@@ -801,6 +835,16 @@ const SkillGapAnalysis: React.FC = () => {
                                         <span>{cert.timeToComplete}</span>
                                         <span>{cert.cost}</span>
                                       </div>
+                                      {cert.validity && (
+                                        <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">Validity: {cert.validity}</p>
+                                      )}
+                                      {cert.industryRecognition && (
+                                        <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">Recognition: {cert.industryRecognition}</p>
+                                      )}
+                                      {cert.url && (
+                                        <a href={cert.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-purple-600 dark:text-purple-400 hover:underline text-xs">View Certification <ExternalLink className="h-3 w-3" /></a>
+                                        <span>{cert.cost}</span>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -816,6 +860,62 @@ const SkillGapAnalysis: React.FC = () => {
                               <p className="text-sm text-purple-800 dark:text-purple-300">
                                 {recommendation.practicalApplication}
                               </p>
+                            </div>
+
+                            {/* Books */}
+                            {recommendation.books && recommendation.books.length > 0 && (
+                              <div className="mt-6">
+                                <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center space-x-2">
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>Recommended Books</span>
+                                </h5>
+                                <div className="grid md:grid-cols-2 gap-3">
+                                  {recommendation.books.map((book, bookIndex) => (
+                                    <div key={bookIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                      <h6 className="font-medium text-gray-900 dark:text-white">{book.title}</h6>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">by {book.author}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{book.description}</p>
+                                      {book.amazonUrl && (
+                                        <a href={book.amazonUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 text-purple-600 dark:text-purple-400 hover:underline text-xs mt-2">Buy on Amazon <ExternalLink className="h-3 w-3" /></a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Overall Summary and Next Steps */}
+                        {currentSkillGapAnalysis.totalDevelopmentTime && (
+                          <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2 flex items-center space-x-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Total Estimated Development Time</span>
+                            </h4>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">{currentSkillGapAnalysis.totalDevelopmentTime}</p>
+                          </div>
+                        )}
+                        {currentSkillGapAnalysis.budgetEstimate && (
+                          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <h4 className="font-medium text-green-800 dark:text-green-400 mb-2 flex items-center space-x-2">
+                              <DollarSign className="h-4 w-4" />
+                              <span>Estimated Budget</span>
+                            </h4>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Minimum: {currentSkillGapAnalysis.budgetEstimate.minimum} | Recommended: {currentSkillGapAnalysis.budgetEstimate.recommended} | Premium: {currentSkillGapAnalysis.budgetEstimate.premium}
+                            </p>
+                          </div>
+                        )}
+                        {currentSkillGapAnalysis.nextSteps && currentSkillGapAnalysis.nextSteps.length > 0 && (
+                          <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                            <h4 className="font-medium text-purple-800 dark:text-purple-400 mb-2 flex items-center space-x-2">
+                              <ArrowRight className="h-4 w-4" />
+                              <span>Next Steps</span>
+                            </h4>
+                            <ul className="list-disc list-inside text-sm text-purple-700 dark:text-purple-300">
+                              {currentSkillGapAnalysis.nextSteps.map((step, idx) => <li key={idx}>{step}</li>)}
+                            </ul>
                             </div>
                           </div>
                         ))}

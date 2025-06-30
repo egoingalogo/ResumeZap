@@ -512,6 +512,35 @@ const ResumeAnalyzer: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Improvement Summary */}
+                  {currentResumeAnalysis.improvementSummary && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 mt-6">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                        Improvement Summary
+                      </h2>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                          <Info className="h-5 w-5" />
+                          <span>Total Changes Made: <span className="font-medium text-gray-900 dark:text-white">{currentResumeAnalysis.improvementSummary.totalChanges}</span></span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white mb-2">Key Areas Improved:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {currentResumeAnalysis.improvementSummary.keyAreasImproved.map((area, index) => (
+                              <span key={index} className="bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400 px-3 py-1 rounded-full text-sm">
+                                {area}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                          <TrendingUp className="h-5 w-5" />
+                          <span>Estimated ATS Improvement: <span className="font-medium text-gray-900 dark:text-white">{currentResumeAnalysis.improvementSummary.estimatedATSImprovement}</span></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Analysis Tabs */}
                   <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
                     <div className="border-b border-gray-200 dark:border-gray-700">
