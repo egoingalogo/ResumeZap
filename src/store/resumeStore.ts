@@ -611,6 +611,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         resumeContentForSaving,
         jobPosting,
         legacySkillGaps,
+        skillGapResult,
         resumeId || null,
         overallSummary
       );
@@ -669,12 +670,37 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     
     try {
       const analysis = await fetchSkillAnalysisById(analysisId);
-      
+
       if (analysis) {
         const skillGaps = convertAnalysisToSkillGaps(analysis);
+        
+        // Reconstruct the SkillGapResult from saved detailed data
+        let skillGapResult: SkillGapResult | null = null;
+        
+        if (analysis.detailedSkillGapAnalysis) {
+          skillGapResult = {
+            skillGapAnalysis: analysis.detailedSkillGapAnalysis,
+            learningRecommendations: analysis.learningRecommendationsDetails || [],
+            developmentRoadmap: analysis.developmentRoadmapDetails || {
+              phase1: { duration: '', focus: '', milestones: [] },
+              phase2: { duration: '', focus: '', milestones: [] },
+              phase3: { duration: '', focus: '', milestones: [] },
+            },
+            skillsAlreadyStrong: analysis.skillsAlreadyStrongDetails || [],
+            totalDevelopmentTime: analysis.totalDevelopmentTime || '',
+            budgetEstimate: analysis.budgetEstimateDetails || {
+              minimum: '',
+              recommended: '',
+              premium: ''
+            },
+            nextSteps: analysis.nextStepsDetails || []
+          };
+        }
+        
         set({ 
           currentSkillAnalysis: analysis,
           skillGaps,
+          currentSkillGapAnalysis: skillGapResult,
           error: null,
         });
         console.log('ResumeStore: Skill analysis loaded successfully');

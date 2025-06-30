@@ -8,6 +8,13 @@ interface SkillAnalysis {
   resumeContentSnapshot: string;
   analysisDate: string;
   overallSummary?: string | null;
+  detailedSkillGapAnalysis?: any;
+  learningRecommendationsDetails?: any;
+  developmentRoadmapDetails?: any;
+  skillsAlreadyStrongDetails?: any;
+  totalDevelopmentTime?: string | null;
+  budgetEstimateDetails?: any;
+  nextStepsDetails?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +55,7 @@ export const createSkillAnalysis = async (
   resumeContent: string,
   jobPosting: string,
   skillGaps: SkillGap[],
+  fullSkillGapAnalysis?: any,
   resumeId?: string | null,
   overallSummary?: string | null
 ): Promise<SkillAnalysisWithRecommendations> => {
@@ -79,6 +87,13 @@ export const createSkillAnalysis = async (
       job_posting_content: jobPosting.trim(),
       resume_content_snapshot: resumeContent?.trim() || 'PDF file processed by AI - content extracted during analysis',
       overall_summary: overallSummary?.trim() || null,
+      detailed_skill_gap_analysis: fullSkillGapAnalysis?.skillGapAnalysis || null,
+      learning_recommendations_details: fullSkillGapAnalysis?.learningRecommendations || null,
+      development_roadmap_details: fullSkillGapAnalysis?.developmentRoadmap || null,
+      skills_already_strong_details: fullSkillGapAnalysis?.skillsAlreadyStrong || null,
+      total_development_time: fullSkillGapAnalysis?.totalDevelopmentTime || null,
+      budget_estimate_details: fullSkillGapAnalysis?.budgetEstimate || null,
+      next_steps_details: fullSkillGapAnalysis?.nextSteps || null,
     };
     
     const { data: analysisRecord, error: analysisError } = await supabase
@@ -141,6 +156,13 @@ export const createSkillAnalysis = async (
       resumeContentSnapshot: analysisRecord.resume_content_snapshot,
       analysisDate: analysisRecord.analysis_date,
       overallSummary: analysisRecord.overall_summary,
+      detailedSkillGapAnalysis: analysisRecord.detailed_skill_gap_analysis,
+      learningRecommendationsDetails: analysisRecord.learning_recommendations_details,
+      developmentRoadmapDetails: analysisRecord.development_roadmap_details,
+      skillsAlreadyStrongDetails: analysisRecord.skills_already_strong_details,
+      totalDevelopmentTime: analysisRecord.total_development_time,
+      budgetEstimateDetails: analysisRecord.budget_estimate_details,
+      nextStepsDetails: analysisRecord.next_steps_details,
       createdAt: analysisRecord.created_at,
       updatedAt: analysisRecord.updated_at,
       recommendations: recommendationRecords.map(rec => ({
@@ -208,6 +230,13 @@ export const fetchSkillAnalyses = async (): Promise<SkillAnalysisWithRecommendat
       resumeContentSnapshot: analysis.resume_content_snapshot,
       analysisDate: analysis.analysis_date,
       overallSummary: analysis.overall_summary,
+      detailedSkillGapAnalysis: analysis.detailed_skill_gap_analysis,
+      learningRecommendationsDetails: analysis.learning_recommendations_details,
+      developmentRoadmapDetails: analysis.development_roadmap_details,
+      skillsAlreadyStrongDetails: analysis.skills_already_strong_details,
+      totalDevelopmentTime: analysis.total_development_time,
+      budgetEstimateDetails: analysis.budget_estimate_details,
+      nextStepsDetails: analysis.next_steps_details,
       createdAt: analysis.created_at,
       updatedAt: analysis.updated_at,
       recommendations: (analysis.skill_recommendations || []).map((rec: any) => ({
@@ -282,6 +311,13 @@ export const fetchSkillAnalysisById = async (analysisId: string): Promise<SkillA
       resumeContentSnapshot: analysis.resume_content_snapshot,
       analysisDate: analysis.analysis_date,
       overallSummary: analysis.overall_summary,
+      detailedSkillGapAnalysis: analysis.detailed_skill_gap_analysis,
+      learningRecommendationsDetails: analysis.learning_recommendations_details, 
+      developmentRoadmapDetails: analysis.development_roadmap_details,
+      skillsAlreadyStrongDetails: analysis.skills_already_strong_details,
+      totalDevelopmentTime: analysis.total_development_time,
+      budgetEstimateDetails: analysis.budget_estimate_details,
+      nextStepsDetails: analysis.next_steps_details,
       createdAt: analysis.created_at,
       updatedAt: analysis.updated_at,
       recommendations: (analysis.skill_recommendations || []).map((rec: any) => ({

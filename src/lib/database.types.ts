@@ -179,6 +179,13 @@ export interface Database {
           resume_content_snapshot: string
           analysis_date?: string
           overall_summary?: string | null
+          detailed_skill_gap_analysis?: Json | null
+          learning_recommendations_details?: Json | null
+          development_roadmap_details?: Json | null
+          skills_already_strong_details?: Json | null
+          total_development_time?: string | null
+          budget_estimate_details?: Json | null
+          next_steps_details?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -190,6 +197,20 @@ export interface Database {
           resume_content_snapshot?: string
           analysis_date?: string
           overall_summary?: string | null
+          detailed_skill_gap_analysis?: Json | null
+          learning_recommendations_details?: Json | null
+          development_roadmap_details?: Json | null
+          skills_already_strong_details?: Json | null
+          total_development_time?: string | null
+          budget_estimate_details?: Json | null
+          next_steps_details?: Json | null
+          detailed_skill_gap_analysis?: Json | null
+          learning_recommendations_details?: Json | null
+          development_roadmap_details?: Json | null
+          skills_already_strong_details?: Json | null
+          total_development_time?: string | null
+          budget_estimate_details?: Json | null
+          next_steps_details?: Json | null
           created_at?: string
           updated_at?: string
         }
